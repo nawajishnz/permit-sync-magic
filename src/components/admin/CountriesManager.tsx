@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +31,7 @@ const CountriesManager = () => {
     length_of_stay: ''
   });
 
+  // Update the useQuery to log the response for debugging
   const { 
     data: countries = [], 
     isLoading, 
@@ -40,12 +40,18 @@ const CountriesManager = () => {
   } = useQuery({
     queryKey: ['countries'],
     queryFn: async () => {
+      console.log('Fetching countries...');
       const { data, error } = await supabase
         .from('countries')
         .select('*')
         .order('name');
         
-      if (error) throw error;
+      console.log('Countries response:', { data, error });
+      
+      if (error) {
+        console.error('Error fetching countries:', error);
+        throw error;
+      }
       
       return data || [];
     }
@@ -183,6 +189,11 @@ const CountriesManager = () => {
     navigate(`/admin/packages?countryId=${countryId}&countryName=${encodeURIComponent(countryName)}`);
   };
 
+  // Add useEffect to log countries data for debugging
+  useEffect(() => {
+    console.log('Countries in component:', countries);
+  }, [countries]);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -200,6 +211,11 @@ const CountriesManager = () => {
           {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin h-8 w-8 border-4 border-teal border-t-transparent rounded-full" />
+            </div>
+          ) : isError ? (
+            <div className="text-center py-8 text-red-500">
+              <p>Error loading countries. Please try again.</p>
+              <p className="text-sm mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
             </div>
           ) : countries.length > 0 ? (
             <div className="overflow-x-auto">

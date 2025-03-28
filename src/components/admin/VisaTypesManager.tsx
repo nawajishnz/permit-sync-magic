@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +32,11 @@ const VisaTypesManager = () => {
     fee: ''
   });
 
+  // Add debug logging
+  useEffect(() => {
+    console.log('URL Parameters:', { countryId, countryName });
+  }, [countryId, countryName]);
+
   const { 
     data: visaTypes = [], 
     isLoading, 
@@ -41,6 +45,8 @@ const VisaTypesManager = () => {
   } = useQuery({
     queryKey: ['visaTypes', countryId],
     queryFn: async () => {
+      console.log('Fetching visa types with countryId:', countryId);
+      
       let query = supabase
         .from('visa_types')
         .select(`
@@ -54,11 +60,22 @@ const VisaTypesManager = () => {
       }
       
       const { data, error } = await query;
-      if (error) throw error;
+      
+      console.log('Visa types response:', { data, error });
+      
+      if (error) {
+        console.error('Error fetching visa types:', error);
+        throw error;
+      }
       
       return data || [];
     }
   });
+  
+  // Log visa types when they change
+  useEffect(() => {
+    console.log('Visa types in component:', visaTypes);
+  }, [visaTypes]);
 
   useEffect(() => {
     if (isError && error instanceof Error) {
@@ -204,6 +221,11 @@ const VisaTypesManager = () => {
           {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin h-8 w-8 border-4 border-teal border-t-transparent rounded-full" />
+            </div>
+          ) : isError ? (
+            <div className="text-center py-8 text-red-500">
+              <p>Error loading visa types. Please try again.</p>
+              <p className="text-sm mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
             </div>
           ) : visaTypes.length > 0 ? (
             <div className="overflow-x-auto">
