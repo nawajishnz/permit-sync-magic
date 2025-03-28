@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 210 100% 25%;
+    --primary: 230 72% 37%; /* Updated to match logo blue */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 174 88% 35%;
@@ -55,7 +55,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 100% 25%;
+    --primary: 230 72% 37%; /* Updated to match logo blue */
     --primary-foreground: 0 0% 98%;
 
     --secondary: 174 88% 35%;
@@ -96,7 +96,7 @@
 }
 
 .permitsy-gradient {
-  background: linear-gradient(135deg, #0A2342 0%, #0CA4A5 100%);
+  background: linear-gradient(135deg, #1A2BA3 0%, #0CA4A5 100%);
 }
 
 .card-hover {
@@ -105,5 +105,5 @@
 
 .card-hover:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px -5px rgba(10, 35, 66, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(26, 43, 163, 0.1);
 }

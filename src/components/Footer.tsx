@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, Facebook, Instagram, Twitter, Phone, Mail, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Phone, Mail, MapPin } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
@@ -11,10 +11,13 @@ const Footer: React.FC = () => {
           {/* Company info */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <Globe className="h-8 w-8 text-teal" />
-              <span className="text-2xl font-bold">Permitsy</span>
+              <img 
+                src="/lovable-uploads/c6f0f3d8-3504-4698-82f8-c54a489198c6.png" 
+                alt="Permitsy" 
+                className="h-10 sm:h-12" 
+              />
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-300 mb-4 mt-4">
               Making visa applications simple, transparent, and accessible for everyone.
             </p>
             <div className="flex space-x-4">

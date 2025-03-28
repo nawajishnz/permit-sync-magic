@@ -79,7 +79,7 @@ const Hero: React.FC = () => {
                     <span className="text-sm text-gray-500">From</span>
                     <p className="text-2xl font-bold text-navy">$149</p>
                   </div>
-                  <Button className="bg-teal hover:bg-teal-600 text-white">
+                  <Button className="bg-navy hover:bg-navy-600 text-white">
                     Apply Now
                   </Button>
                 </div>

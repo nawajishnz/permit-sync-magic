@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
-  Globe, 
   Menu, 
   X, 
   UserCircle, 
@@ -22,8 +21,11 @@ const Header: React.FC = () => {
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <Globe className="h-8 w-8 text-navy" />
-            <span className="text-2xl font-bold text-navy hidden sm:block">Permitsy</span>
+            <img 
+              src="/lovable-uploads/c6f0f3d8-3504-4698-82f8-c54a489198c6.png" 
+              alt="Permitsy" 
+              className="h-10 sm:h-12" 
+            />
           </Link>
           
           {/* Desktop Navigation */}
@@ -68,7 +70,7 @@ const Header: React.FC = () => {
             )}
             
             <Link to="/apply-now">
-              <Button size="sm" className="bg-teal hover:bg-teal-600 text-white">
+              <Button size="sm" className="bg-navy hover:bg-navy-600 text-white">
                 Apply Now
               </Button>
             </Link>
@@ -143,7 +145,7 @@ const Header: React.FC = () => {
             )}
             <Link 
               to="/apply-now" 
-              className="bg-teal hover:bg-teal-600 text-white px-4 py-2 rounded-md text-center"
+              className="bg-navy hover:bg-navy-600 text-white px-4 py-2 rounded-md text-center"
               onClick={() => setIsOpen(false)}
             >
               Apply Now
