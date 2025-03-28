@@ -1,11 +1,23 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, Globe, FileText, Clock, DollarSign, Users, Check } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  ChevronLeft, 
+  Globe, 
+  FileText, 
+  Clock, 
+  DollarSign, 
+  Users, 
+  Check,
+  Calendar,
+  Passport,
+  MapPin,
+  ShieldCheck
+} from 'lucide-react';
 
 // Country data - in a real app this would come from an API
 const countryData = {
@@ -14,6 +26,19 @@ const countryData = {
     flag: '🇺🇸',
     banner: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29',
     description: 'The United States offers various visa options for tourists, students, workers, and immigrants. Each visa type has specific requirements and application procedures.',
+    entryType: 'Single/Multiple',
+    lengthOfStay: '30-180 days',
+    validity: '10 years (for B1/B2)',
+    processingTime: '3-5 business days',
+    documentsRequired: [
+      'Valid passport with at least 6 months validity',
+      'Completed visa application form',
+      'Proof of financial stability',
+      'Proof of ties to home country',
+      'Travel itinerary',
+      'Passport-sized photographs',
+      'Previous visa copies (if applicable)'
+    ],
     visaTypes: [
       { name: 'Tourist Visa (B-2)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Valid passport', 'DS-160 form', 'Proof of funds', 'Intent to return'] },
       { name: 'Student Visa (F-1)', processingTime: '3-5 weeks', fee: '$160', requirements: ['I-20 from school', 'SEVIS fee payment', 'Academic records'] },
@@ -21,6 +46,26 @@ const countryData = {
       { name: 'Business Visa (B-1)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Business invitation', 'Meeting agenda', 'Business credentials'] },
       { name: 'Transit Visa (C)', processingTime: '2-3 weeks', fee: '$160', requirements: ['Onward ticket', 'Visa for destination', 'Travel itinerary'] },
       { name: 'Crew Member Visa (D)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Employer letter', "Seaman's book", 'Shipping company letter'] },
+    ],
+    visaPackages: [
+      { 
+        name: 'Standard Processing', 
+        processingTime: '7-10 days', 
+        price: '$299',
+        features: ['Document review', 'Application assistance', 'Email support']
+      },
+      { 
+        name: 'Express Processing', 
+        processingTime: '3-5 days', 
+        price: '$399',
+        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+      },
+      { 
+        name: 'Premium Service', 
+        processingTime: '24-48 hours', 
+        price: '$599',
+        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
+      }
     ]
   },
   canada: {
@@ -107,6 +152,7 @@ const countryData = {
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
   const country = id && countryData[id as keyof typeof countryData];
+  const [selectedPackage, setSelectedPackage] = useState(0);
   
   if (!country) {
     return (
@@ -128,124 +174,328 @@ const CountryDetails = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow">
-        {/* Banner */}
-        <div className="relative h-64 md:h-80">
-          <div className="absolute inset-0">
-            <img 
-              src={country.banner}
-              alt={country.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-navy/70 to-transparent"></div>
-          </div>
-          
-          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-            <div className="container mx-auto">
+      
+      {/* Banner */}
+      <div className="relative h-64">
+        <div className="absolute inset-0">
+          <img 
+            src={country.banner}
+            alt={country.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/70 to-transparent"></div>
+        </div>
+        
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+          <div className="container mx-auto max-w-7xl">
+            <div className="flex items-center">
+              <Link to="/" className="mr-2">
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+              </Link>
               <div className="flex items-center">
-                <Link to="/" className="mr-2">
-                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                    <ChevronLeft className="h-5 w-5" />
-                  </Button>
-                </Link>
-                <div className="flex items-center">
-                  <span className="text-4xl mr-3">{country.flag}</span>
-                  <h1 className="text-3xl md:text-4xl font-bold">{country.name}</h1>
-                </div>
+                <span className="text-4xl mr-3">{country.flag}</span>
+                <h1 className="text-3xl md:text-4xl font-bold">{country.name} Visa Information</h1>
               </div>
             </div>
           </div>
         </div>
-        
-        {/* Content */}
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-navy mb-4">Overview</h2>
-            <p className="text-gray-600">{country.description}</p>
-          </div>
-          
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-navy">Available Visa Types</h2>
-              <Link to="/visa-finder">
-                <Button variant="outline" className="border-teal text-teal hover:bg-teal hover:text-white">
-                  <Globe className="mr-2 h-4 w-4" />
-                  Use Visa Finder
-                </Button>
-              </Link>
-            </div>
+      </div>
+      
+      {/* Two-column layout */}
+      <div className="container mx-auto max-w-7xl px-4 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left column - scrollable content */}
+          <div className="w-full lg:w-2/3 space-y-8">
+            {/* Visa Overview Section */}
+            <section className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-2xl font-bold text-navy mb-6">Visa Overview</h2>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                <div className="flex flex-col">
+                  <div className="flex items-center text-gray-500 mb-2">
+                    <Passport className="h-5 w-5 mr-2" />
+                    <span className="text-sm">Visa Type:</span>
+                  </div>
+                  <p className="font-medium">{id?.toUpperCase()} Visa</p>
+                </div>
+                
+                <div className="flex flex-col">
+                  <div className="flex items-center text-gray-500 mb-2">
+                    <Calendar className="h-5 w-5 mr-2" />
+                    <span className="text-sm">Length of Stay:</span>
+                  </div>
+                  <p className="font-medium">{country.lengthOfStay || '30 days'}</p>
+                </div>
+                
+                <div className="flex flex-col">
+                  <div className="flex items-center text-gray-500 mb-2">
+                    <Clock className="h-5 w-5 mr-2" />
+                    <span className="text-sm">Validity:</span>
+                  </div>
+                  <p className="font-medium">{country.validity || '60 days'}</p>
+                </div>
+                
+                <div className="flex flex-col">
+                  <div className="flex items-center text-gray-500 mb-2">
+                    <Globe className="h-5 w-5 mr-2" />
+                    <span className="text-sm">Entry:</span>
+                  </div>
+                  <p className="font-medium">{country.entryType || 'Single'}</p>
+                </div>
+              </div>
+              
+              <div className="prose max-w-none">
+                <p className="text-gray-600">{country.description}</p>
+              </div>
+            </section>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {country.visaTypes.map((visa, index) => (
-                <Card key={index} className="overflow-hidden h-full">
-                  <CardContent className="p-6">
-                    <h3 className="font-bold text-navy text-lg mb-2">{visa.name}</h3>
-                    
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-start">
-                        <Clock className="h-4 w-4 text-gray-500 mt-1 mr-2" />
-                        <div>
-                          <p className="text-xs text-gray-500">Processing Time</p>
-                          <p className="font-medium">{visa.processingTime}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start">
-                        <DollarSign className="h-4 w-4 text-gray-500 mt-1 mr-2" />
-                        <div>
-                          <p className="text-xs text-gray-500">Visa Fee</p>
-                          <p className="font-medium">{visa.fee}</p>
-                        </div>
-                      </div>
+            {/* Documents Required Section */}
+            <section className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-2xl font-bold text-navy mb-6">Required Documents</h2>
+              
+              <ul className="space-y-3">
+                {(country.documentsRequired || [
+                  'Valid passport',
+                  'Completed application form',
+                  'Passport-sized photos',
+                  'Proof of accommodation',
+                  'Proof of sufficient funds',
+                  'Return ticket',
+                  'Travel insurance'
+                ]).map((doc, index) => (
+                  <li key={index} className="flex items-start">
+                    <Check className="h-5 w-5 text-teal flex-shrink-0 mr-3 mt-0.5" />
+                    <span>{doc}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            
+            {/* Processing Timeline */}
+            <section className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-2xl font-bold text-navy mb-6">Processing Timeline</h2>
+              
+              <div className="space-y-6">
+                <div className="relative pl-8 pb-6 border-l-2 border-teal">
+                  <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
+                  <h3 className="font-semibold text-navy mb-1">Application Submission</h3>
+                  <p className="text-gray-600">Complete and submit your visa application with all required documents.</p>
+                </div>
+                
+                <div className="relative pl-8 pb-6 border-l-2 border-teal">
+                  <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
+                  <h3 className="font-semibold text-navy mb-1">Document Verification</h3>
+                  <p className="text-gray-600">Your documents will be reviewed by our team and the embassy.</p>
+                </div>
+                
+                <div className="relative pl-8 pb-6 border-l-2 border-teal">
+                  <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
+                  <h3 className="font-semibold text-navy mb-1">Processing</h3>
+                  <p className="text-gray-600">Your application is processed by the embassy or consulate.</p>
+                </div>
+                
+                <div className="relative pl-8">
+                  <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
+                  <h3 className="font-semibold text-navy mb-1">Visa Issuance</h3>
+                  <p className="text-gray-600">Receive your visa within the standard processing time of {country.processingTime || '3-5 business days'}.</p>
+                </div>
+              </div>
+            </section>
+            
+            {/* Popular Destinations */}
+            {id === 'uae' && (
+              <section className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-2xl font-bold text-navy mb-6">All 7 Emirates with 1 Visa</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="relative h-48 rounded-lg overflow-hidden">
+                    <img 
+                      src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c" 
+                      alt="Dubai"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h3 className="text-xl font-bold">Dubai</h3>
                     </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Key Requirements</p>
-                      <ul className="space-y-1">
-                        {visa.requirements.map((req, i) => (
-                          <li key={i} className="text-sm flex items-start">
-                            <Check className="h-4 w-4 text-teal mr-2 mt-0.5" />
-                            <span>{req}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  </div>
+                  
+                  <div className="relative h-48 rounded-lg overflow-hidden">
+                    <img 
+                      src="https://images.unsplash.com/photo-1570375309836-a2976045b372" 
+                      alt="Abu Dhabi"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h3 className="text-xl font-bold">Abu Dhabi</h3>
                     </div>
-                    
-                    <div className="mt-4">
-                      <Link to="/apply-now">
-                        <Button className="w-full bg-teal hover:bg-teal-600 text-white">
-                          <FileText className="mr-2 h-4 w-4" />
-                          Apply Now
-                        </Button>
-                      </Link>
+                  </div>
+                  
+                  <div className="relative h-48 rounded-lg overflow-hidden">
+                    <img 
+                      src="https://images.unsplash.com/photo-1565552645632-d725f8bfc19a" 
+                      alt="Sharjah"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h3 className="text-xl font-bold">Sharjah</h3>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  </div>
+                </div>
+              </section>
+            )}
+            
+            {/* Testimonials or Additional Info */}
+            <section className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-2xl font-bold text-navy mb-6">Why Choose Us</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-4">
+                  <div className="bg-teal/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Clock className="h-8 w-8 text-teal" />
+                  </div>
+                  <h3 className="font-bold text-navy mb-2">Fast Processing</h3>
+                  <p className="text-gray-600 text-sm">Get your visa approved quickly with our expedited service options.</p>
+                </div>
+                
+                <div className="text-center p-4">
+                  <div className="bg-teal/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShieldCheck className="h-8 w-8 text-teal" />
+                  </div>
+                  <h3 className="font-bold text-navy mb-2">100% Success Rate</h3>
+                  <p className="text-gray-600 text-sm">Our experienced team ensures your application meets all requirements.</p>
+                </div>
+                
+                <div className="text-center p-4">
+                  <div className="bg-teal/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users className="h-8 w-8 text-teal" />
+                  </div>
+                  <h3 className="font-bold text-navy mb-2">24/7 Support</h3>
+                  <p className="text-gray-600 text-sm">Our visa experts are always available to answer your questions.</p>
+                </div>
+              </div>
+            </section>
           </div>
           
-          <div className="bg-gray-50 rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-bold text-navy mb-3">Need Help with Your {country.name} Visa?</h2>
-            <p className="text-gray-600 mb-4">
-              Our visa experts can guide you through the entire application process and increase your chances of approval.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/contact">
-                <Button variant="outline" className="border-navy text-navy hover:bg-navy hover:text-white">
+          {/* Right column - sticky packages section */}
+          <div className="w-full lg:w-1/3">
+            <div className="sticky top-24">
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+                <div className="bg-navy text-white p-4">
+                  <h2 className="text-xl font-bold">Select Your Package</h2>
+                </div>
+                
+                <div className="p-4 space-y-4">
+                  <ScrollArea className="h-96 pr-4">
+                    {(country.visaPackages || [
+                      { 
+                        name: 'Standard Processing', 
+                        processingTime: '7-10 days', 
+                        price: '$299',
+                        features: ['Document review', 'Application assistance', 'Email support']
+                      },
+                      { 
+                        name: 'Express Processing', 
+                        processingTime: '3-5 days', 
+                        price: '$399',
+                        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+                      },
+                      { 
+                        name: 'Premium Service', 
+                        processingTime: '24-48 hours', 
+                        price: '$599',
+                        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
+                      }
+                    ]).map((pkg, index) => (
+                      <div 
+                        key={index} 
+                        className={`border rounded-lg mb-4 cursor-pointer transition-all ${selectedPackage === index ? 'border-teal shadow-md' : 'border-gray-200'}`}
+                        onClick={() => setSelectedPackage(index)}
+                      >
+                        <div className={`p-4 ${selectedPackage === index ? 'bg-teal/5' : ''}`}>
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="font-bold text-navy">{pkg.name}</h3>
+                            <span className="text-teal font-bold">{pkg.price}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-gray-500 mb-3">
+                            <Clock className="h-4 w-4 mr-2" />
+                            <span className="text-sm">{pkg.processingTime}</span>
+                          </div>
+                          
+                          <ul className="space-y-2">
+                            {pkg.features.map((feature, i) => (
+                              <li key={i} className="flex items-start">
+                                <Check className="h-4 w-4 text-teal mr-2 mt-0.5" />
+                                <span className="text-sm">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h3 className="font-bold text-navy mb-3">Available Visa Types</h3>
+                      
+                      {country.visaTypes.map((visa, index) => (
+                        <div key={index} className="mb-3 last:mb-0">
+                          <div className="flex justify-between items-center">
+                            <p className="text-sm font-medium">{visa.name}</p>
+                            <span className="text-sm text-gray-600">{visa.fee}</span>
+                          </div>
+                          <div className="flex items-center text-gray-500 mt-1">
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span className="text-xs">{visa.processingTime}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  
+                  <div className="pt-4 border-t">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="font-medium">Price</span>
+                      <span className="font-bold text-lg">{country.visaPackages?.[selectedPackage]?.price || '$299'}</span>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded p-3 mb-4">
+                      <div className="flex items-center">
+                        <ShieldCheck className="h-5 w-5 text-teal mr-2" />
+                        <div>
+                          <p className="text-sm font-medium">VisaProtect™</p>
+                          <p className="text-xs text-gray-500">100% refund if rejected</p>
+                        </div>
+                        <span className="ml-auto text-teal text-xs font-medium">Free</span>
+                      </div>
+                    </div>
+                    
+                    <Button className="w-full bg-teal hover:bg-teal-600 text-white">
+                      Start Application
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-bold text-navy mb-2">Need Help?</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Our visa experts can guide you through the entire process.
+                </p>
+                <Button variant="outline" className="w-full border-navy text-navy hover:bg-navy hover:text-white">
                   <Users className="mr-2 h-4 w-4" />
                   Speak to an Expert
                 </Button>
-              </Link>
-              <Link to="/apply-now">
-                <Button className="bg-teal hover:bg-teal-600 text-white">
-                  Start Your Application
-                </Button>
-              </Link>
+              </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
+      
       <Footer />
     </div>
   );
