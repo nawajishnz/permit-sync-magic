@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -158,12 +157,17 @@ const CountriesManager = () => {
         return;
       }
       
+      console.log('Submitting form data:', formData);
+      
       if (isEditMode && currentCountry) {
         // Update existing country
-        const { error } = await supabase
+        console.log(`Updating country with ID: ${currentCountry.id}`);
+        const { data, error } = await supabase
           .from('countries')
           .update(formData)
           .eq('id', currentCountry.id);
+          
+        console.log('Update response:', { data, error });
           
         if (error) throw error;
         
@@ -173,9 +177,12 @@ const CountriesManager = () => {
         });
       } else {
         // Create new country
-        const { error } = await supabase
+        console.log('Creating new country');
+        const { data, error } = await supabase
           .from('countries')
           .insert([formData]);
+          
+        console.log('Insert response:', { data, error });
           
         if (error) throw error;
         
@@ -188,6 +195,12 @@ const CountriesManager = () => {
       // Close dialog and refresh countries
       setIsDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ['countries'] });
+      
+      // After a slight delay, manually refetch to ensure we have the latest data
+      setTimeout(() => {
+        console.log('Performing delayed refetch after submit');
+        refetch();
+      }, 500);
     } catch (error: any) {
       console.error('Error saving country:', error);
       toast({

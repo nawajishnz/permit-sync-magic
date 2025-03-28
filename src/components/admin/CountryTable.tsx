@@ -47,6 +47,7 @@ const CountryTable: React.FC<CountryTableProps> = ({
     return (
       <div className="text-center py-8 text-gray-500">
         <p>No countries found. Add your first country to get started.</p>
+        <p className="text-sm mt-2">Click the "Add Country" button above to create your first country.</p>
       </div>
     );
   }
