@@ -10,11 +10,11 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Company info */}
           <div>
-            <div className="flex items-center space-x-2 mb-4">
+            <div className="mb-4">
               <img 
                 src="/lovable-uploads/c6f0f3d8-3504-4698-82f8-c54a489198c6.png" 
                 alt="Permitsy" 
-                className="h-10 sm:h-12" 
+                className="h-10 sm:h-12 bg-white p-1 rounded"
               />
             </div>
             <p className="text-gray-300 mb-4 mt-4">
