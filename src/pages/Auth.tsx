@@ -12,7 +12,8 @@ import Footer from '@/components/Footer';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, LoaderIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const Auth = () => {
   const { signIn, signUp, user, userRole } = useAuth();
@@ -24,6 +25,7 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [showSampleCreds, setShowSampleCreds] = useState(false);
+  const [showLoginHelp, setShowLoginHelp] = useState(false);
   
   // Check if the user is accessing admin login from URL param
   useEffect(() => {
@@ -107,6 +109,10 @@ const Auth = () => {
     setPassword('nawajish@123');
   };
 
+  const openLoginHelp = () => {
+    setShowLoginHelp(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -139,8 +145,8 @@ const Auth = () => {
                   <AlertCircle className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-700">
                     <p className="mb-2">Demo admin credentials:</p>
-                    <p>Email: nawajish@gmail.com</p>
-                    <p>Password: nawajish@123</p>
+                    <p className="font-mono text-xs bg-blue-100 p-1 rounded mb-1">Email: nawajish@gmail.com</p>
+                    <p className="font-mono text-xs bg-blue-100 p-1 rounded mb-2">Password: nawajish@123</p>
                     <Button 
                       onClick={setDemoCredentials} 
                       variant="outline" 
@@ -189,8 +195,24 @@ const Auth = () => {
                       className={`w-full ${isAdminMode ? 'bg-navy hover:bg-navy-600' : 'bg-teal hover:bg-teal-600'}`}
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Signing in...' : 'Sign In'}
+                      {isLoading ? (
+                        <>
+                          <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                          Signing in...
+                        </>
+                      ) : 'Sign In'}
                     </Button>
+                    
+                    <div className="text-center">
+                      <Button 
+                        type="button" 
+                        variant="link" 
+                        className="text-sm text-gray-500" 
+                        onClick={openLoginHelp}
+                      >
+                        Having trouble signing in?
+                      </Button>
+                    </div>
                     
                     {isAdminMode && (
                       <div className="text-center mt-4">
@@ -262,7 +284,12 @@ const Auth = () => {
                       className="w-full bg-teal hover:bg-teal-600"
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Creating Account...' : 'Create Account'}
+                      {isLoading ? (
+                        <>
+                          <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                          Creating Account...
+                        </>
+                      ) : 'Create Account'}
                     </Button>
                   </form>
                 </TabsContent>
@@ -277,6 +304,40 @@ const Auth = () => {
         </div>
       </main>
       <Footer />
+
+      <Dialog open={showLoginHelp} onOpenChange={setShowLoginHelp}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Login Help</DialogTitle>
+            <DialogDescription>
+              If you're having trouble logging in:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-3">
+            <p className="text-sm">• Check that you're using the correct email and password</p>
+            <p className="text-sm">• Make sure caps lock is off</p>
+            <p className="text-sm">• For admin access, ensure your account has admin privileges</p>
+            <p className="text-sm">• If you've forgotten your password, contact support</p>
+            
+            <div className="bg-blue-50 p-3 rounded-md mt-3 border border-blue-100">
+              <p className="text-sm font-medium text-blue-800">Admin Demo Account:</p>
+              <p className="text-xs mt-1">Email: nawajish@gmail.com</p>
+              <p className="text-xs">Password: nawajish@123</p>
+              <Button 
+                onClick={() => {
+                  setDemoCredentials();
+                  setShowLoginHelp(false);
+                }}
+                size="sm"
+                variant="outline"
+                className="mt-2 text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
+              >
+                Use Demo Account
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

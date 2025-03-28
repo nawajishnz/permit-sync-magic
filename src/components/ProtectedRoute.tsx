@@ -22,7 +22,13 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
           title: "Authentication required",
           description: "Please sign in to access this page",
         });
-        navigate('/auth');
+        
+        // Pass admin=true param if trying to access admin routes
+        if (requiredRole === 'admin') {
+          navigate('/auth?admin=true');
+        } else {
+          navigate('/auth');
+        }
       } 
       // If a specific role is required and user doesn't have it
       else if (requiredRole && userRole !== requiredRole) {

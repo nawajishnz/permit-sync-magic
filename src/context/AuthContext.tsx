@@ -79,8 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error fetching user role:', error);
         setUserRole(null);
       } else {
-        setUserRole(data.role);
         console.log('User role fetched:', data.role);
+        setUserRole(data.role);
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -91,7 +91,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       console.log('Attempting to sign in with:', { email });
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      // First, validate inputs
+      if (!email.trim() || !password.trim()) {
+        toast({
+          title: "Error signing in",
+          description: "Email and password are required",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Attempt sign in
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: email.trim(), 
+        password: password.trim() 
+      });
       
       if (error) {
         console.error('Sign in error:', error);
@@ -141,6 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           
           console.log('User role from database:', userData.role);
+          setUserRole(userData.role);
           
           // Navigate based on role
           if (userData.role === 'admin') {
