@@ -90,7 +90,7 @@ const FAQs = () => {
         {
           id: 'visa-rejection',
           question: 'What happens if my visa is rejected?',
-          answer: 'If your visa application is rejected, we'll help you understand the reasons for rejection and advise you on the best course of action. This may include reapplying with additional documentation, applying for a different visa category, or appealing the decision if appropriate.'
+          answer: "If your visa application is rejected, we'll help you understand the reasons for rejection and advise you on the best course of action. This may include reapplying with additional documentation, applying for a different visa category, or appealing the decision if appropriate."
         }
       ]
     }
