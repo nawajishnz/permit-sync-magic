@@ -14,6 +14,11 @@ import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, LoaderIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+
+// Admin test account credentials
+const ADMIN_TEST_EMAIL = "admin@permitsy.com";
+const ADMIN_TEST_PASSWORD = "admin123";
 
 const Auth = () => {
   const { signIn, signUp, user, userRole } = useAuth();
@@ -26,6 +31,7 @@ const Auth = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [showSampleCreds, setShowSampleCreds] = useState(false);
   const [showLoginHelp, setShowLoginHelp] = useState(false);
+  const [setupAdmin, setSetupAdmin] = useState(false);
   
   // Check if the user is accessing admin login from URL param
   useEffect(() => {
@@ -104,9 +110,103 @@ const Auth = () => {
     }
   };
 
-  const setDemoCredentials = () => {
-    setEmail('nawajish@gmail.com');
-    setPassword('nawajish@123');
+  const setAdminCredentials = () => {
+    setEmail(ADMIN_TEST_EMAIL);
+    setPassword(ADMIN_TEST_PASSWORD);
+  };
+
+  const createAdminAccount = async () => {
+    setIsLoading(true);
+    setSetupAdmin(true);
+    
+    try {
+      // Check if admin account already exists
+      const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
+        email: ADMIN_TEST_EMAIL,
+        password: ADMIN_TEST_PASSWORD
+      });
+      
+      if (existingUser.user) {
+        // Admin already exists, update role if needed
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', existingUser.user.id)
+          .single();
+          
+        if (profileError || profileData.role !== 'admin') {
+          // Update the role to admin
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ role: 'admin' })
+            .eq('id', existingUser.user.id);
+            
+          if (updateError) {
+            console.error('Error updating admin role:', updateError);
+            throw new Error('Failed to set admin role');
+          }
+        }
+        
+        toast({
+          title: "Success",
+          description: "Admin account already exists and is ready to use",
+        });
+        
+        setEmail(ADMIN_TEST_EMAIL);
+        setPassword(ADMIN_TEST_PASSWORD);
+        return;
+      }
+      
+      if (checkError && !checkError.message.includes('Invalid login credentials')) {
+        throw new Error(checkError.message);
+      }
+      
+      // Create new admin account
+      const { data: newUser, error: signUpError } = await supabase.auth.signUp({
+        email: ADMIN_TEST_EMAIL,
+        password: ADMIN_TEST_PASSWORD,
+        options: {
+          data: {
+            full_name: "Admin User",
+          }
+        }
+      });
+      
+      if (signUpError) {
+        throw new Error(signUpError.message);
+      }
+      
+      if (newUser.user) {
+        // Set the user role to admin
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ role: 'admin' })
+          .eq('id', newUser.user.id);
+          
+        if (updateError) {
+          console.error('Error setting admin role:', updateError);
+          throw new Error('Failed to set admin role');
+        }
+        
+        toast({
+          title: "Success",
+          description: "Admin account created successfully",
+        });
+        
+        setEmail(ADMIN_TEST_EMAIL);
+        setPassword(ADMIN_TEST_PASSWORD);
+      }
+    } catch (error: any) {
+      console.error('Error creating admin account:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create admin account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setSetupAdmin(false);
+    }
   };
 
   const openLoginHelp = () => {
@@ -145,16 +245,32 @@ const Auth = () => {
                   <AlertCircle className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-700">
                     <p className="mb-2">Demo admin credentials:</p>
-                    <p className="font-mono text-xs bg-blue-100 p-1 rounded mb-1">Email: nawajish@gmail.com</p>
-                    <p className="font-mono text-xs bg-blue-100 p-1 rounded mb-2">Password: nawajish@123</p>
-                    <Button 
-                      onClick={setDemoCredentials} 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-2 text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
-                    >
-                      Use demo credentials
-                    </Button>
+                    <p className="font-mono text-xs bg-blue-100 p-1 rounded mb-1">Email: {ADMIN_TEST_EMAIL}</p>
+                    <p className="font-mono text-xs bg-blue-100 p-1 rounded mb-2">Password: {ADMIN_TEST_PASSWORD}</p>
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                      <Button 
+                        onClick={setAdminCredentials} 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
+                      >
+                        Use admin credentials
+                      </Button>
+                      <Button 
+                        onClick={createAdminAccount} 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                        disabled={isLoading || setupAdmin}
+                      >
+                        {setupAdmin ? (
+                          <>
+                            <LoaderIcon className="mr-2 h-3 w-3 animate-spin" />
+                            Setting up...
+                          </>
+                        ) : "Setup admin account"}
+                      </Button>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
@@ -321,19 +437,33 @@ const Auth = () => {
             
             <div className="bg-blue-50 p-3 rounded-md mt-3 border border-blue-100">
               <p className="text-sm font-medium text-blue-800">Admin Demo Account:</p>
-              <p className="text-xs mt-1">Email: nawajish@gmail.com</p>
-              <p className="text-xs">Password: nawajish@123</p>
-              <Button 
-                onClick={() => {
-                  setDemoCredentials();
-                  setShowLoginHelp(false);
-                }}
-                size="sm"
-                variant="outline"
-                className="mt-2 text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
-              >
-                Use Demo Account
-              </Button>
+              <p className="text-xs mt-1">Email: {ADMIN_TEST_EMAIL}</p>
+              <p className="text-xs">Password: {ADMIN_TEST_PASSWORD}</p>
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                <Button 
+                  onClick={() => {
+                    setAdminCredentials();
+                    setShowLoginHelp(false);
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
+                >
+                  Use Admin Credentials
+                </Button>
+                <Button 
+                  onClick={() => {
+                    createAdminAccount();
+                    setShowLoginHelp(false);
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                  disabled={isLoading || setupAdmin}
+                >
+                  {setupAdmin ? "Setting up..." : "Setup Admin Account"}
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>

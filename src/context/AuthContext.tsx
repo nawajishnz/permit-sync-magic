@@ -79,8 +79,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error fetching user role:', error);
         setUserRole(null);
       } else {
-        console.log('User role fetched:', data.role);
-        setUserRole(data.role);
+        // Handle the role as a string value
+        const roleValue = data.role;
+        console.log('User role fetched from DB:', roleValue);
+        
+        // Validate the role value
+        if (roleValue === 'admin' || roleValue === 'user') {
+          setUserRole(roleValue);
+        } else {
+          console.log('Unknown role value:', roleValue);
+          setUserRole('user'); // Default to user if role is invalid
+        }
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -131,41 +140,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('Sign in successful:', data.user?.id);
       
-      // Get the current session after sign-in
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      if (currentSession?.user) {
+      if (data.user) {
         // Fetch user role to determine redirect
-        const { data: userData, error: roleError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', currentSession.user.id)
-          .single();
-        
-        if (roleError) {
-          console.error('Error fetching user role after sign in:', roleError);
-          toast({
-            title: "Warning",
-            description: "Unable to determine user role. Redirecting to default dashboard.",
-          });
-          navigate('/dashboard');
-        } else {
-          toast({
-            title: "Success!",
-            description: "You have successfully signed in.",
-          });
+        try {
+          const { data: userData, error: roleError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .single();
           
-          console.log('User role from database:', userData.role);
-          setUserRole(userData.role);
-          
-          // Navigate based on role
-          if (userData.role === 'admin') {
-            console.log('Redirecting to admin dashboard');
-            navigate('/admin');
-          } else {
-            console.log('Redirecting to user dashboard');
+          if (roleError) {
+            console.error('Error fetching user role after sign in:', roleError);
+            toast({
+              title: "Warning",
+              description: "Unable to determine user role. Redirecting to default dashboard.",
+            });
             navigate('/dashboard');
+          } else {
+            toast({
+              title: "Success!",
+              description: "You have successfully signed in.",
+            });
+            
+            // Handle the role as a string value
+            const roleValue = userData.role;
+            console.log('User role from database:', roleValue);
+            
+            // Validate the role value and redirect accordingly
+            if (roleValue === 'admin') {
+              console.log('Redirecting to admin dashboard');
+              navigate('/admin');
+            } else {
+              console.log('Redirecting to user dashboard');
+              navigate('/dashboard');
+            }
           }
+        } catch (error) {
+          console.error('Unexpected error fetching user role:', error);
+          navigate('/dashboard');
         }
       }
     } catch (error: any) {
