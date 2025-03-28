@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -45,7 +46,7 @@ const countryData = {
       { name: 'Work Visa (H-1B)', processingTime: '3-6 months', fee: '$190', requirements: ['Employer petition', 'Educational credentials', 'Relevant experience'] },
       { name: 'Business Visa (B-1)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Business invitation', 'Meeting agenda', 'Business credentials'] },
       { name: 'Transit Visa (C)', processingTime: '2-3 weeks', fee: '$160', requirements: ['Onward ticket', 'Visa for destination', 'Travel itinerary'] },
-      { name: 'Crew Member Visa (D)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Employer letter', "Seaman's book", 'Shipping company letter'] },
+      { name: 'Crew Member Visa (D)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Employer letter', "Seaman's book", 'Shipping company letter'] }
     ],
     visaPackages: [
       { 
@@ -665,4 +666,23 @@ const CountryDetails = () => {
                     ))}
                     
                     <div className="border border-gray-200 rounded-lg p-4">
-                      <h3 className="font-bold text-
+                      <h3 className="font-bold text-navy mb-2">Need Help?</h3>
+                      <p className="text-sm text-gray-600 mb-4">Our visa experts are ready to assist you with your application.</p>
+                      <Button className="w-full bg-teal hover:bg-teal/90">
+                        Apply Now
+                      </Button>
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default CountryDetails;
