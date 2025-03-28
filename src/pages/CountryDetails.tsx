@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -17,8 +16,13 @@ import {
   Calendar,
   CreditCard,
   MapPin,
-  ShieldCheck
+  ShieldCheck,
+  Minus,
+  Plus,
+  FileCheck,
+  BadgeIndianRupee
 } from 'lucide-react';
+import { format, addDays } from 'date-fns';
 
 // Country data - in a real app this would come from an API
 const countryData = {
@@ -41,30 +45,33 @@ const countryData = {
       'Previous visa copies (if applicable)'
     ],
     visaTypes: [
-      { name: 'Tourist Visa (B-2)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Valid passport', 'DS-160 form', 'Proof of funds', 'Intent to return'] },
-      { name: 'Student Visa (F-1)', processingTime: '3-5 weeks', fee: '$160', requirements: ['I-20 from school', 'SEVIS fee payment', 'Academic records'] },
-      { name: 'Work Visa (H-1B)', processingTime: '3-6 months', fee: '$190', requirements: ['Employer petition', 'Educational credentials', 'Relevant experience'] },
-      { name: 'Business Visa (B-1)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Business invitation', 'Meeting agenda', 'Business credentials'] },
-      { name: 'Transit Visa (C)', processingTime: '2-3 weeks', fee: '$160', requirements: ['Onward ticket', 'Visa for destination', 'Travel itinerary'] },
-      { name: 'Crew Member Visa (D)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Employer letter', "Seaman's book", 'Shipping company letter'] }
+      { name: 'Tourist Visa (B-2)', processingTime: '2-4 weeks', fee: '₹6,500', requirements: ['Valid passport', 'DS-160 form', 'Proof of funds', 'Intent to return'] },
+      { name: 'Student Visa (F-1)', processingTime: '3-5 weeks', fee: '₹8,800', requirements: ['I-20 from school', 'SEVIS fee payment', 'Academic records'] },
+      { name: 'Work Visa (H-1B)', processingTime: '3-6 months', fee: '₹12,500', requirements: ['Employer petition', 'Educational credentials', 'Relevant experience'] },
+      { name: 'Business Visa (B-1)', processingTime: '2-4 weeks', fee: '₹6,500', requirements: ['Business invitation', 'Meeting agenda', 'Business credentials'] },
+      { name: 'Transit Visa (C)', processingTime: '2-3 weeks', fee: '₹6,500', requirements: ['Onward ticket', 'Visa for destination', 'Travel itinerary'] },
+      { name: 'Crew Member Visa (D)', processingTime: '2-4 weeks', fee: '₹6,500', requirements: ['Employer letter', "Seaman's book", 'Shipping company letter'] }
     ],
     visaPackages: [
       { 
         name: 'Standard Processing', 
         processingTime: '7-10 days', 
-        price: '$299',
+        governmentFee: '₹6,500',
+        atlysFee: '₹1,000',
         features: ['Document review', 'Application assistance', 'Email support']
       },
       { 
         name: 'Express Processing', 
         processingTime: '3-5 days', 
-        price: '$399',
+        governmentFee: '₹6,500',
+        atlysFee: '₹2,500',
         features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
       },
       { 
         name: 'Premium Service', 
         processingTime: '24-48 hours', 
-        price: '$599',
+        governmentFee: '₹6,500',
+        atlysFee: '₹5,000',
         features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
       }
     ]
@@ -379,6 +386,7 @@ const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
   const country = id && countryData[id as keyof typeof countryData];
   const [selectedPackage, setSelectedPackage] = useState(0);
+  const [travellers, setTravellers] = useState(1);
   
   if (!country) {
     return (
@@ -396,6 +404,31 @@ const CountryDetails = () => {
       </div>
     );
   }
+  
+  // Calculate visa dates
+  const today = new Date();
+  const guaranteedDate = addDays(today, 3);
+  const formattedGuaranteedDate = format(guaranteedDate, "d MMM yyyy 'at' h:mm a");
+  const shortGuaranteedDate = format(guaranteedDate, "d MMMM");
+  const previousDate = format(addDays(guaranteedDate, -2), "d MMMM");
+  
+  // Get the selected package
+  const visaPackage = country.visaPackages[selectedPackage];
+  
+  // Calculate fees
+  const governmentFee = visaPackage.governmentFee.replace('₹', '');
+  const atlysFee = visaPackage.atlysFee.replace('₹', '');
+  const totalAmount = parseInt(governmentFee) * travellers;
+  
+  const handleDecreaseTravellers = () => {
+    if (travellers > 1) {
+      setTravellers(travellers - 1);
+    }
+  };
+  
+  const handleIncreaseTravellers = () => {
+    setTravellers(travellers + 1);
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -610,79 +643,21 @@ const CountryDetails = () => {
           {/* Right column - sticky packages section */}
           <div className="w-full lg:w-1/3">
             <div className="sticky top-24">
+              {/* New Package Card based on the reference design */}
               <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-                <div className="bg-navy text-white p-4">
-                  <h2 className="text-xl font-bold">Select Your Package</h2>
-                </div>
-                
-                <div className="p-4 space-y-4">
-                  <ScrollArea className="h-96 pr-4">
-                    {(country.visaPackages || [
-                      { 
-                        name: 'Standard Processing', 
-                        processingTime: '7-10 days', 
-                        price: '$299',
-                        features: ['Document review', 'Application assistance', 'Email support']
-                      },
-                      { 
-                        name: 'Express Processing', 
-                        processingTime: '3-5 days', 
-                        price: '$399',
-                        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-                      },
-                      { 
-                        name: 'Premium Service', 
-                        processingTime: '24-48 hours', 
-                        price: '$599',
-                        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
-                      }
-                    ]).map((pkg, index) => (
-                      <div 
-                        key={index} 
-                        className={`border rounded-lg mb-4 cursor-pointer transition-all ${selectedPackage === index ? 'border-teal shadow-md' : 'border-gray-200'}`}
-                        onClick={() => setSelectedPackage(index)}
-                      >
-                        <div className={`p-4 ${selectedPackage === index ? 'bg-teal/5' : ''}`}>
-                          <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-bold text-navy">{pkg.name}</h3>
-                            <span className="text-teal font-bold">{pkg.price}</span>
-                          </div>
-                          
-                          <div className="flex items-center text-gray-500 mb-3">
-                            <Clock className="h-4 w-4 mr-2" />
-                            <span className="text-sm">{pkg.processingTime}</span>
-                          </div>
-                          
-                          <ul className="space-y-2">
-                            {pkg.features.map((feature, i) => (
-                              <li key={i} className="flex items-start">
-                                <Check className="h-4 w-4 text-teal mr-2 mt-0.5" />
-                                <span className="text-sm">{feature}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                {/* Date selector */}
+                <div className="flex mb-2">
+                  <div className="flex-1 bg-indigo-600 text-white py-3 px-4 flex items-center rounded-t-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="bg-white text-indigo-600 rounded-full p-1">
+                        <Check className="h-4 w-4" />
                       </div>
-                    ))}
-                    
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <h3 className="font-bold text-navy mb-2">Need Help?</h3>
-                      <p className="text-sm text-gray-600 mb-4">Our visa experts are ready to assist you with your application.</p>
-                      <Button className="w-full bg-teal hover:bg-teal/90">
-                        Apply Now
-                      </Button>
+                      <span>{shortGuaranteedDate}</span>
                     </div>
-                  </ScrollArea>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <Footer />
-    </div>
-  );
-};
-
-export default CountryDetails;
+                  </div>
+                  <div className="flex-1 bg-gray-100 py-3 px-4 flex items-center">
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <div className="bg-white text-gray-400 rounded-full p-1">
+                        <Check className="h-4 w-4" />
+                      </div>
+                      <span>{previousDate}</span>
