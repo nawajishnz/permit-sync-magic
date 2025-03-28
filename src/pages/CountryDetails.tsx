@@ -73,11 +73,43 @@ const countryData = {
     flag: '🇨🇦',
     banner: 'https://images.unsplash.com/photo-1517935706615-2717063c2225',
     description: 'Canada offers temporary and permanent visas for visitors, students, workers, and immigrants. The application process varies depending on your nationality and purpose of visit.',
+    entryType: 'Single/Multiple',
+    lengthOfStay: '6 months (typical)',
+    validity: 'Up to 10 years',
+    processingTime: '2-4 weeks',
+    documentsRequired: [
+      'Valid passport',
+      'Application forms',
+      'Photographs',
+      'Proof of financial support',
+      'Letter of invitation (if applicable)',
+      'Travel history'
+    ],
     visaTypes: [
       { name: 'Visitor Visa', processingTime: '2-3 weeks', fee: 'CAD $100', requirements: ['Valid passport', 'Financial proof', 'Travel history', 'Purpose of visit'] },
       { name: 'Study Permit', processingTime: '3-6 weeks', fee: 'CAD $150', requirements: ['Acceptance letter', 'Proof of funds', 'Intent to leave'] },
       { name: 'Work Permit', processingTime: '4-8 weeks', fee: 'CAD $155', requirements: ['Job offer', 'Labor market impact assessment', 'Qualifications'] },
       { name: 'Express Entry', processingTime: '6 months', fee: 'CAD $1,325', requirements: ['Education credentials', 'Language tests', 'Work experience'] }
+    ],
+    visaPackages: [
+      { 
+        name: 'Standard Processing', 
+        processingTime: '2-3 weeks', 
+        price: '$249',
+        features: ['Document review', 'Application assistance', 'Email support']
+      },
+      { 
+        name: 'Express Processing', 
+        processingTime: '7-10 days', 
+        price: '$349',
+        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+      },
+      { 
+        name: 'Premium Service', 
+        processingTime: '3-5 days', 
+        price: '$499',
+        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
+      }
     ]
   },
   uk: {
@@ -85,12 +117,44 @@ const countryData = {
     flag: '🇬🇧',
     banner: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad',
     description: 'The United Kingdom offers various visa categories for tourists, students, workers, and family members. Each visa has specific eligibility criteria and documentation requirements.',
+    entryType: 'Single/Multiple',
+    lengthOfStay: '6 months (standard visitor)',
+    validity: 'Up to 10 years (long-term)',
+    processingTime: '3-4 weeks',
+    documentsRequired: [
+      'Valid passport',
+      'Completed application',
+      'Biometric information',
+      'Proof of financial means',
+      'Accommodation details',
+      'Travel history'
+    ],
     visaTypes: [
       { name: 'Standard Visitor Visa', processingTime: '3 weeks', fee: '£95', requirements: ['Valid passport', 'Proof of funds', 'Accommodation details', 'Return ticket'] },
       { name: 'Student Visa', processingTime: '3-4 weeks', fee: '£348', requirements: ['CAS from institution', 'Proof of funds', 'English language test'] },
       { name: 'Skilled Worker Visa', processingTime: '3-8 weeks', fee: '£610+', requirements: ['Certificate of sponsorship', 'Appropriate skill level', 'English language test'] },
       { name: 'Family Visa', processingTime: '6-12 weeks', fee: '£1,523', requirements: ['Relationship proof', 'Financial requirement', 'Accommodation details'] },
       { name: 'Transit Visa', processingTime: '1-2 weeks', fee: '£35', requirements: ['Valid onward journey', 'Short stay proof', 'No intention to stay'] }
+    ],
+    visaPackages: [
+      { 
+        name: 'Standard Processing', 
+        processingTime: '3-4 weeks', 
+        price: '£199',
+        features: ['Document review', 'Application assistance', 'Email support']
+      },
+      { 
+        name: 'Express Processing', 
+        processingTime: '1-2 weeks', 
+        price: '£299',
+        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+      },
+      { 
+        name: 'Premium Service', 
+        processingTime: '3-5 days', 
+        price: '£399',
+        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
+      }
     ]
   },
   schengen: {
@@ -98,10 +162,43 @@ const countryData = {
     flag: '🇪🇺',
     banner: 'https://images.unsplash.com/photo-1499856871958-5b9357976b82',
     description: 'The Schengen visa allows travel to 26 European countries. Depending on your nationality and purpose of visit, you may apply for different types of Schengen visas.',
+    entryType: 'Single/Multiple',
+    lengthOfStay: '90 days within 180 days',
+    validity: 'Up to 5 years',
+    processingTime: '10-15 days',
+    documentsRequired: [
+      'Valid passport',
+      'Visa application form',
+      'Photos',
+      'Travel insurance',
+      'Itinerary',
+      'Proof of accommodation',
+      'Proof of financial means'
+    ],
     visaTypes: [
       { name: 'Tourist Visa (C)', processingTime: '10-15 days', fee: '€80', requirements: ['Valid passport', 'Travel insurance', 'Itinerary', 'Proof of funds'] },
       { name: 'Business Visa', processingTime: '10-15 days', fee: '€80', requirements: ['Business invitation', 'Company letter', 'Proof of funds'] },
       { name: 'Student Visa', processingTime: '10-15 days', fee: '€80', requirements: ['Acceptance letter', 'Accommodation proof', 'Financial support'] }
+    ],
+    visaPackages: [
+      { 
+        name: 'Standard Processing', 
+        processingTime: '10-15 days', 
+        price: '€199',
+        features: ['Document review', 'Application assistance', 'Email support']
+      },
+      { 
+        name: 'Express Processing', 
+        processingTime: '5-7 days', 
+        price: '€299',
+        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+      },
+      { 
+        name: 'Premium Service', 
+        processingTime: '2-4 days', 
+        price: '€399',
+        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
+      }
     ]
   },
   australia: {
@@ -109,11 +206,43 @@ const countryData = {
     flag: '🇦🇺',
     banner: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be',
     description: 'Australia offers numerous visa options for visitors, students, workers, and immigrants. Most visa applications are processed online through the ImmiAccount portal.',
+    entryType: 'Single/Multiple',
+    lengthOfStay: '3-12 months',
+    validity: '1 year (typical)',
+    processingTime: '20-50 days',
+    documentsRequired: [
+      'Valid passport',
+      'Application form',
+      'Photographs',
+      'Health insurance',
+      'Proof of funds',
+      'Character documents'
+    ],
     visaTypes: [
       { name: 'Visitor Visa (600)', processingTime: '20-50 days', fee: 'AUD $145', requirements: ['Valid passport', 'Sufficient funds', 'Health insurance', 'Character requirements'] },
       { name: 'Student Visa (500)', processingTime: '4-6 weeks', fee: 'AUD $620', requirements: ['CoE from institution', 'Health insurance', 'Financial requirements'] },
       { name: 'Working Holiday Visa (417/462)', processingTime: '14-40 days', fee: 'AUD $485', requirements: ['Age 18-30', 'Sufficient funds', 'Health insurance'] },
       { name: 'Skilled Visa (189/190/491)', processingTime: '6-18 months', fee: 'AUD $4,045+', requirements: ['Skills assessment', 'Points test', 'English proficiency'] }
+    ],
+    visaPackages: [
+      { 
+        name: 'Standard Processing', 
+        processingTime: '20-50 days', 
+        price: 'AUD $249',
+        features: ['Document review', 'Application assistance', 'Email support']
+      },
+      { 
+        name: 'Express Processing', 
+        processingTime: '14-20 days', 
+        price: 'AUD $349',
+        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+      },
+      { 
+        name: 'Premium Service', 
+        processingTime: '7-12 days', 
+        price: 'AUD $499',
+        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
+      }
     ]
   },
   uae: {
@@ -121,10 +250,42 @@ const countryData = {
     flag: '🇦🇪',
     banner: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c',
     description: 'The United Arab Emirates offers various visa types for tourists, business visitors, workers, and residents. The process and requirements vary based on nationality and purpose.',
+    entryType: 'Single/Multiple',
+    lengthOfStay: '30-90 days',
+    validity: '1-3 months',
+    processingTime: '3-5 days',
+    documentsRequired: [
+      'Valid passport',
+      'Photographs',
+      'Application form',
+      'Return ticket',
+      'Hotel bookings',
+      'Financial statements'
+    ],
     visaTypes: [
       { name: 'Tourist Visa', processingTime: '3-5 days', fee: '$90-$180', requirements: ['Valid passport', 'Return ticket', 'Hotel booking', 'Sufficient funds'] },
       { name: 'Visit Visa', processingTime: '3-5 days', fee: '$180-$270', requirements: ['Host invitation', 'Valid passport', 'Photographs'] },
       { name: 'Employment Visa', processingTime: '2-3 weeks', fee: 'Varies', requirements: ['Job offer', 'Medical test', 'Educational certificates'] }
+    ],
+    visaPackages: [
+      { 
+        name: 'Standard Processing', 
+        processingTime: '3-5 days', 
+        price: '$199',
+        features: ['Document review', 'Application assistance', 'Email support']
+      },
+      { 
+        name: 'Express Processing', 
+        processingTime: '24-48 hours', 
+        price: '$299',
+        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+      },
+      { 
+        name: 'Premium Service', 
+        processingTime: 'Same day', 
+        price: '$399',
+        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'VIP service']
+      }
     ]
   },
   japan: {
@@ -132,9 +293,41 @@ const countryData = {
     flag: '🇯🇵',
     banner: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989',
     description: 'Japan offers various visa categories for short-term visits, business, study, work, and long-term residency. Application procedures depend on your nationality and purpose of visit.',
+    entryType: 'Single/Multiple',
+    lengthOfStay: '15-90 days',
+    validity: '3 months - 5 years',
+    processingTime: '5-7 days',
+    documentsRequired: [
+      'Valid passport',
+      'Visa application form',
+      'Photos',
+      'Itinerary',
+      'Financial documents',
+      'Invitation letter (if applicable)'
+    ],
     visaTypes: [
       { name: 'Tourist Visa', processingTime: '5-7 days', fee: '¥3,000', requirements: ['Valid passport', 'Itinerary', 'Sufficient funds', 'Return ticket'] },
       { name: 'Business Visa', processingTime: '5-7 days', fee: '¥3,000', requirements: ['Business invitation', 'Company letter', 'Itinerary'] }
+    ],
+    visaPackages: [
+      { 
+        name: 'Standard Processing', 
+        processingTime: '5-7 days', 
+        price: '¥20,000',
+        features: ['Document review', 'Application assistance', 'Email support']
+      },
+      { 
+        name: 'Express Processing', 
+        processingTime: '3-4 days', 
+        price: '¥30,000',
+        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+      },
+      { 
+        name: 'Premium Service', 
+        processingTime: '1-2 days', 
+        price: '¥45,000',
+        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
+      }
     ]
   },
   singapore: {
@@ -142,9 +335,41 @@ const countryData = {
     flag: '🇸🇬',
     banner: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd',
     description: 'Singapore offers various visa options for tourists, business visitors, students, and workers. Many nationalities enjoy visa-free entry for short visits.',
+    entryType: 'Single/Multiple',
+    lengthOfStay: '30-90 days',
+    validity: '2 years (multiple entry)',
+    processingTime: '3-5 days',
+    documentsRequired: [
+      'Valid passport',
+      'Completed form',
+      'Recent photograph',
+      'Return ticket',
+      'Proof of funds',
+      'Travel itinerary'
+    ],
     visaTypes: [
       { name: 'Tourist Visa', processingTime: '3-5 days', fee: 'SGD $30', requirements: ['Valid passport', 'Return ticket', 'Proof of funds', 'Travel itinerary'] },
       { name: 'Business Visa', processingTime: '3-5 days', fee: 'SGD $30', requirements: ['Business invitation', 'Company letter', 'Meeting schedule'] }
+    ],
+    visaPackages: [
+      { 
+        name: 'Standard Processing', 
+        processingTime: '3-5 days', 
+        price: 'SGD $159',
+        features: ['Document review', 'Application assistance', 'Email support']
+      },
+      { 
+        name: 'Express Processing', 
+        processingTime: '1-2 days', 
+        price: 'SGD $259',
+        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
+      },
+      { 
+        name: 'Premium Service', 
+        processingTime: 'Same day', 
+        price: 'SGD $359',
+        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'VIP treatment']
+      }
     ]
   }
 };
@@ -440,65 +665,4 @@ const CountryDetails = () => {
                     ))}
                     
                     <div className="border border-gray-200 rounded-lg p-4">
-                      <h3 className="font-bold text-navy mb-3">Available Visa Types</h3>
-                      
-                      {country.visaTypes.map((visa, index) => (
-                        <div key={index} className="mb-3 last:mb-0">
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm font-medium">{visa.name}</p>
-                            <span className="text-sm text-gray-600">{visa.fee}</span>
-                          </div>
-                          <div className="flex items-center text-gray-500 mt-1">
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span className="text-xs">{visa.processingTime}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                  
-                  <div className="pt-4 border-t">
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="font-medium">Price</span>
-                      <span className="font-bold text-lg">{country.visaPackages?.[selectedPackage]?.price || '$299'}</span>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded p-3 mb-4">
-                      <div className="flex items-center">
-                        <ShieldCheck className="h-5 w-5 text-teal mr-2" />
-                        <div>
-                          <p className="text-sm font-medium">VisaProtect™</p>
-                          <p className="text-xs text-gray-500">100% refund if rejected</p>
-                        </div>
-                        <span className="ml-auto text-teal text-xs font-medium">Free</span>
-                      </div>
-                    </div>
-                    
-                    <Button className="w-full bg-teal hover:bg-teal-600 text-white">
-                      Start Application
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-bold text-navy mb-2">Need Help?</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Our visa experts can guide you through the entire process.
-                </p>
-                <Button variant="outline" className="w-full border-navy text-navy hover:bg-navy hover:text-white">
-                  <Users className="mr-2 h-4 w-4" />
-                  Speak to an Expert
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <Footer />
-    </div>
-  );
-};
-
-export default CountryDetails;
+                      <h3 className="font-bold text-
