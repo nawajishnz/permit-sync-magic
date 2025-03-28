@@ -26,7 +26,7 @@ const testimonials = [
     visa: 'UK Visitor Visa',
     rating: 5,
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
-    content: 'I was worried about my visa application being rejected, but with Permitsy's expert review service, my application was approved on the first try. Highly recommended!'
+    content: "I was worried about my visa application being rejected, but with Permitsy's expert review service, my application was approved on the first try. Highly recommended!"
   },
   {
     id: 3,
