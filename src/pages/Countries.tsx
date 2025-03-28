@@ -6,20 +6,77 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Search, Filter, MapPin, Globe } from 'lucide-react';
+import { Search, Filter, MapPin, Globe, Flag } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 const CountriesPage = () => {
   // Sample countries data - this would typically come from an API
   const countries = [
-    { id: 1, name: 'United States', continent: 'North America', flagUrl: 'https://flagcdn.com/w320/us.png', visaTypes: ['Tourist', 'Business', 'Student'] },
-    { id: 2, name: 'Canada', continent: 'North America', flagUrl: 'https://flagcdn.com/w320/ca.png', visaTypes: ['Tourist', 'Work', 'Express Entry'] },
-    { id: 3, name: 'United Kingdom', continent: 'Europe', flagUrl: 'https://flagcdn.com/w320/gb.png', visaTypes: ['Visitor', 'Skilled Worker', 'Student'] },
-    { id: 4, name: 'Australia', continent: 'Oceania', flagUrl: 'https://flagcdn.com/w320/au.png', visaTypes: ['Tourist', 'Work Holiday', 'Skilled Migration'] },
-    { id: 5, name: 'Japan', continent: 'Asia', flagUrl: 'https://flagcdn.com/w320/jp.png', visaTypes: ['Tourist', 'Work', 'Student'] },
-    { id: 6, name: 'Germany', continent: 'Europe', flagUrl: 'https://flagcdn.com/w320/de.png', visaTypes: ['Schengen', 'Work', 'Student'] },
-    { id: 7, name: 'France', continent: 'Europe', flagUrl: 'https://flagcdn.com/w320/fr.png', visaTypes: ['Schengen', 'Long Stay', 'Student'] },
-    { id: 8, name: 'Singapore', continent: 'Asia', flagUrl: 'https://flagcdn.com/w320/sg.png', visaTypes: ['Tourist', 'Work', 'Dependent'] },
+    { 
+      id: 1, 
+      name: 'United States', 
+      continent: 'North America', 
+      flagUrl: 'https://flagcdn.com/w320/us.png', 
+      imageUrl: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29',
+      visaTypes: ['Tourist', 'Business', 'Student'] 
+    },
+    { 
+      id: 2, 
+      name: 'Canada', 
+      continent: 'North America', 
+      flagUrl: 'https://flagcdn.com/w320/ca.png', 
+      imageUrl: 'https://images.unsplash.com/photo-1517935706615-2717063c2225',
+      visaTypes: ['Tourist', 'Work', 'Express Entry'] 
+    },
+    { 
+      id: 3, 
+      name: 'United Kingdom', 
+      continent: 'Europe', 
+      flagUrl: 'https://flagcdn.com/w320/gb.png', 
+      imageUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad',
+      visaTypes: ['Visitor', 'Skilled Worker', 'Student'] 
+    },
+    { 
+      id: 4, 
+      name: 'Australia', 
+      continent: 'Oceania', 
+      flagUrl: 'https://flagcdn.com/w320/au.png', 
+      imageUrl: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be',
+      visaTypes: ['Tourist', 'Work Holiday', 'Skilled Migration'] 
+    },
+    { 
+      id: 5, 
+      name: 'Japan', 
+      continent: 'Asia', 
+      flagUrl: 'https://flagcdn.com/w320/jp.png', 
+      imageUrl: 'https://images.unsplash.com/photo-1492571350019-22de08371fd3',
+      visaTypes: ['Tourist', 'Work', 'Student'] 
+    },
+    { 
+      id: 6, 
+      name: 'Germany', 
+      continent: 'Europe', 
+      flagUrl: 'https://flagcdn.com/w320/de.png', 
+      imageUrl: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b',
+      visaTypes: ['Schengen', 'Work', 'Student'] 
+    },
+    { 
+      id: 7, 
+      name: 'France', 
+      continent: 'Europe', 
+      flagUrl: 'https://flagcdn.com/w320/fr.png', 
+      imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34',
+      visaTypes: ['Schengen', 'Long Stay', 'Student'] 
+    },
+    { 
+      id: 8, 
+      name: 'Singapore', 
+      continent: 'Asia', 
+      flagUrl: 'https://flagcdn.com/w320/sg.png', 
+      imageUrl: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd',
+      visaTypes: ['Tourist', 'Work', 'Dependent'] 
+    },
   ];
 
   const [continent, setContinent] = useState('');
@@ -107,24 +164,39 @@ const CountriesPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {countries.map((country) => (
               <Link to={`/country/${country.id}`} key={country.id}>
-                <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 rounded-2xl border-none">
-                  <div className="aspect-video relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40 z-10" />
-                    <img 
-                      src={country.flagUrl} 
-                      alt={`${country.name} flag`} 
-                      className="object-cover w-full h-full transition-transform duration-500 hover:scale-110"
-                    />
+                <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 rounded-2xl border-none group">
+                  <div className="relative">
+                    <AspectRatio ratio={16/9} className="bg-gray-100 overflow-hidden">
+                      <img 
+                        src={country.imageUrl} 
+                        alt={`${country.name} landscape`} 
+                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 z-10"></div>
+                    </AspectRatio>
+                    
+                    {/* Country name and continent */}
                     <div className="absolute bottom-4 left-4 z-20">
-                      <div className="flex items-center text-sm text-white bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+                      <h3 className="font-semibold text-xl text-white mb-1">{country.name}</h3>
+                      <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
                         <MapPin size={14} className="mr-1" /> 
                         <span>{country.continent}</span>
                       </div>
                     </div>
+                    
+                    {/* Flag at top right */}
+                    <div className="absolute top-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
+                      <div className="w-8 h-8 rounded-full overflow-hidden">
+                        <img 
+                          src={country.flagUrl} 
+                          alt={`${country.name} flag`} 
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <CardContent className="p-5">
-                    <h3 className="font-semibold text-lg text-navy-700 mb-3">{country.name}</h3>
-                    <div className="flex flex-wrap gap-2 mt-3">
+                    <div className="flex flex-wrap gap-2">
                       {country.visaTypes.map((type, i) => (
                         <span key={i} className="text-xs bg-navy-50 text-navy-700 px-3 py-1 rounded-full">
                           {type}
