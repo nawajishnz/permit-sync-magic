@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { FileCheck, Clock, Award, ArrowRight, Check, Play, Star } from 'lucide-react';
+import { FileCheck, Clock, Award, ArrowRight, Check, Play, Star, Zap, CreditCard, FileText, Globe, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Carousel,
@@ -16,9 +16,9 @@ import { Progress } from '@/components/ui/progress';
 const steps = [
   {
     id: 1,
-    title: 'Complete Online Application',
-    description: 'Fill out our user-friendly online application form with your travel details and personal information.',
-    icon: FileCheck,
+    title: 'Fill Out Your Details & Pay',
+    description: 'Complete our user-friendly online application form with your travel details and personal information.',
+    icon: FileText,
     color: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
     features: [
       'Intuitive form design',
@@ -36,14 +36,14 @@ const steps = [
   },
   {
     id: 2,
-    title: 'Expert Document Review',
-    description: 'Our visa specialists review your application and supporting documents to ensure everything meets requirements.',
-    icon: Clock,
-    color: 'bg-gradient-to-br from-blue-500 to-blue-600',
+    title: 'AI-Powered Documentation',
+    description: 'Our intelligent system prepares and verifies your documents automatically.',
+    icon: Zap,
+    color: 'bg-gradient-to-br from-purple-500 to-purple-600',
     features: [
-      'Professional verification',
-      'Accuracy checks',
-      'Quick turnaround time'
+      'Automatic formatting',
+      'Error detection',
+      'Document generation'
     ],
     cta: 'Learn About Process',
     demo: {
@@ -51,14 +51,34 @@ const steps = [
         '/images/document-review-1.png',
         '/images/document-review-2.png'
       ],
-      caption: 'Expert review ensures your application is correct'
+      caption: 'AI technology ensures your documents are correct'
     }
   },
   {
     id: 3,
+    title: 'Expert Human Review',
+    description: 'Our visa specialists review your application and documents to ensure everything meets official requirements.',
+    icon: Globe,
+    color: 'bg-gradient-to-br from-blue-500 to-blue-600',
+    features: [
+      'Professional verification',
+      'Accuracy checks',
+      'Quick turnaround time'
+    ],
+    cta: 'Meet Our Experts',
+    demo: {
+      images: [
+        '/images/document-review-1.png',
+        '/images/document-review-2.png'
+      ],
+      caption: 'Expert review ensures your application meets all requirements'
+    }
+  },
+  {
+    id: 4,
     title: 'Receive Your Visa',
     description: 'Get approved and receive your visa electronically or by mail, ready for your upcoming travels.',
-    icon: Award,
+    icon: CreditCard,
     color: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
     features: [
       'Digital visa delivery',
@@ -155,12 +175,173 @@ const ProcessVisualization = ({ step }) => {
                 ))}
               </div>
               <p className="text-white/80 text-center text-xs mt-2">
-                {step.id < 3 ? "Moving to next step..." : "Your visa is ready!"}
+                {step.id < 4 ? "Moving to next step..." : "Your visa is ready!"}
               </p>
             </div>
           )}
         </motion.div>
       </AnimatePresence>
+    </div>
+  );
+};
+
+// New detailed process step visualization
+const StepDetailVisualization = ({ step }) => {
+  // Progress animation for the progress line
+  const [progress, setProgress] = useState(0);
+  
+  useEffect(() => {
+    // Animate progress when component mounts
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev < 100) return prev + 1;
+        return 0; // Reset when complete
+      });
+    }, 50);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="bg-white rounded-lg shadow-md p-4 overflow-hidden">
+      <div className="flex items-center mb-4">
+        <div className={`w-10 h-10 ${step.color} rounded-lg text-white flex items-center justify-center mr-3`}>
+          <step.icon className="h-5 w-5" />
+        </div>
+        <div>
+          <h4 className="font-medium text-navy">Step {step.id}: {step.title}</h4>
+          <div className="text-xs text-gray-500">{step.features[0]}</div>
+        </div>
+      </div>
+      
+      {step.id === 1 && (
+        <div className="relative border border-gray-100 rounded-lg p-3">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-2 gap-2"
+          >
+            <div className="space-y-2">
+              <div className="h-2 bg-gray-100 rounded-full w-full"></div>
+              <div className="h-2 bg-gray-100 rounded-full w-3/4"></div>
+              <div className="flex items-center">
+                <div className="h-4 w-4 bg-indigo-100 rounded-sm mr-1"></div>
+                <div className="h-2 bg-gray-100 rounded-full w-16"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-2 bg-gray-100 rounded-full w-full"></div>
+              <div className="h-2 bg-gray-100 rounded-full w-1/2"></div>
+              <motion.div 
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5, duration: 0.3 }}
+                className="h-6 w-16 bg-indigo-500 rounded-md"
+              ></motion.div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      
+      {step.id === 2 && (
+        <div className="relative border border-gray-100 rounded-lg p-3">
+          <div className="grid grid-cols-3 gap-3">
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              className="flex flex-col items-center"
+            >
+              <div className="w-8 h-10 bg-gray-100 rounded mb-1 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-gray-400" />
+              </div>
+              <div className="h-1 w-full bg-gray-100"></div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ 
+                scale: [0.6, 1.1, 1],
+                opacity: 1,
+                rotate: [0, -5, 5, 0]
+              }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-col items-center"
+            >
+              <div className="w-10 h-10 bg-purple-500 rounded-full mb-1 flex items-center justify-center text-white">
+                <Zap className="h-5 w-5" />
+              </div>
+              <div className="h-1 w-full bg-purple-200">
+                <motion.div 
+                  className="h-full bg-purple-500"
+                  style={{ width: `${progress}%` }}
+                ></motion.div>
+              </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="flex flex-col items-center"
+            >
+              <div className="w-8 h-10 bg-purple-100 rounded mb-1 flex items-center justify-center">
+                <FileCheck className="h-4 w-4 text-purple-500" />
+              </div>
+              <div className="h-1 w-full bg-gray-100"></div>
+            </motion.div>
+          </div>
+        </div>
+      )}
+      
+      {step.id === 3 && (
+        <div className="relative border border-gray-100 rounded-lg p-3">
+          <div className="flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="relative"
+            >
+              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+                <Search className="h-8 w-8 text-blue-500" />
+              </div>
+              
+              <motion.div
+                className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.8, duration: 0.3, type: "spring" }}
+              >
+                <Check className="h-4 w-4" />
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      )}
+      
+      {step.id === 4 && (
+        <div className="relative border border-gray-100 rounded-lg p-3">
+          <div className="flex justify-center">
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="relative w-20 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-md flex items-center justify-center text-white overflow-hidden"
+            >
+              <Globe className="h-5 w-5 mr-1" />
+              <span className="font-bold text-sm">VISA</span>
+              <motion.div
+                className="absolute inset-0 bg-white opacity-20"
+                initial={{ x: "-100%" }}
+                animate={{ x: "100%" }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+              />
+            </motion.div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -186,7 +367,7 @@ const HowItWorks = () => {
             transition={{ duration: 0.5 }}
             className="text-4xl font-bold text-white mb-4"
           >
-            How It Works
+            Expert Application With Teleport
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -194,7 +375,7 @@ const HowItWorks = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-white/90 max-w-2xl mx-auto text-lg"
           >
-            Get your visa in three simple steps. Our streamlined process makes visa applications quick and hassle-free.
+            4 simple steps to apply for your visa. Our streamlined process makes visa applications quick and hassle-free.
           </motion.p>
         </div>
         
@@ -246,7 +427,7 @@ const HowItWorks = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-10 max-w-6xl mx-auto">
+          <div className="grid grid-cols-4 gap-6 max-w-6xl mx-auto">
             {steps.map((step) => (
               <motion.div 
                 key={step.id}
@@ -269,8 +450,8 @@ const HowItWorks = () => {
                   <step.icon className="h-8 w-8" />
                 </div>
                 
-                <h3 className="text-2xl font-semibold text-white mb-4">{step.title}</h3>
-                <p className="text-white/80 mb-6 text-base">{step.description}</p>
+                <h3 className="text-xl font-semibold text-white mb-4">{step.title}</h3>
+                <p className="text-white/80 mb-6 text-sm">{step.description}</p>
                 
                 {/* Interactive process visualization */}
                 {hoveredStep === step.id && (
@@ -308,6 +489,23 @@ const HowItWorks = () => {
               </motion.div>
             ))}
           </div>
+          
+          {/* Detailed step visualization */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="mt-12 bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20"
+          >
+            <h3 className="text-xl font-semibold text-white mb-6 text-center">See How It Works</h3>
+            <div className="grid grid-cols-4 gap-4">
+              {steps.map((step) => (
+                <div key={step.id} className={activeStep === step.id ? "opacity-100" : "opacity-70"}>
+                  <StepDetailVisualization step={step} />
+                </div>
+              ))}
+            </div>
+          </motion.div>
         </div>
         
         {/* Mobile Carousel */}

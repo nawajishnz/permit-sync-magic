@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, MapPin, Compass, CalendarClock, Search, Play } from 'lucide-react';
+import { ArrowRight, Check, MapPin, Compass, CalendarClock, Search, Play, Zap, FileText, CreditCard, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -31,6 +31,33 @@ const Hero: React.FC = () => {
       transition: { duration: 0.5 }
     }
   };
+
+  const applicationSteps = [
+    { 
+      id: 1, 
+      title: "Fill Out Your Details & Pay", 
+      icon: FileText,
+      description: "Complete your application form with all required information and submit payment"
+    },
+    { 
+      id: 2, 
+      title: "AI-Powered Documentation", 
+      icon: Zap,
+      description: "Our AI system helps prepare and verify your documentation automatically"
+    },
+    { 
+      id: 3, 
+      title: "Expert Human Review", 
+      icon: Globe,
+      description: "Visa specialists double-check your application for accuracy and completeness"
+    },
+    { 
+      id: 4, 
+      title: "Receive Your Visa", 
+      icon: CreditCard,
+      description: "Your visa is delivered electronically or by mail, on time and hassle-free"
+    }
+  ];
   
   return (
     <section className="relative overflow-hidden pt-24 pb-20 sm:pt-32 sm:pb-24">
@@ -45,7 +72,7 @@ const Hero: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="lg:order-1"
+            className="order-1 lg:order-1"
           >
             <div className="inline-flex items-center px-3 py-1.5 mb-6 rounded-full bg-indigo-50 border border-indigo-100">
               <span className="text-xs font-medium text-indigo-600 mr-2">98% Success Rate</span>
@@ -55,13 +82,13 @@ const Hero: React.FC = () => {
             
             <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
               <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
-                Travel Visas
+                Expert Application
               </span>
-              <span className="block mt-1">Simplified For You</span>
+              <span className="block mt-1">With Teleport</span>
             </h1>
             
             <p className="text-xl text-gray-600 mb-8 max-w-lg">
-              Skip the embassy lines and paperwork. Apply for your tourist or visit visa online and get approved in days, not months.
+              4 simple steps to apply for your visa. Skip the embassy lines and paperwork with our streamlined process.
             </p>
             
             {/* Search box */}
@@ -124,19 +151,19 @@ const Hero: React.FC = () => {
             </motion.div>
           </motion.div>
           
-          {/* Animated platform demo section - Now always second in the DOM for mobile priority */}
+          {/* Application Process Visualization - New component inspired by reference image */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="lg:order-2"
+            className="order-2 lg:order-2"
           >
             <div className="relative">
               {/* Decorative elements */}
               <div className="absolute -top-6 -right-6 w-56 h-56 rounded-full bg-indigo-100 opacity-60 blur-3xl"></div>
               <div className="absolute -bottom-10 -left-10 w-56 h-56 rounded-full bg-blue-100 opacity-60 blur-3xl"></div>
               
-              {/* Animated Platform Workflow Visualization */}
+              {/* Application Process Flow Visualization */}
               <motion.div 
                 className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 relative z-10"
                 initial="hidden"
@@ -155,92 +182,124 @@ const Hero: React.FC = () => {
                   <div className="w-16"></div> {/* Spacer for balance */}
                 </div>
                 
-                {/* Platform content */}
+                {/* Application Process Steps */}
                 <div className="p-6">
-                  {/* Step 1: Country Selection */}
-                  <motion.div 
-                    className="mb-6"
+                  {/* Active Application Step View */}
+                  <motion.div
                     variants={itemVariant}
+                    className="mb-8"
                   >
-                    <div className="text-sm text-gray-500 mb-2 flex items-center">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 mr-2 text-xs font-medium">1</span>
-                      Select Destination Country
+                    <div className="flex items-center mb-4">
+                      <div className="mr-3 w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                        <Zap className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-indigo-600 font-medium mb-1">Step 2 of 4</div>
+                        <h3 className="text-lg font-semibold text-gray-800">Getting your documents</h3>
+                        <p className="text-sm text-gray-500">Powered by AI ⚡</p>
+                      </div>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                      <div className="grid grid-cols-3 gap-2">
-                        {["🇺🇸", "🇨🇦", "🇬🇧"].map((flag, i) => (
-                          <motion.div 
-                            key={i}
-                            className={`flex items-center justify-center p-2 rounded-md ${i === 0 ? 'bg-indigo-50 border border-indigo-100' : 'bg-white border border-gray-100'}`}
-                            whileHover={{ scale: 1.05, backgroundColor: "#EEF2FF" }}
-                          >
-                            <span className="text-xl mr-1">{flag}</span>
-                          </motion.div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
+                      <div className="grid grid-cols-3 gap-4 w-full">
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3, duration: 0.5 }}
+                          className="flex flex-col items-center"
+                        >
+                          <div className="w-12 h-14 bg-gray-200 rounded-md flex items-center justify-center mb-2">
+                            <FileText className="h-6 w-6 text-gray-400" />
+                          </div>
+                          <span className="text-xs text-gray-500">Form.pdf</span>
+                        </motion.div>
+                        
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ 
+                            opacity: 1, 
+                            scale: [0.8, 1.1, 1],
+                            rotate: [0, 5, -5, 0] 
+                          }}
+                          transition={{ delay: 0.5, duration: 0.8 }}
+                          className="flex flex-col items-center"
+                        >
+                          <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center mb-2 border border-gray-100">
+                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
+                              <Search className="h-5 w-5 text-indigo-500" />
+                            </div>
+                          </div>
+                          <span className="text-xs text-indigo-600 font-medium">Processing</span>
+                        </motion.div>
+                        
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.7, duration: 0.5 }}
+                          className="flex flex-col items-center"
+                        >
+                          <div className="w-12 h-14 bg-gray-200 rounded-md flex items-center justify-center mb-2">
+                            <FileText className="h-6 w-6 text-gray-400" />
+                          </div>
+                          <span className="text-xs text-gray-500">Visa.pdf</span>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                  
+                  {/* Application Progress Steps */}
+                  <motion.div
+                    variants={itemVariant}
+                    className="pt-4 border-t border-gray-100"
+                  >
+                    <div className="relative mb-4">
+                      <div className="absolute top-4 left-6 right-6 h-0.5 bg-gray-200"></div>
+                      <div className="flex justify-between relative">
+                        {applicationSteps.map((step, index) => (
+                          <div key={index} className="relative z-10 flex flex-col items-center">
+                            <div className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                              index < 2 ? 'bg-green-500 text-white' : 
+                              index === 2 ? 'bg-indigo-600 text-white border-4 border-indigo-100' : 
+                              'bg-gray-200 text-gray-500'
+                            }`}>
+                              {index < 2 ? (
+                                <Check className="h-5 w-5" />
+                              ) : (
+                                <span className="text-xs font-medium">{step.id}</span>
+                              )}
+                            </div>
+                            <span className="text-xs mt-2 text-center w-16 truncate">{step.title.split(' ')[0]}</span>
+                          </div>
                         ))}
                       </div>
                     </div>
-                  </motion.div>
-                  
-                  {/* Step 2: Visa Type */}
-                  <motion.div 
-                    className="mb-6"
-                    variants={itemVariant}
-                  >
-                    <div className="text-sm text-gray-500 mb-2 flex items-center">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 mr-2 text-xs font-medium">2</span>
-                      Select Visa Type
-                    </div>
-                    <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-                      <div className="bg-white rounded-md p-2 border border-gray-100 flex items-center">
-                        <div className="h-4 w-4 rounded-full bg-indigo-600 mr-2 flex items-center justify-center">
-                          <Check className="h-3 w-3 text-white" />
-                        </div>
-                        <span className="text-sm">Tourist Visa (B-2)</span>
+                    
+                    <div className="flex justify-between items-center mt-6">
+                      <div className="text-sm font-medium text-gray-700">Estimated completion:</div>
+                      <div className="bg-green-50 px-3 py-1 rounded-full text-green-700 text-sm font-medium">
+                        3-5 business days
                       </div>
                     </div>
                   </motion.div>
                   
-                  {/* Step 3: Form Completion */}
+                  {/* Step description - animates between steps */}
                   <motion.div
                     variants={itemVariant}
+                    className="mt-6 pt-6 border-t border-gray-100"
                   >
-                    <div className="text-sm text-gray-500 mb-2 flex items-center">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 mr-2 text-xs font-medium">3</span>
-                      Complete Application
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="h-2 w-16 bg-gray-200 rounded-full overflow-hidden">
-                          <motion.div 
-                            className="h-full bg-green-500"
-                            initial={{ width: "0%" }}
-                            animate={{ width: "75%" }}
-                            transition={{ duration: 1.5, delay: 1, repeat: Infinity, repeatDelay: 4 }}
-                          ></motion.div>
-                        </div>
-                        <span className="text-xs text-gray-500">75% Complete</span>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="h-2 bg-gray-200 rounded-full w-full"></div>
-                        <div className="h-2 bg-gray-200 rounded-full w-3/4"></div>
-                      </div>
-                    </div>
-                  </motion.div>
-                  
-                  {/* Video demo button */}
-                  <motion.div 
-                    className="mt-6 flex justify-center"
-                    variants={itemVariant}
-                  >
-                    <Button 
-                      variant="ghost"
-                      className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 flex items-center text-sm"
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 1 }}
+                      className="text-center"
                     >
-                      <div className="bg-indigo-100 w-6 h-6 rounded-full flex items-center justify-center mr-2">
-                        <Play className="h-3 w-3 text-indigo-600" />
-                      </div>
-                      Watch how it works
-                    </Button>
+                      <h4 className="font-medium text-gray-800 mb-2">
+                        Sit back as we handle your visa application
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        Our AI-powered system is scanning and preparing your documents while our experts are standing by to review
+                      </p>
+                    </motion.div>
                   </motion.div>
                 </div>
               </motion.div>
