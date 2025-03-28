@@ -64,7 +64,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				navy: {
-					DEFAULT: '#1A2BA3', // Updated to match logo blue
+					DEFAULT: '#1A2BA3',
 					50: '#E7E9F7',
 					100: '#C5CAED',
 					200: '#9AA4DE',
@@ -90,8 +90,8 @@ export default {
 					900: '#021A1A'
 				},
 				gray: {
-					DEFAULT: '#5A5A5A', // Added to match logo gray
-					50: '#F5F5F5',
+					DEFAULT: '#5A5A5A',
+					50: '#F5F5F7', // Apple's light gray
 					100: '#E5E5E5',
 					200: '#CCCCCC',
 					300: '#B3B3B3',
@@ -103,10 +103,18 @@ export default {
 					900: '#0F0F0F'
 				}
 			},
+			fontFamily: {
+				sans: ['SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			boxShadow: {
+				'apple': '0 4px 20px rgba(0, 0, 0, 0.05)',
+				'apple-hover': '0 8px 30px rgba(0, 0, 0, 0.08)',
+				'apple-card': '0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02)',
 			},
 			keyframes: {
 				'accordion-down': {

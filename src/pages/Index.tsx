@@ -10,14 +10,20 @@ import Footer from '@/components/Footer';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <main className="flex-grow">
         <Hero />
         <HowItWorks />
-        <PopularDestinations />
-        <Testimonials />
-        <PopularCountries />
+        <div className="bg-gray-50 py-20">
+          <PopularDestinations />
+        </div>
+        <div className="py-20">
+          <Testimonials />
+        </div>
+        <div className="bg-gray-50 py-20">
+          <PopularCountries />
+        </div>
       </main>
       <Footer />
     </div>
