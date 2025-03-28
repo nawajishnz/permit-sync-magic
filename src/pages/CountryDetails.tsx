@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -416,8 +417,8 @@ const CountryDetails = () => {
   const visaPackage = country.visaPackages[selectedPackage];
   
   // Calculate fees
-  const governmentFee = visaPackage.governmentFee.replace('₹', '');
-  const atlysFee = visaPackage.atlysFee.replace('₹', '');
+  const governmentFee = visaPackage.governmentFee ? visaPackage.governmentFee.replace('₹', '') : '0';
+  const atlysFee = visaPackage.atlysFee ? visaPackage.atlysFee.replace('₹', '') : '0';
   const totalAmount = parseInt(governmentFee) * travellers;
   
   const handleDecreaseTravellers = () => {
@@ -661,3 +662,119 @@ const CountryDetails = () => {
                         <Check className="h-4 w-4" />
                       </div>
                       <span>{previousDate}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Visa guarantee box */}
+                <div className="p-4 border-t border-gray-100">
+                  <div className="bg-indigo-50 p-3 rounded-lg text-center mb-4">
+                    <span className="text-xs text-indigo-600 font-medium uppercase">Visa guaranteed on</span>
+                    <p className="text-indigo-700 font-semibold">{formattedGuaranteedDate}</p>
+                  </div>
+                  
+                  {/* Package selection */}
+                  <div className="mb-4">
+                    <h3 className="font-bold text-lg text-navy mb-3">{visaPackage.name}</h3>
+                    <p className="text-gray-500 text-sm mb-2">Processing time: {visaPackage.processingTime}</p>
+                    
+                    <div className="flex gap-2 mb-3">
+                      {visaPackage.features.map((feature, index) => (
+                        <span key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Travellers */}
+                  <div className="mb-5">
+                    <label className="text-sm text-gray-600 mb-2 block">Number of travellers</label>
+                    <div className="flex items-center">
+                      <button 
+                        onClick={handleDecreaseTravellers}
+                        className="bg-gray-100 hover:bg-gray-200 rounded-l-md p-2"
+                        disabled={travellers <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <div className="px-4 py-2 border-t border-b border-gray-200 text-center min-w-[40px]">
+                        {travellers}
+                      </div>
+                      <button 
+                        onClick={handleIncreaseTravellers}
+                        className="bg-gray-100 hover:bg-gray-200 rounded-r-md p-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Price breakdown */}
+                  <div className="bg-gray-50 p-4 rounded-lg mb-5">
+                    <h4 className="font-medium text-navy mb-3">Price breakdown</h4>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Government fee</span>
+                        <span className="font-medium">₹{governmentFee} × {travellers}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Permits fee</span>
+                        <span className="font-medium">₹{atlysFee}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">PermitsyProtect</span>
+                        <span className="font-medium">Free</span>
+                      </div>
+                      
+                      <div className="pt-2 mt-2 border-t border-gray-200 flex justify-between font-bold">
+                        <span>Total amount</span>
+                        <span className="text-navy">₹{parseInt(governmentFee) * travellers + parseInt(atlysFee)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* CTA Button */}
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-6">
+                    Start Application
+                  </Button>
+                  
+                  {/* Money-back guarantee */}
+                  <div className="mt-4 text-center">
+                    <p className="text-xs text-gray-500 flex items-center justify-center">
+                      <ShieldCheck className="h-3 w-3 mr-1" />
+                      100% Money-back guarantee if visa is not approved
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Support card */}
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <div className="flex items-start">
+                  <div className="bg-teal/10 p-2 rounded-md mr-3">
+                    <MessageSquare className="h-5 w-5 text-teal" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-navy">Need help with your application?</h3>
+                    <p className="text-sm text-gray-600 mb-3">Our visa experts are available 24/7</p>
+                    <Button variant="outline" size="sm" className="text-xs">
+                      Chat with an expert
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default CountryDetails;
