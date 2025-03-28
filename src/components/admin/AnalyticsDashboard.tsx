@@ -101,7 +101,7 @@ const AnalyticsDashboard = () => {
     return Object.values(monthlyData);
   }, [applicationsData]);
 
-  // Process revenue data
+  // Process revenue data - Fixed the TypeScript error here
   const processedRevenueData = React.useMemo(() => {
     if (!revenueData || revenueData.length === 0) return [];
 
@@ -117,11 +117,12 @@ const AnalyticsDashboard = () => {
       const date = new Date(app.submitted_date);
       const monthName = months[date.getMonth()];
       
-      // Extract price and convert to number
+      // Extract price and convert to number - FIX HERE
       let price = 0;
       if (app.visa_packages?.price) {
         // Remove currency symbol and convert to number
-        price = parseFloat(app.visa_packages.price.replace(/[^0-9.-]+/g, '')) || 0;
+        const priceString = String(app.visa_packages.price);
+        price = parseFloat(priceString.replace(/[^0-9.-]+/g, '')) || 0;
       }
       
       monthlyRevenue[monthName].revenue += price;
