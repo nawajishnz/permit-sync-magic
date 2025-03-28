@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, MapPin, Compass, CalendarClock, Search } from 'lucide-react';
+import { ArrowRight, Check, MapPin, Compass, CalendarClock, Search, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -9,6 +9,28 @@ import { motion } from 'framer-motion';
 
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
+  
+  // Animation variants for the dashboard preview
+  const dashboardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.8,
+        staggerChildren: 0.2
+      } 
+    }
+  };
+  
+  const itemVariant = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.5 }
+    }
+  };
   
   return (
     <section className="relative overflow-hidden pt-24 pb-20 sm:pt-32 sm:pb-24">
@@ -33,7 +55,7 @@ const Hero: React.FC = () => {
             
             <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
               <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
-                Global Visa Solutions
+                Travel Visas
               </span>
               <span className="block mt-1">Simplified For You</span>
             </h1>
@@ -95,14 +117,14 @@ const Hero: React.FC = () => {
                 </Button>
               </Link>
               <Link to="/apply-now">
-                <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 text-white rounded-full w-full sm:w-auto shadow-md">
-                  Apply Now <ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 text-white rounded-full w-full sm:w-auto shadow-md group transition-all duration-300">
+                  Apply Now <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </motion.div>
           </motion.div>
           
-          {/* Hero image/card section - Now always second in the DOM for mobile priority */}
+          {/* Animated platform demo section - Now always second in the DOM for mobile priority */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -114,102 +136,146 @@ const Hero: React.FC = () => {
               <div className="absolute -top-6 -right-6 w-56 h-56 rounded-full bg-indigo-100 opacity-60 blur-3xl"></div>
               <div className="absolute -bottom-10 -left-10 w-56 h-56 rounded-full bg-blue-100 opacity-60 blur-3xl"></div>
               
-              {/* 3D floating cards */}
-              <div className="relative z-10">
-                {/* Main visa card */}
-                <motion.div 
-                  className="bg-white rounded-3xl shadow-2xl p-8 transform rotate-2 hover:rotate-0 transition-all duration-300"
-                  whileHover={{ y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}
-                >
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <div className="flex items-center mb-2">
-                        <span className="text-2xl mr-2">🇺🇸</span>
-                        <h3 className="text-xl font-semibold">US Tourist Visa</h3>
+              {/* Animated Platform Workflow Visualization */}
+              <motion.div 
+                className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 relative z-10"
+                initial="hidden"
+                animate="visible"
+                variants={dashboardVariants}
+                whileHover={{ y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}
+              >
+                {/* Platform header */}
+                <div className="bg-gradient-to-r from-indigo-600 to-blue-500 p-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="bg-white/20 w-3 h-3 rounded-full mr-2"></div>
+                    <div className="bg-white/20 w-3 h-3 rounded-full mr-2"></div>
+                    <div className="bg-white/20 w-3 h-3 rounded-full"></div>
+                  </div>
+                  <div className="text-white font-medium text-sm">Visa Application Platform</div>
+                  <div className="w-16"></div> {/* Spacer for balance */}
+                </div>
+                
+                {/* Platform content */}
+                <div className="p-6">
+                  {/* Step 1: Country Selection */}
+                  <motion.div 
+                    className="mb-6"
+                    variants={itemVariant}
+                  >
+                    <div className="text-sm text-gray-500 mb-2 flex items-center">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 mr-2 text-xs font-medium">1</span>
+                      Select Destination Country
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                      <div className="grid grid-cols-3 gap-2">
+                        {["🇺🇸", "🇨🇦", "🇬🇧"].map((flag, i) => (
+                          <motion.div 
+                            key={i}
+                            className={`flex items-center justify-center p-2 rounded-md ${i === 0 ? 'bg-indigo-50 border border-indigo-100' : 'bg-white border border-gray-100'}`}
+                            whileHover={{ scale: 1.05, backgroundColor: "#EEF2FF" }}
+                          >
+                            <span className="text-xl mr-1">{flag}</span>
+                          </motion.div>
+                        ))}
                       </div>
-                      <p className="text-indigo-600 font-medium">B-2 Visitor Visa</p>
                     </div>
-                    <div className="bg-green-50 text-green-700 text-xs font-medium px-3 py-1 rounded-full">
-                      98% Approval
-                    </div>
-                  </div>
+                  </motion.div>
                   
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Processing Time</p>
-                      <p className="font-medium">7-14 days</p>
+                  {/* Step 2: Visa Type */}
+                  <motion.div 
+                    className="mb-6"
+                    variants={itemVariant}
+                  >
+                    <div className="text-sm text-gray-500 mb-2 flex items-center">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 mr-2 text-xs font-medium">2</span>
+                      Select Visa Type
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Validity</p>
-                      <p className="font-medium">10 years</p>
-                    </div>
-                  </div>
-                  
-                  <ul className="space-y-3 mb-6">
-                    {[
-                      'Complete document preparation',
-                      'Expert application review',
-                      'Interview preparation',
-                      '24/7 customer support'
-                    ].map((item, i) => (
-                      <motion.li 
-                        key={i} 
-                        className="flex items-start text-sm"
-                        initial={{ opacity: 0, x: -5 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: 0.1 * i }}
-                      >
-                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mt-0.5 mr-3">
-                          <Check className="h-3 w-3" />
+                    <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                      <div className="bg-white rounded-md p-2 border border-gray-100 flex items-center">
+                        <div className="h-4 w-4 rounded-full bg-indigo-600 mr-2 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-white" />
                         </div>
-                        <span>{item}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
-                  
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">From</p>
-                      <p className="text-2xl font-bold">$149</p>
+                        <span className="text-sm">Tourist Visa (B-2)</span>
+                      </div>
                     </div>
-                    <Button className="rounded-full bg-indigo-600 hover:bg-indigo-700">
-                      Apply Now
+                  </motion.div>
+                  
+                  {/* Step 3: Form Completion */}
+                  <motion.div
+                    variants={itemVariant}
+                  >
+                    <div className="text-sm text-gray-500 mb-2 flex items-center">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 mr-2 text-xs font-medium">3</span>
+                      Complete Application
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="h-2 w-16 bg-gray-200 rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full bg-green-500"
+                            initial={{ width: "0%" }}
+                            animate={{ width: "75%" }}
+                            transition={{ duration: 1.5, delay: 1, repeat: Infinity, repeatDelay: 4 }}
+                          ></motion.div>
+                        </div>
+                        <span className="text-xs text-gray-500">75% Complete</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-2 bg-gray-200 rounded-full w-full"></div>
+                        <div className="h-2 bg-gray-200 rounded-full w-3/4"></div>
+                      </div>
+                    </div>
+                  </motion.div>
+                  
+                  {/* Video demo button */}
+                  <motion.div 
+                    className="mt-6 flex justify-center"
+                    variants={itemVariant}
+                  >
+                    <Button 
+                      variant="ghost"
+                      className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 flex items-center text-sm"
+                    >
+                      <div className="bg-indigo-100 w-6 h-6 rounded-full flex items-center justify-center mr-2">
+                        <Play className="h-3 w-3 text-indigo-600" />
+                      </div>
+                      Watch how it works
                     </Button>
-                  </div>
-                </motion.div>
-                
-                {/* Secondary card positioned behind main card */}
-                <div className="absolute -bottom-8 -left-6 w-3/4 h-44 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl shadow-lg -z-10 transform -rotate-6"></div>
-                
-                {/* Small decorative elements */}
-                <motion.div 
-                  className="absolute top-1/2 -right-5 w-12 h-12 bg-yellow-400 rounded-lg shadow-lg transform rotate-12"
-                  animate={{ 
-                    rotate: [12, 8, 12],
-                    y: [0, -5, 0]
-                  }}
-                  transition={{ 
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                ></motion.div>
-                <motion.div 
-                  className="absolute -bottom-4 right-10 w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center transform -rotate-12"
-                  animate={{ 
-                    rotate: [-12, -6, -12],
-                    y: [0, -8, 0]
-                  }}
-                  transition={{ 
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.5
-                  }}
-                >
-                  <span className="text-3xl">✈️</span>
-                </motion.div>
-              </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+              
+              {/* Floating elements */}
+              <motion.div 
+                className="absolute -bottom-4 right-10 w-16 h-16 bg-white rounded-xl shadow-lg flex items-center justify-center transform -rotate-12"
+                animate={{ 
+                  rotate: [-12, -6, -12],
+                  y: [0, -8, 0]
+                }}
+                transition={{ 
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              >
+                <span className="text-2xl">✈️</span>
+              </motion.div>
+              
+              <motion.div 
+                className="absolute top-1/3 -right-5 w-12 h-12 bg-green-400 rounded-lg shadow-lg flex items-center justify-center transform rotate-12"
+                animate={{ 
+                  rotate: [12, 8, 12],
+                  y: [0, -5, 0]
+                }}
+                transition={{ 
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Check className="h-6 w-6 text-white" />
+              </motion.div>
             </div>
           </motion.div>
         </div>

@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
-import { FileCheck, Clock, Award, ArrowRight, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { FileCheck, Clock, Award, ArrowRight, Check, Play, Star } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Carousel,
   CarouselContent,
@@ -25,7 +25,14 @@ const steps = [
       'Save and continue later',
       'Supporting document uploads'
     ],
-    cta: 'Start Application'
+    cta: 'Start Application',
+    demo: {
+      images: [
+        '/images/application-form-1.png',
+        '/images/application-form-2.png'
+      ],
+      caption: 'Our simplified form makes applying easy'
+    }
   },
   {
     id: 2,
@@ -38,7 +45,14 @@ const steps = [
       'Accuracy checks',
       'Quick turnaround time'
     ],
-    cta: 'Learn About Process'
+    cta: 'Learn About Process',
+    demo: {
+      images: [
+        '/images/document-review-1.png',
+        '/images/document-review-2.png'
+      ],
+      caption: 'Expert review ensures your application is correct'
+    }
   },
   {
     id: 3,
@@ -51,9 +65,105 @@ const steps = [
       'Physical mail option',
       'Instant notifications'
     ],
-    cta: 'View Sample Visa'
+    cta: 'View Sample Visa',
+    demo: {
+      images: [
+        '/images/visa-approved-1.png',
+        '/images/visa-approved-2.png'
+      ],
+      caption: 'Your visa delivered safely and quickly'
+    }
   }
 ];
+
+// Animated process visualization component
+const ProcessVisualization = ({ step }) => {
+  const [currentFrame, setCurrentFrame] = useState(0);
+  
+  // Simulate a simple animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentFrame(prev => (prev + 1) % 3);
+    }, 1200);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 h-40 border border-white/20 relative overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentFrame}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
+          className="absolute inset-0 p-4"
+        >
+          {currentFrame === 0 && (
+            <div className="flex flex-col h-full justify-center items-center">
+              <div className={`w-12 h-12 ${step.color} rounded-xl flex items-center justify-center mb-3`}>
+                <step.icon className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-white/80 text-center text-sm">{step.title}</p>
+            </div>
+          )}
+          
+          {currentFrame === 1 && (
+            <div className="flex flex-col h-full justify-center">
+              <div className="flex items-center mb-3">
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center mr-2">
+                  <span className="text-white text-xs font-medium">{step.id}</span>
+                </div>
+                <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="h-full bg-white"
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 1 }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2 mb-3">
+                {step.features.map((feature, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    className="flex items-center text-white/90"
+                    initial={{ opacity: 0, x: -5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.2 }}
+                  >
+                    <Check className="h-3 w-3 mr-2 text-emerald-400 flex-shrink-0" />
+                    <span className="text-xs">{feature}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {currentFrame === 2 && (
+            <div className="flex flex-col h-full justify-center items-center">
+              <div className="mb-3 flex items-center">
+                <div className="bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full flex items-center">
+                  <Check className="h-3 w-3 mr-1" />
+                  <span>Step {step.id} Complete</span>
+                </div>
+              </div>
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                ))}
+              </div>
+              <p className="text-white/80 text-center text-xs mt-2">
+                {step.id < 3 ? "Moving to next step..." : "Your visa is ready!"}
+              </p>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const HowItWorks = () => {
   const [activeStep, setActiveStep] = useState(1);
@@ -88,6 +198,25 @@ const HowItWorks = () => {
           </motion.p>
         </div>
         
+        {/* Interactive walkthrough demo button */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="flex justify-center mb-12"
+        >
+          <Button 
+            variant="outline" 
+            size="lg"
+            className="bg-white/10 text-white border-white/30 hover:bg-white/20 rounded-full"
+          >
+            <div className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center mr-3">
+              <Play className="h-4 w-4 text-white ml-0.5" />
+            </div>
+            Watch Interactive Demo
+          </Button>
+        </motion.div>
+        
         {/* Desktop Process Flow */}
         <div className="hidden md:block">
           {/* Progress path */}
@@ -95,6 +224,26 @@ const HowItWorks = () => {
             <div className="absolute top-1/3 left-0 w-full h-1 bg-white/20 rounded-full"></div>
             <div className="absolute top-1/3 left-0 h-1 bg-white rounded-full transition-all duration-500" 
                 style={{ width: `${(activeStep / steps.length) * 100}%` }}></div>
+                
+            {/* Progress markers */}
+            <div className="flex justify-between relative">
+              {steps.map((step) => (
+                <motion.div
+                  key={step.id}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.5 + (step.id * 0.2) }}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center z-10 
+                    ${activeStep >= step.id ? "bg-white text-indigo-600" : "bg-white/30 text-white"}`}
+                >
+                  {activeStep > step.id ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <span className="font-medium">{step.id}</span>
+                  )}
+                </motion.div>
+              ))}
+            </div>
           </div>
           
           <div className="grid grid-cols-3 gap-10 max-w-6xl mx-auto">
@@ -123,31 +272,31 @@ const HowItWorks = () => {
                 <h3 className="text-2xl font-semibold text-white mb-4">{step.title}</h3>
                 <p className="text-white/80 mb-6 text-base">{step.description}</p>
                 
+                {/* Interactive process visualization */}
                 {hoveredStep === step.id && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="mt-4"
+                    className="mt-4 mb-6"
                   >
-                    <h4 className="text-white font-medium mb-3">Key Features:</h4>
-                    <ul className="mb-6">
-                      {step.features.map((feature, index) => (
-                        <li key={index} className="flex items-center text-white/90 mb-2">
-                          <Check className="h-4 w-4 mr-2 text-emerald-400" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button 
-                      variant="outline" 
-                      className="mt-2 bg-white/10 text-white border-white/30 hover:bg-white/20"
-                    >
-                      {step.cta}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <ProcessVisualization step={step} />
                   </motion.div>
                 )}
+                
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: hoveredStep === step.id ? 1 : 0, height: hoveredStep === step.id ? 'auto' : 0 }}
+                  className="mt-6"
+                >
+                  <Button 
+                    variant="outline" 
+                    className="mt-2 bg-white/10 text-white border-white/30 hover:bg-white/20"
+                  >
+                    {step.cta}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </motion.div>
                 
                 <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
                 
@@ -181,14 +330,10 @@ const HowItWorks = () => {
                       <h3 className="text-xl font-semibold text-white text-center mb-3">{step.title}</h3>
                       <p className="text-white/80 text-center mb-4 text-sm">{step.description}</p>
                       
-                      <ul className="mb-5 space-y-2">
-                        {step.features.map((feature, idx) => (
-                          <li key={idx} className="flex items-center text-white/90 text-sm">
-                            <Check className="h-3 w-3 mr-2 text-emerald-400 flex-shrink-0" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {/* Mobile process visualization */}
+                      <div className="mb-5">
+                        <ProcessVisualization step={step} />
+                      </div>
                       
                       <Button 
                         size="sm"
