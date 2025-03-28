@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Application {
   id: string;
   submitted_date: string;
+  status?: string; // Added status property
   visa_packages?: {
     price: string | number;
   } | null;
@@ -24,6 +25,7 @@ const AnalyticsDashboard = () => {
         .select(`
           id,
           submitted_date,
+          status,
           visa_packages (
             price
           )
@@ -91,7 +93,7 @@ const AnalyticsDashboard = () => {
       const date = new Date(app.submitted_date);
       const monthName = months[date.getMonth()];
 
-      // Ensure the status exists on the application
+      // Get status from the application or default to 'Pending'
       const status = app.status || 'Pending';
 
       if (!monthlyCounts[status]) {
@@ -112,7 +114,7 @@ const AnalyticsDashboard = () => {
     return monthlyData;
   }, [applicationsData]);
 
-  // Process revenue data - Fixed the TypeScript error here
+  // Process revenue data
   const processedRevenueData = React.useMemo(() => {
     if (!revenueData || revenueData.length === 0) return [];
 
@@ -129,7 +131,7 @@ const AnalyticsDashboard = () => {
       const date = new Date(app.submitted_date);
       const monthName = months[date.getMonth()];
       
-      // Extract price and convert to number - FIX HERE
+      // Extract price and convert to number
       let price = 0;
       if (app.visa_packages?.price) {
         // Convert to string first to ensure we can use string methods
