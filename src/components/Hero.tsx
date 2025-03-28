@@ -18,12 +18,12 @@ const Hero: React.FC = () => {
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Hero content */}
+          {/* Hero content - Always rendered first in DOM for mobile priority */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="order-2 lg:order-1"
+            className="lg:order-1"
           >
             <div className="inline-flex items-center px-3 py-1.5 mb-6 rounded-full bg-indigo-50 border border-indigo-100">
               <span className="text-xs font-medium text-indigo-600 mr-2">98% Success Rate</span>
@@ -102,12 +102,12 @@ const Hero: React.FC = () => {
             </motion.div>
           </motion.div>
           
-          {/* Hero image/card section - Make sure it's first on desktop but second on mobile */}
+          {/* Hero image/card section - Now always second in the DOM for mobile priority */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className={`order-1 lg:order-2 ${isMobile ? 'mb-8' : ''}`}
+            className="lg:order-2"
           >
             <div className="relative">
               {/* Decorative elements */}
