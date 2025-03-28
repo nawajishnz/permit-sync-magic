@@ -1,86 +1,110 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Search, Filter, MapPin, Globe, Flag } from 'lucide-react';
+import { Search, Filter, MapPin, Globe, Flag, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const CountriesPage = () => {
-  // Sample countries data - this would typically come from an API
-  const countries = [
-    { 
-      id: 1, 
-      name: 'United States', 
-      continent: 'North America', 
-      flagUrl: 'https://flagcdn.com/w320/us.png', 
-      imageUrl: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29',
-      visaTypes: ['Tourist', 'Business', 'Student'] 
-    },
-    { 
-      id: 2, 
-      name: 'Canada', 
-      continent: 'North America', 
-      flagUrl: 'https://flagcdn.com/w320/ca.png', 
-      imageUrl: 'https://images.unsplash.com/photo-1517935706615-2717063c2225',
-      visaTypes: ['Tourist', 'Work', 'Express Entry'] 
-    },
-    { 
-      id: 3, 
-      name: 'United Kingdom', 
-      continent: 'Europe', 
-      flagUrl: 'https://flagcdn.com/w320/gb.png', 
-      imageUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad',
-      visaTypes: ['Visitor', 'Skilled Worker', 'Student'] 
-    },
-    { 
-      id: 4, 
-      name: 'Australia', 
-      continent: 'Oceania', 
-      flagUrl: 'https://flagcdn.com/w320/au.png', 
-      imageUrl: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be',
-      visaTypes: ['Tourist', 'Work Holiday', 'Skilled Migration'] 
-    },
-    { 
-      id: 5, 
-      name: 'Japan', 
-      continent: 'Asia', 
-      flagUrl: 'https://flagcdn.com/w320/jp.png', 
-      imageUrl: 'https://images.unsplash.com/photo-1492571350019-22de08371fd3',
-      visaTypes: ['Tourist', 'Work', 'Student'] 
-    },
-    { 
-      id: 6, 
-      name: 'Germany', 
-      continent: 'Europe', 
-      flagUrl: 'https://flagcdn.com/w320/de.png', 
-      imageUrl: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b',
-      visaTypes: ['Schengen', 'Work', 'Student'] 
-    },
-    { 
-      id: 7, 
-      name: 'France', 
-      continent: 'Europe', 
-      flagUrl: 'https://flagcdn.com/w320/fr.png', 
-      imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34',
-      visaTypes: ['Schengen', 'Long Stay', 'Student'] 
-    },
-    { 
-      id: 8, 
-      name: 'Singapore', 
-      continent: 'Asia', 
-      flagUrl: 'https://flagcdn.com/w320/sg.png', 
-      imageUrl: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd',
-      visaTypes: ['Tourist', 'Work', 'Dependent'] 
-    },
-  ];
-
+  const [countries, setCountries] = useState([]);
   const [continent, setContinent] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [filteredCountries, setFilteredCountries] = useState([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        setIsLoading(true);
+        console.log('Fetching countries from the database...');
+        const { data, error } = await supabase
+          .from('countries')
+          .select('*')
+          .order('name');
+          
+        if (error) {
+          console.error('Error fetching countries:', error);
+          toast({
+            title: "Error loading countries",
+            description: error.message || "Failed to load countries data",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('Countries fetched:', data?.length);
+        setCountries(data || []);
+        setFilteredCountries(data || []);
+      } catch (err) {
+        console.error('Exception when fetching countries:', err);
+        toast({
+          title: "Error loading countries",
+          description: "Something went wrong while loading countries",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCountries();
+  }, [toast]);
+
+  // Filter countries based on search term and continent
+  useEffect(() => {
+    let result = countries;
+    
+    // Filter by search term
+    if (searchTerm) {
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      result = result.filter(country => 
+        country.name.toLowerCase().includes(lowerCaseSearch) ||
+        country.entry_type.toLowerCase().includes(lowerCaseSearch)
+      );
+    }
+    
+    // Filter by continent (simplified approach since we don't have continent in the database)
+    // In a real implementation, you would have a continent field in your database
+    if (continent && continent !== 'all') {
+      // This is a placeholder. For now, we're not filtering by continent
+      // since that data isn't in our database
+      console.log('Continent filtering not implemented yet:', continent);
+    }
+    
+    setFilteredCountries(result);
+  }, [searchTerm, continent, countries]);
+
+  // Get visa types for a country (placeholder function)
+  const getVisaTypes = (country) => {
+    // This would normally come from the database
+    // For now, we'll generate some based on entry_type
+    const visaType = country.entry_type || 'Tourist';
+    return [visaType, 'Business', 'Student'];
+  };
+
+  // Determine continent based on country name (placeholder)
+  const getContinent = (countryName) => {
+    const continentMap = {
+      'United States': 'North America',
+      'Canada': 'North America',
+      'United Kingdom': 'Europe',
+      'Australia': 'Oceania',
+      'Japan': 'Asia',
+      'Germany': 'Europe',
+      'France': 'Europe',
+      'Singapore': 'Asia',
+    };
+    
+    return continentMap[countryName] || 'Unknown';
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
@@ -155,66 +179,89 @@ const CountriesPage = () => {
         <div className="container mx-auto px-4 mb-8">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl md:text-3xl font-bold text-navy-700">Browse Countries</h2>
-            <p className="text-gray-500">{countries.length} countries available</p>
+            <p className="text-gray-500">{filteredCountries.length} countries available</p>
           </div>
         </div>
 
         {/* Countries grid */}
         <div className="container mx-auto px-4 pb-20">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {countries.map((country) => (
-              <Link to={`/country/${country.id}`} key={country.id}>
-                <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 rounded-2xl border-none group">
-                  <div className="relative">
-                    <AspectRatio ratio={16/9} className="bg-gray-100 overflow-hidden">
-                      <img 
-                        src={country.imageUrl} 
-                        alt={`${country.name} landscape`} 
-                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 z-10"></div>
-                    </AspectRatio>
-                    
-                    {/* Country name and continent */}
-                    <div className="absolute bottom-4 left-4 z-20">
-                      <h3 className="font-semibold text-xl text-white mb-1">{country.name}</h3>
-                      <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
-                        <MapPin size={14} className="mr-1" /> 
-                        <span>{country.continent}</span>
-                      </div>
-                    </div>
-                    
-                    {/* Flag at top right */}
-                    <div className="absolute top-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
-                      <div className="w-8 h-8 rounded-full overflow-hidden">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-navy-500" />
+              <span className="ml-3 text-lg text-navy-700">Loading countries...</span>
+            </div>
+          ) : filteredCountries.length === 0 ? (
+            <div className="text-center py-20">
+              <Globe className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">No countries found</h3>
+              <p className="text-gray-500">
+                {searchTerm ? `No countries match "${searchTerm}"` : 'No countries available yet'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredCountries.map((country) => (
+                <Link to={`/country/${country.id}`} key={country.id}>
+                  <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 rounded-2xl border-none group">
+                    <div className="relative">
+                      <AspectRatio ratio={16/9} className="bg-gray-100 overflow-hidden">
                         <img 
-                          src={country.flagUrl} 
-                          alt={`${country.name} flag`} 
-                          className="object-cover w-full h-full"
+                          src={country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000'} 
+                          alt={`${country.name} landscape`} 
+                          className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                          onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                          }}
                         />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 z-10"></div>
+                      </AspectRatio>
+                      
+                      {/* Country name and continent */}
+                      <div className="absolute bottom-4 left-4 z-20">
+                        <h3 className="font-semibold text-xl text-white mb-1">{country.name}</h3>
+                        <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+                          <MapPin size={14} className="mr-1" /> 
+                          <span>{getContinent(country.name)}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Flag at top right */}
+                      <div className="absolute top-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
+                        <div className="w-8 h-8 rounded-full overflow-hidden">
+                          <img 
+                            src={country.flag || `https://flagcdn.com/w320/us.png`} 
+                            alt={`${country.name} flag`} 
+                            className="object-cover w-full h-full"
+                            onError={(e) => {
+                              e.target.src = 'https://flagcdn.com/w320/us.png';
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <CardContent className="p-5">
-                    <div className="flex flex-wrap gap-2">
-                      {country.visaTypes.map((type, i) => (
-                        <span key={i} className="text-xs bg-navy-50 text-navy-700 px-3 py-1 rounded-full">
-                          {type}
-                        </span>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                    <CardContent className="p-5">
+                      <div className="flex flex-wrap gap-2">
+                        {getVisaTypes(country).map((type, i) => (
+                          <span key={i} className="text-xs bg-navy-50 text-navy-700 px-3 py-1 rounded-full">
+                            {type}
+                          </span>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
           
           {/* Pagination or load more */}
-          <div className="mt-12 text-center">
-            <Button variant="outline" className="rounded-full border-gray-200 px-8">
-              Load More Countries
-            </Button>
-          </div>
+          {filteredCountries.length > 0 && (
+            <div className="mt-12 text-center">
+              <Button variant="outline" className="rounded-full border-gray-200 px-8">
+                Load More Countries
+              </Button>
+            </div>
+          )}
         </div>
       </main>
       <Footer />
