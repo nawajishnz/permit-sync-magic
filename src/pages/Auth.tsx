@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,21 +9,36 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { Badge } from '@/components/ui/badge';
 
 const Auth = () => {
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, userRole } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  
+  // Check if the user is accessing admin login from URL param
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('admin') === 'true') {
+      setIsAdminMode(true);
+    }
+  }, [location]);
 
   // Redirect if already logged in
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [user, navigate]);
+  }, [user, userRole, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,16 +67,31 @@ const Auth = () => {
         <div className="container mx-auto px-4 max-w-md">
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center text-navy">Welcome to Permitsy</CardTitle>
-              <CardDescription className="text-center">
-                Sign in or create an account to manage your visa applications
-              </CardDescription>
+              {isAdminMode ? (
+                <>
+                  <div className="flex items-center justify-center mb-2">
+                    <Badge variant="outline" className="bg-navy text-white">Admin Access</Badge>
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-center text-navy">Administrator Login</CardTitle>
+                  <CardDescription className="text-center">
+                    Sign in to access the admin dashboard
+                  </CardDescription>
+                </>
+              ) : (
+                <>
+                  <CardTitle className="text-2xl font-bold text-center text-navy">Welcome to Permitsy</CardTitle>
+                  <CardDescription className="text-center">
+                    Sign in or create an account to manage your visa applications
+                  </CardDescription>
+                </>
+              )}
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="signin">
+              <Tabs defaultValue={isAdminMode ? "signin" : "signin"}>
                 <TabsList className="grid w-full grid-cols-2 mb-8">
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  {!isAdminMode && <TabsTrigger value="signup">Sign Up</TabsTrigger>}
+                  {isAdminMode && <TabsTrigger value="signup" disabled>Sign Up</TabsTrigger>}
                 </TabsList>
                 
                 <TabsContent value="signin">
@@ -90,11 +120,37 @@ const Auth = () => {
                     
                     <Button 
                       type="submit" 
-                      className="w-full bg-teal hover:bg-teal-600"
+                      className={`w-full ${isAdminMode ? 'bg-navy hover:bg-navy-600' : 'bg-teal hover:bg-teal-600'}`}
                       disabled={isLoading}
                     >
                       {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
+                    
+                    {isAdminMode && (
+                      <div className="text-center mt-4">
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          onClick={() => setIsAdminMode(false)}
+                          className="text-sm"
+                        >
+                          Switch to User Login
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {!isAdminMode && (
+                      <div className="text-center mt-4">
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          onClick={() => setIsAdminMode(true)}
+                          className="text-sm"
+                        >
+                          Admin Login
+                        </Button>
+                      </div>
+                    )}
                   </form>
                 </TabsContent>
                 
