@@ -7,13 +7,41 @@ import {
   X, 
   UserCircle, 
   Search,
-  MessageSquare
+  MessageSquare,
+  LogOut,
+  Settings,
+  User
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, signOut, userRole } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      ?.split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase() || 'U';
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -56,11 +84,41 @@ const Header: React.FC = () => {
             </div>
             
             {user ? (
-              <Link to="/dashboard">
-                <Button variant="outline" size="sm" className="border-navy text-navy hover:bg-navy hover:text-white">
-                  <UserCircle className="mr-2 h-4 w-4" /> Dashboard
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="border-navy text-navy hover:bg-navy hover:text-white">
+                    <Avatar className="h-6 w-6 mr-2">
+                      <AvatarImage src={user?.user_metadata?.avatar_url} />
+                      <AvatarFallback>{getInitials(user?.user_metadata?.full_name || '')}</AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:inline">{user?.user_metadata?.full_name || user.email?.split('@')[0]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="cursor-pointer flex items-center">
+                      <User className="mr-2 h-4 w-4" /> Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  {userRole === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="cursor-pointer flex items-center">
+                        <Settings className="mr-2 h-4 w-4" /> Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link to="/account-settings" className="cursor-pointer flex items-center">
+                      <Settings className="mr-2 h-4 w-4" /> Account Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-500">
+                    <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link to="/auth">
                 <Button variant="outline" size="sm" className="border-navy text-navy hover:bg-navy hover:text-white">
@@ -127,13 +185,40 @@ const Header: React.FC = () => {
               Contact Us
             </Link>
             {user ? (
-              <Link 
-                to="/dashboard" 
-                className="text-navy-700 hover:text-teal px-4 py-2 rounded-md hover:bg-gray-50"
-                onClick={() => setIsOpen(false)}
-              >
-                Dashboard
-              </Link>
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="text-navy-700 hover:text-teal px-4 py-2 rounded-md hover:bg-gray-50"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                {userRole === 'admin' && (
+                  <Link 
+                    to="/admin" 
+                    className="text-navy-700 hover:text-teal px-4 py-2 rounded-md hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
+                <Link 
+                  to="/account-settings" 
+                  className="text-navy-700 hover:text-teal px-4 py-2 rounded-md hover:bg-gray-50"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Account Settings
+                </Link>
+                <button 
+                  onClick={() => {
+                    handleSignOut();
+                    setIsOpen(false);
+                  }}
+                  className="text-left text-red-500 hover:text-red-700 px-4 py-2 rounded-md hover:bg-gray-50 flex items-center"
+                >
+                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                </button>
+              </>
             ) : (
               <Link 
                 to="/auth" 
