@@ -1,86 +1,154 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, MapPin, Compass, CalendarClock, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
 
 const Hero: React.FC = () => {
   return (
-    <section className="pt-20 pb-24 sm:pt-28 sm:pb-32 bg-gray-50 overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden pt-24 pb-20 sm:pt-32 sm:pb-24">
+      {/* Background gradient elements */}
+      <div className="absolute top-0 -left-20 w-[600px] h-[600px] rounded-full bg-blue-400/20 blur-3xl opacity-20"></div>
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-indigo-600/20 blur-3xl opacity-20"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="fade-in slide-up">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold leading-tight tracking-tight mb-6">
-              Travel Visas
-              <span className="block">Made Simple</span>
+          {/* Hero content */}
+          <div className="fade-in slide-up order-2 lg:order-1">
+            <div className="inline-flex items-center px-3 py-1.5 mb-6 rounded-full bg-indigo-50 border border-indigo-100">
+              <span className="text-xs font-medium text-indigo-600 mr-2">98% Success Rate</span>
+              <div className="h-1 w-1 rounded-full bg-indigo-300"></div>
+              <span className="text-xs ml-2 text-indigo-500">4.9 ★ (1.2k+ reviews)</span>
+            </div>
+            
+            <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
+              Travel Documents 
+              <span className="block bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">Made Simple</span>
             </h1>
-            <p className="text-lg text-gray-600 mb-8 max-w-lg">
+            
+            <p className="text-xl text-gray-600 mb-8 max-w-lg">
               Skip the embassy lines and paperwork. Apply for your tourist or visit visa online and get approved in days, not months.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+            
+            {/* Search box */}
+            <div className="relative mb-10 max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <MapPin className="h-5 w-5 text-gray-400" />
+              </div>
+              <Input 
+                type="text" 
+                placeholder="Where do you want to travel?" 
+                className="w-full pl-12 pr-36 py-3 rounded-full border-gray-200 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-14"
+              />
+              <div className="absolute inset-y-0 right-2 flex items-center">
+                <Button size="sm" className="rounded-full bg-indigo-600 hover:bg-indigo-700 pr-4">
+                  <Search className="h-4 w-4 mr-1" /> Search
+                </Button>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
+              {[
+                { icon: Compass, text: '190+ countries covered' },
+                { icon: CalendarClock, text: 'Fast processing times' },
+                { icon: Check, text: 'Expert document review' },
+                { icon: MapPin, text: '24/7 support' }
+              ].map((feature, i) => (
+                <div key={i} className="flex items-center">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 mr-3">
+                    <feature.icon className="h-4 w-4" />
+                  </div>
+                  <span className="text-gray-600">{feature.text}</span>
+                </div>
+              ))}
+            </div>
+            
+            {/* CTA buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-10">
               <Link to="/visa-finder">
-                <Button size="lg" className="bg-white shadow-sm border border-gray-100 text-black hover:bg-gray-50 rounded-full w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="shadow-sm border border-gray-200 hover:bg-gray-50 text-gray-800 rounded-full w-full sm:w-auto">
                   Find My Visa
                 </Button>
               </Link>
               <Link to="/apply-now">
-                <Button size="lg" className="bg-black hover:bg-gray-800 text-white rounded-full w-full sm:w-auto">
+                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full w-full sm:w-auto shadow-md">
                   Apply Now <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
-              {['100% Online Application', 'Expert Document Review', 'Fast Processing Times', '24/7 Support'].map((feature, i) => (
-                <div key={i} className="flex items-center">
-                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-black text-white mr-3">
-                    <Check className="h-3 w-3" />
-                  </div>
-                  <span className="text-sm text-gray-600">{feature}</span>
-                </div>
-              ))}
-            </div>
           </div>
-          <div className="hidden lg:block">
+          
+          {/* Hero image/card section */}
+          <div className="order-1 lg:order-2 fade-in slide-up" style={{ animationDelay: '0.2s' }}>
             <div className="relative">
-              <div className="absolute -top-10 -right-10 w-64 h-64 bg-yellow-100 rounded-full opacity-20 blur-3xl"></div>
-              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-blue-100 rounded-full opacity-20 blur-3xl"></div>
-              <div className="relative bg-white rounded-2xl shadow-apple-card p-8 text-gray-800 max-w-md mx-auto">
-                <div className="border-b border-gray-100 pb-6 mb-6">
-                  <h3 className="text-lg font-medium mb-2">US Tourist Visa (B-2)</h3>
-                  <div className="flex justify-between items-center mt-4">
+              {/* Decorative elements */}
+              <div className="absolute -top-6 -right-6 w-56 h-56 rounded-full bg-indigo-100 opacity-60 blur-3xl"></div>
+              <div className="absolute -bottom-10 -left-10 w-56 h-56 rounded-full bg-blue-100 opacity-60 blur-3xl"></div>
+              
+              {/* 3D floating cards */}
+              <div className="relative z-10">
+                {/* Main visa card */}
+                <div className="bg-white rounded-3xl shadow-2xl p-8 transform rotate-2 hover:rotate-0 transition-all duration-300">
+                  <div className="flex justify-between items-start mb-6">
                     <div>
-                      <span className="text-xs text-gray-500 block mb-1">Processing Time</span>
-                      <p className="font-medium">7-14 business days</p>
+                      <div className="flex items-center mb-2">
+                        <span className="text-2xl mr-2">🇺🇸</span>
+                        <h3 className="text-xl font-semibold">US Tourist Visa</h3>
+                      </div>
+                      <p className="text-indigo-600 font-medium">B-2 Visitor Visa</p>
+                    </div>
+                    <div className="bg-green-50 text-green-700 text-xs font-medium px-3 py-1 rounded-full">
+                      98% Approval
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Processing Time</p>
+                      <p className="font-medium">7-14 days</p>
                     </div>
                     <div>
-                      <span className="text-xs text-gray-500 block mb-1">Success Rate</span>
-                      <p className="font-medium">98%</p>
+                      <p className="text-xs text-gray-500 mb-1">Validity</p>
+                      <p className="font-medium">10 years</p>
                     </div>
+                  </div>
+                  
+                  <ul className="space-y-3 mb-6">
+                    {[
+                      'Complete document preparation',
+                      'Expert application review',
+                      'Interview preparation',
+                      '24/7 customer support'
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mt-0.5 mr-3">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">From</p>
+                      <p className="text-2xl font-bold">$149</p>
+                    </div>
+                    <Button className="rounded-full bg-indigo-600 hover:bg-indigo-700">
+                      Apply Now
+                    </Button>
                   </div>
                 </div>
-                <ul className="space-y-4 mb-8">
-                  {[
-                    'Complete document preparation', 
-                    'Interview coaching and preparation', 
-                    '24/7 expert support', 
-                    'Application review by visa experts'
-                  ].map((feature, i) => (
-                    <li key={i} className="flex items-start">
-                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-black text-white mt-0.5 mr-3 shrink-0">
-                        <Check className="h-3 w-3" />
-                      </div>
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">From</span>
-                    <p className="text-2xl font-semibold">$149</p>
-                  </div>
-                  <Button className="bg-black hover:bg-gray-800 text-white rounded-full">
-                    Apply Now
-                  </Button>
+                
+                {/* Secondary card positioned behind main card */}
+                <div className="absolute -bottom-8 -left-6 w-3/4 h-44 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl shadow-lg -z-10 transform -rotate-6"></div>
+                
+                {/* Small decorative elements */}
+                <div className="absolute top-1/2 -right-5 w-12 h-12 bg-yellow-400 rounded-lg shadow-lg transform rotate-12"></div>
+                <div className="absolute -bottom-4 right-10 w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center transform -rotate-12">
+                  <span className="text-3xl">✈️</span>
                 </div>
               </div>
             </div>

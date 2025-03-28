@@ -22,7 +22,8 @@ import {
   Plus,
   FileCheck,
   BadgeIndianRupee,
-  MessageSquare
+  MessageSquare,
+  Star
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
@@ -431,33 +432,134 @@ const CountryDetails = () => {
   const handleIncreaseTravellers = () => {
     setTravellers(travellers + 1);
   };
+
+  // Image grid layout for country banner
+  const getImageUrlsForCountry = () => {
+    if (id === 'singapore') {
+      return [
+        'https://images.unsplash.com/photo-1525625293386-3f8f99389edd', // Main Singapore image
+        'https://images.unsplash.com/photo-1570375309836-a2976045b372', // Gardens by the Bay
+        'https://images.unsplash.com/photo-1565552645632-d725f8bfc19a', // Marina Bay Sands
+        'https://images.unsplash.com/photo-1573655349936-b9def0b9a7b3', // City skyline
+      ];
+    } else if (id === 'japan') {
+      return [
+        'https://images.unsplash.com/photo-1542051841857-5f90071e7989', // Main Japan image
+        'https://images.unsplash.com/photo-1528164344705-47542687000d', // Tokyo Tower
+        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e', // Kyoto Temple
+        'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3', // Cherry Blossoms
+      ];
+    } else if (id === 'usa') {
+      return [
+        'https://images.unsplash.com/photo-1501594907352-04cda38ebc29', // New York
+        'https://images.unsplash.com/photo-1501466044931-62695aada8e9', // Golden Gate Bridge
+        'https://images.unsplash.com/photo-1543158266-0066955047b0', // Washington DC
+        'https://images.unsplash.com/photo-1570755324166-49694643b334', // Las Vegas
+      ];
+    } else {
+      return [country.banner]; // Default to single banner image
+    }
+  };
+  
+  const images = getImageUrlsForCountry();
   
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      {/* Banner */}
-      <div className="relative h-64">
-        <div className="absolute inset-0">
-          <img 
-            src={country.banner}
-            alt={country.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy/70 to-transparent"></div>
-        </div>
+      {/* Enhanced Banner with multiple images */}
+      <div className="relative bg-gradient-to-r from-indigo-600 to-blue-500">
+        <div className="absolute inset-0 bg-black/30 z-10"></div>
         
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-          <div className="container mx-auto max-w-7xl">
-            <div className="flex items-center">
-              <Link to="/" className="mr-2">
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
+        {/* Image Grid */}
+        <div className="relative h-96">
+          {images.length > 1 ? (
+            <div className="grid grid-cols-3 grid-rows-2 h-full">
+              {/* Main large image */}
+              <div className="col-span-2 row-span-2 relative">
+                <img 
+                  src={images[0]}
+                  alt={country.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Smaller image grid */}
+              <div className="col-span-1 row-span-1">
+                <img 
+                  src={images[1] || images[0]}
+                  alt={`${country.name} attraction`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="col-span-1 row-span-1">
+                <div className="grid grid-cols-1 grid-rows-2 h-full">
+                  <div>
+                    <img 
+                      src={images[2] || images[0]}
+                      alt={`${country.name} attraction`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <img 
+                      src={images[3] || images[0]}
+                      alt={`${country.name} attraction`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <img 
+              src={country.banner}
+              alt={country.name}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
+
+        {/* Banner Content Overlay */}
+        <div className="absolute top-0 left-0 right-0 bottom-0 z-20 flex flex-col justify-end">
+          <div className="container mx-auto max-w-7xl px-6 py-8">
+            <div className="flex flex-col space-y-4 text-white">
+              <Link to="/" className="flex items-center text-white/90 w-fit hover:text-white transition-colors">
+                <ChevronLeft className="h-5 w-5 mr-1" />
+                <span>Back to Home</span>
               </Link>
-              <div className="flex items-center">
-                <span className="text-4xl mr-3">{country.flag}</span>
-                <h1 className="text-3xl md:text-4xl font-bold">{country.name} Visa Information</h1>
+
+              <div className="flex items-center mb-1">
+                <span className="text-5xl mr-4">{country.flag}</span>
+                <div>
+                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{country.name} Visa</h1>
+                  <div className="flex items-center mt-2">
+                    <div className="flex items-center mr-4">
+                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
+                      <span className="font-medium">4.8</span>
+                      <span className="mx-1 text-white/70">•</span>
+                      <span className="text-white/70">821 Reviews</span>
+                    </div>
+                    <div className="px-3 py-1 rounded-full bg-teal-500/90 text-white text-sm font-medium">
+                      98% Success Rate
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-6 mt-4">
+                <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+                  <Calendar className="h-4 w-4 mr-2 text-white/70" />
+                  <span>Stay: <strong>{country.lengthOfStay}</strong></span>
+                </div>
+                <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+                  <Clock className="h-4 w-4 mr-2 text-white/70" />
+                  <span>Processing: <strong>{country.processingTime}</strong></span>
+                </div>
+                <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+                  <Globe className="h-4 w-4 mr-2 text-white/70" />
+                  <span>Entry: <strong>{country.entryType}</strong></span>
+                </div>
               </div>
             </div>
           </div>
@@ -470,7 +572,7 @@ const CountryDetails = () => {
           {/* Left column - scrollable content */}
           <div className="w-full lg:w-2/3 space-y-8">
             {/* Visa Overview Section */}
-            <section className="bg-white rounded-lg shadow-sm p-6">
+            <section className="bg-white rounded-2xl shadow-sm p-8">
               <h2 className="text-2xl font-bold text-navy mb-6">Visa Overview</h2>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
@@ -513,7 +615,7 @@ const CountryDetails = () => {
             </section>
             
             {/* Documents Required Section */}
-            <section className="bg-white rounded-lg shadow-sm p-6">
+            <section className="bg-white rounded-2xl shadow-sm p-8">
               <h2 className="text-2xl font-bold text-navy mb-6">Required Documents</h2>
               
               <ul className="space-y-3">
@@ -535,7 +637,7 @@ const CountryDetails = () => {
             </section>
             
             {/* Processing Timeline */}
-            <section className="bg-white rounded-lg shadow-sm p-6">
+            <section className="bg-white rounded-2xl shadow-sm p-8">
               <h2 className="text-2xl font-bold text-navy mb-6">Processing Timeline</h2>
               
               <div className="space-y-6">
@@ -567,15 +669,15 @@ const CountryDetails = () => {
             
             {/* Popular Destinations */}
             {id === 'uae' && (
-              <section className="bg-white rounded-lg shadow-sm p-6">
+              <section className="bg-white rounded-2xl shadow-sm p-8">
                 <h2 className="text-2xl font-bold text-navy mb-6">All 7 Emirates with 1 Visa</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="relative h-48 rounded-lg overflow-hidden">
+                  <div className="relative h-48 rounded-xl overflow-hidden group">
                     <img 
                       src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c" 
                       alt="Dubai"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                     <div className="absolute bottom-4 left-4 text-white">
@@ -583,11 +685,11 @@ const CountryDetails = () => {
                     </div>
                   </div>
                   
-                  <div className="relative h-48 rounded-lg overflow-hidden">
+                  <div className="relative h-48 rounded-xl overflow-hidden group">
                     <img 
                       src="https://images.unsplash.com/photo-1570375309836-a2976045b372" 
                       alt="Abu Dhabi"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                     <div className="absolute bottom-4 left-4 text-white">
@@ -595,11 +697,11 @@ const CountryDetails = () => {
                     </div>
                   </div>
                   
-                  <div className="relative h-48 rounded-lg overflow-hidden">
+                  <div className="relative h-48 rounded-xl overflow-hidden group">
                     <img 
                       src="https://images.unsplash.com/photo-1565552645632-d725f8bfc19a" 
                       alt="Sharjah"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                     <div className="absolute bottom-4 left-4 text-white">
@@ -611,7 +713,7 @@ const CountryDetails = () => {
             )}
             
             {/* Testimonials or Additional Info */}
-            <section className="bg-white rounded-lg shadow-sm p-6">
+            <section className="bg-white rounded-2xl shadow-sm p-8">
               <h2 className="text-2xl font-bold text-navy mb-6">Why Choose Us</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -646,10 +748,10 @@ const CountryDetails = () => {
           <div className="w-full lg:w-1/3">
             <div className="sticky top-24">
               {/* New Package Card based on the reference design */}
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
                 {/* Date selector */}
                 <div className="flex mb-2">
-                  <div className="flex-1 bg-indigo-600 text-white py-3 px-4 flex items-center rounded-t-lg">
+                  <div className="flex-1 bg-indigo-600 text-white py-3 px-4 flex items-center rounded-t-2xl">
                     <div className="flex items-center space-x-2">
                       <div className="bg-white text-indigo-600 rounded-full p-1">
                         <Check className="h-4 w-4" />
@@ -694,9 +796,9 @@ const CountryDetails = () => {
                         <button
                           key={index}
                           onClick={() => setSelectedPackage(index)}
-                          className={`py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                          className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                             selectedPackage === index
-                              ? 'bg-navy text-white'
+                              ? 'bg-indigo-600 text-white'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                         >
@@ -732,7 +834,7 @@ const CountryDetails = () => {
                   </div>
                   
                   {/* Pricing */}
-                  <div className="bg-gray-50 p-4 rounded-md mb-6">
+                  <div className="bg-gray-50 p-4 rounded-xl mb-6">
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center">
                         <BadgeIndianRupee className="h-5 w-5 text-gray-500 mr-2" />
@@ -755,7 +857,7 @@ const CountryDetails = () => {
                   
                   {/* CTA Button */}
                   <Link to={`/apply/${id}/${selectedPackage}`} className="w-full">
-                    <Button className="w-full bg-teal hover:bg-teal/90">
+                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
                       Start Application
                     </Button>
                   </Link>
