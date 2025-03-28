@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -151,7 +152,7 @@ const CountriesManager = () => {
       if (!formData.name || !formData.entry_type) {
         toast({
           title: "Missing required fields",
-          description: "Please fill in all required fields",
+          description: "Please fill in all required fields and upload images",
           variant: "destructive",
         });
         return;
@@ -259,6 +260,7 @@ const CountriesManager = () => {
         formData={formData}
         onInputChange={handleInputChange}
         onSubmit={handleSubmit}
+        setFormData={setFormData}
       />
     </div>
   );
