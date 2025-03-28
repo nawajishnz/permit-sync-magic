@@ -2,7 +2,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash, FileText, Package } from 'lucide-react';
+import { Edit, Trash, FileText, Package, AlertCircle } from 'lucide-react';
 
 interface CountryTableProps {
   countries: any[];
@@ -36,13 +36,14 @@ const CountryTable: React.FC<CountryTableProps> = ({
   if (isError) {
     return (
       <div className="text-center py-8 text-red-500">
-        <p>Error loading countries. Please try again.</p>
+        <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+        <p className="font-medium">Error loading countries</p>
         <p className="text-sm mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
       </div>
     );
   }
 
-  if (countries.length === 0) {
+  if (!countries || countries.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         <p>No countries found. Add your first country to get started.</p>

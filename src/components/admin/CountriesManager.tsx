@@ -29,12 +29,13 @@ const CountriesManager = () => {
     length_of_stay: ''
   });
 
-  // Fetch countries data
+  // Fetch countries data with enhanced error handling and debugging
   const { 
     data: countries = [], 
     isLoading, 
     isError, 
-    error 
+    error,
+    refetch 
   } = useQuery({
     queryKey: ['countries'],
     queryFn: async () => {
@@ -44,7 +45,7 @@ const CountriesManager = () => {
         .select('*')
         .order('name');
         
-      console.log('Countries response:', { data, error });
+      console.log('Countries response:', { data, error, count: data?.length });
       
       if (error) {
         console.error('Error fetching countries:', error);
@@ -52,8 +53,25 @@ const CountriesManager = () => {
       }
       
       return data || [];
-    }
+    },
+    // Disable stale time to ensure fresh data
+    staleTime: 0
   });
+
+  // Debug log countries when data changes
+  useEffect(() => {
+    console.log('Countries data in component:', countries);
+  }, [countries]);
+
+  // Add a manual refresh capability for testing
+  const handleRefresh = () => {
+    console.log('Manually refreshing countries data...');
+    refetch();
+    toast({
+      title: "Refreshing data",
+      description: "Fetching the latest countries data",
+    });
+  };
 
   useEffect(() => {
     if (isError && error instanceof Error) {
@@ -86,6 +104,7 @@ const CountriesManager = () => {
   };
 
   const handleEdit = (country: any) => {
+    console.log('Editing country:', country);
     setFormData({
       name: country.name || '',
       flag: country.flag || '',
@@ -187,18 +206,18 @@ const CountriesManager = () => {
     navigate(`/admin/packages?countryId=${countryId}&countryName=${encodeURIComponent(countryName)}`);
   };
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Countries in component:', countries);
-  }, [countries]);
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Countries Manager</h1>
-        <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
-          <Plus className="mr-2 h-4 w-4" /> Add Country
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleRefresh} variant="outline">
+            Refresh Data
+          </Button>
+          <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
+            <Plus className="mr-2 h-4 w-4" /> Add Country
+          </Button>
+        </div>
       </div>
       
       <Card>
