@@ -1,20 +1,20 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import AdminNav from '@/components/AdminNav';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
-
-// Admin Dashboard Pages (placeholders for now)
-const AdminHome = () => <div className="p-6"><h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1><p>Welcome to the admin dashboard.</p></div>;
-const Countries = () => <div className="p-6"><h1 className="text-2xl font-bold mb-4">Countries Management</h1></div>;
-const VisaTypes = () => <div className="p-6"><h1 className="text-2xl font-bold mb-4">Visa Types Management</h1></div>;
-const Packages = () => <div className="p-6"><h1 className="text-2xl font-bold mb-4">Packages Management</h1></div>;
-const Appointments = () => <div className="p-6"><h1 className="text-2xl font-bold mb-4">Appointments Management</h1></div>;
-const Users = () => <div className="p-6"><h1 className="text-2xl font-bold mb-4">Users Management</h1></div>;
+import AdminHome from '@/components/admin/AdminHome';
+import CountriesManager from '@/components/admin/CountriesManager';
+import VisaTypesManager from '@/components/admin/VisaTypesManager';
+import PackagesManager from '@/components/admin/PackagesManager';
+import ApplicationsManager from '@/components/admin/ApplicationsManager';
+import UsersManager from '@/components/admin/UsersManager';
+import FAQsManager from '@/components/admin/FAQsManager';
+import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 
 const AdminDashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -49,11 +49,13 @@ const AdminDashboard = () => {
         <div className="p-6">
           <Routes>
             <Route path="/" element={<AdminHome />} />
-            <Route path="/countries" element={<Countries />} />
-            <Route path="/visa-types" element={<VisaTypes />} />
-            <Route path="/packages" element={<Packages />} />
-            <Route path="/appointments" element={<Appointments />} />
-            <Route path="/users" element={<Users />} />
+            <Route path="/countries" element={<CountriesManager />} />
+            <Route path="/visa-types" element={<VisaTypesManager />} />
+            <Route path="/packages" element={<PackagesManager />} />
+            <Route path="/applications" element={<ApplicationsManager />} />
+            <Route path="/users" element={<UsersManager />} />
+            <Route path="/faqs" element={<FAQsManager />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
           </Routes>
         </div>
       </div>
