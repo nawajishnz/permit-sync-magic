@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -54,6 +54,11 @@ const FAQs = () => {
           id: 'refund-policy',
           question: 'What is your refund policy?',
           answer: 'If your visa application is rejected, we offer a partial refund of our service fee. Government fees are typically non-refundable. If you cancel your application before processing begins, you may be eligible for a full refund of our service fee minus a small administrative charge. Please refer to our Refund Policy page for detailed information.'
+        },
+        {
+          id: 'service-fees',
+          question: 'What are your service fees for different countries?',
+          answer: "Our service fees vary by country based on processing complexity. Examples include: UAE ($14), Egypt ($6), Vietnam ($25), Indonesia ($35), Greece ($50), Australia ($50), Canada ($300), UK ($260), Malaysia ($1), Argentina ($400), Turkey ($6), and many more. The fee is only charged after visa approval, and if there's a delay, the fee is waived. Government fees are paid separately at the time of application."
         }
       ]
     },
@@ -75,6 +80,11 @@ const FAQs = () => {
           id: 'additional-services',
           question: 'What additional services do you provide?',
           answer: 'Beyond visa processing, we offer document translation, interview preparation for embassy appointments, travel insurance arrangements, appointment scheduling with embassies/consulates, and personalized guidance throughout the visa process.'
+        },
+        {
+          id: 'processing-timeline',
+          question: 'What is your processing timeline guarantee?',
+          answer: 'We guarantee on-time visa processing with a money-back guarantee on our service fee if there are any delays. Our platform handles all paperwork, document uploads, and provides real-time visa status tracking. Specific processing times vary by country, but we maintain a 99.5% on-time delivery rate for over 150 destinations worldwide.'
         }
       ]
     },
@@ -95,6 +105,19 @@ const FAQs = () => {
       ]
     }
   ];
+
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Simple filter function
+  const filteredCategories = searchTerm.trim() === "" 
+    ? faqCategories 
+    : faqCategories.map(category => ({
+        ...category,
+        questions: category.questions.filter(question => 
+          question.question.toLowerCase().includes(searchTerm.toLowerCase()) || 
+          question.answer.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      })).filter(category => category.questions.length > 0);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -118,13 +141,15 @@ const FAQs = () => {
               <Input 
                 placeholder="Search FAQs..." 
                 className="pl-10 py-6 text-lg"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
 
           {/* FAQs by category */}
           <div className="max-w-3xl mx-auto mb-16">
-            {faqCategories.map((category) => (
+            {filteredCategories.map((category) => (
               <div key={category.id} className="mb-10">
                 <h2 className="text-2xl font-bold mb-6">{category.name}</h2>
                 <Accordion type="single" collapsible className="border rounded-lg overflow-hidden">
@@ -141,6 +166,12 @@ const FAQs = () => {
                 </Accordion>
               </div>
             ))}
+            
+            {filteredCategories.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-lg">No FAQs found matching your search. Please try different keywords.</p>
+              </div>
+            )}
           </div>
 
           {/* Still have questions section */}
