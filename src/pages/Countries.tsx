@@ -210,7 +210,8 @@ const CountriesPage = () => {
                           alt={`${country.name} landscape`} 
                           className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                           onError={(e) => {
-                            e.target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 z-10"></div>
@@ -233,7 +234,8 @@ const CountriesPage = () => {
                             alt={`${country.name} flag`} 
                             className="object-cover w-full h-full"
                             onError={(e) => {
-                              e.target.src = 'https://flagcdn.com/w320/us.png';
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://flagcdn.com/w320/us.png';
                             }}
                           />
                         </div>

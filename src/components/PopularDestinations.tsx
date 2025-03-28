@@ -100,7 +100,8 @@ const PopularDestinations = () => {
                         alt={destination.name}
                         className="h-full w-full object-cover transition-transform duration-700 hover:scale-110"
                         onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
