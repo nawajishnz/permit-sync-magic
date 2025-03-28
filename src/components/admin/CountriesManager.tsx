@@ -1,16 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash, ChevronRight, Package, FileText } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import CountryTable from './CountryTable';
+import CountryDialog from './CountryDialog';
 
 const CountriesManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,7 +29,7 @@ const CountriesManager = () => {
     length_of_stay: ''
   });
 
-  // Update the useQuery to log the response for debugging
+  // Fetch countries data
   const { 
     data: countries = [], 
     isLoading, 
@@ -189,7 +187,7 @@ const CountriesManager = () => {
     navigate(`/admin/packages?countryId=${countryId}&countryName=${encodeURIComponent(countryName)}`);
   };
 
-  // Add useEffect to log countries data for debugging
+  // Debug logging
   useEffect(() => {
     console.log('Countries in component:', countries);
   }, [countries]);
@@ -208,184 +206,28 @@ const CountriesManager = () => {
           <CardTitle>Manage Countries</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-teal border-t-transparent rounded-full" />
-            </div>
-          ) : isError ? (
-            <div className="text-center py-8 text-red-500">
-              <p>Error loading countries. Please try again.</p>
-              <p className="text-sm mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
-            </div>
-          ) : countries.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Entry Type</TableHead>
-                    <TableHead>Validity</TableHead>
-                    <TableHead>Processing Time</TableHead>
-                    <TableHead>Related Content</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {countries.map((country) => (
-                    <TableRow key={country.id}>
-                      <TableCell className="font-medium">{country.name}</TableCell>
-                      <TableCell>{country.entry_type}</TableCell>
-                      <TableCell>{country.validity}</TableCell>
-                      <TableCell>{country.processing_time}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => navigateToVisaTypes(country.id, country.name)}
-                            className="flex items-center"
-                          >
-                            <FileText className="h-4 w-4 mr-1" />
-                            Visa Types
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => navigateToPackages(country.id, country.name)}
-                            className="flex items-center"
-                          >
-                            <Package className="h-4 w-4 mr-1" />
-                            Packages
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(country)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDelete(country.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>No countries found. Add your first country to get started.</p>
-            </div>
-          )}
+          <CountryTable 
+            countries={countries}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            navigateToVisaTypes={navigateToVisaTypes}
+            navigateToPackages={navigateToPackages}
+            isLoading={isLoading}
+            isError={isError}
+            error={error as Error | null}
+          />
         </CardContent>
       </Card>
 
       {/* Add/Edit Country Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isEditMode ? 'Edit Country' : 'Add New Country'}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Country Name *</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="e.g. United States"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="flag">Flag URL</Label>
-              <Input
-                id="flag"
-                name="flag"
-                value={formData.flag}
-                onChange={handleInputChange}
-                placeholder="URL to country flag image"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="banner">Banner URL</Label>
-              <Input
-                id="banner"
-                name="banner"
-                value={formData.banner}
-                onChange={handleInputChange}
-                placeholder="URL to country banner image"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Country description"
-                rows={3}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="entry_type">Entry Type *</Label>
-              <Input
-                id="entry_type"
-                name="entry_type"
-                value={formData.entry_type}
-                onChange={handleInputChange}
-                placeholder="e.g. Visa Required"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="validity">Validity</Label>
-              <Input
-                id="validity"
-                name="validity"
-                value={formData.validity}
-                onChange={handleInputChange}
-                placeholder="e.g. 6 months"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="processing_time">Processing Time</Label>
-              <Input
-                id="processing_time"
-                name="processing_time"
-                value={formData.processing_time}
-                onChange={handleInputChange}
-                placeholder="e.g. 5-7 business days"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="length_of_stay">Length of Stay</Label>
-              <Input
-                id="length_of_stay"
-                name="length_of_stay"
-                value={formData.length_of_stay}
-                onChange={handleInputChange}
-                placeholder="e.g. Up to 90 days"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} className="bg-teal hover:bg-teal-600">
-              {isEditMode ? 'Update' : 'Add'} Country
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CountryDialog 
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        isEditMode={isEditMode}
+        formData={formData}
+        onInputChange={handleInputChange}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 };
