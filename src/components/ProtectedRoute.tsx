@@ -62,7 +62,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     );
   }
 
-  // Don't render children if authentication or authorization failed
+  // Only render children if authentication and authorization are successful
   if (!user || (requiredRole && userRole !== requiredRole)) {
     return null;
   }
