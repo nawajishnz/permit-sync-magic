@@ -69,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRole = async (userId: string) => {
     try {
+      console.log('Fetching user role for:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -77,23 +78,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Error fetching user role:', error);
-        setUserRole(null);
+        setUserRole('user'); // Default to user role on error
+        return;
+      }
+      
+      // Handle the role as a string value
+      const roleValue = data?.role;
+      console.log('User role fetched from DB:', roleValue);
+      
+      // Validate the role value
+      if (roleValue === 'admin') {
+        console.log('Setting user as admin');
+        setUserRole('admin');
       } else {
-        // Handle the role as a string value
-        const roleValue = data.role;
-        console.log('User role fetched from DB:', roleValue);
-        
-        // Validate the role value
-        if (roleValue === 'admin' || roleValue === 'user') {
-          setUserRole(roleValue);
-        } else {
-          console.log('Unknown role value:', roleValue);
-          setUserRole('user'); // Default to user if role is invalid
-        }
+        console.log('Setting user as regular user');
+        setUserRole('user'); // Default to user for any other value
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
-      setUserRole(null);
+      setUserRole('user'); // Default to user role on error
     }
   };
 
@@ -156,24 +159,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               description: "Unable to determine user role. Redirecting to default dashboard.",
             });
             navigate('/dashboard');
+            return;
+          }
+          
+          toast({
+            title: "Success!",
+            description: "You have successfully signed in.",
+          });
+          
+          // Handle the role as a string value
+          const roleValue = userData?.role;
+          console.log('User role from database after sign in:', roleValue);
+          
+          // Validate the role value and redirect accordingly
+          if (roleValue === 'admin') {
+            console.log('User is admin, redirecting to admin dashboard');
+            navigate('/admin');
           } else {
-            toast({
-              title: "Success!",
-              description: "You have successfully signed in.",
-            });
-            
-            // Handle the role as a string value
-            const roleValue = userData.role;
-            console.log('User role from database:', roleValue);
-            
-            // Validate the role value and redirect accordingly
-            if (roleValue === 'admin') {
-              console.log('Redirecting to admin dashboard');
-              navigate('/admin');
-            } else {
-              console.log('Redirecting to user dashboard');
-              navigate('/dashboard');
-            }
+            console.log('User is regular user, redirecting to user dashboard');
+            navigate('/dashboard');
           }
         } catch (error) {
           console.error('Unexpected error fetching user role:', error);

@@ -32,6 +32,7 @@ const Auth = () => {
   const [showSampleCreds, setShowSampleCreds] = useState(false);
   const [showLoginHelp, setShowLoginHelp] = useState(false);
   const [setupAdmin, setSetupAdmin] = useState(false);
+  const [adminSetupSuccess, setAdminSetupSuccess] = useState(false);
   
   // Check if the user is accessing admin login from URL param
   useEffect(() => {
@@ -127,6 +128,7 @@ const Auth = () => {
       });
       
       if (existingUser.user) {
+        console.log("Admin user exists, updating role if needed");
         // Admin already exists, update role if needed
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -135,6 +137,7 @@ const Auth = () => {
           .single();
           
         if (profileError || profileData.role !== 'admin') {
+          console.log("Updating existing user to admin role");
           // Update the role to admin
           const { error: updateError } = await supabase
             .from('profiles')
@@ -154,13 +157,16 @@ const Auth = () => {
         
         setEmail(ADMIN_TEST_EMAIL);
         setPassword(ADMIN_TEST_PASSWORD);
+        setAdminSetupSuccess(true);
         return;
       }
       
       if (checkError && !checkError.message.includes('Invalid login credentials')) {
+        console.error("Unexpected error checking admin:", checkError);
         throw new Error(checkError.message);
       }
       
+      console.log("Creating new admin account");
       // Create new admin account
       const { data: newUser, error: signUpError } = await supabase.auth.signUp({
         email: ADMIN_TEST_EMAIL,
@@ -173,10 +179,12 @@ const Auth = () => {
       });
       
       if (signUpError) {
+        console.error("Error creating admin account:", signUpError);
         throw new Error(signUpError.message);
       }
       
       if (newUser.user) {
+        console.log("Admin user created, setting role", newUser.user.id);
         // Set the user role to admin
         const { error: updateError } = await supabase
           .from('profiles')
@@ -195,6 +203,7 @@ const Auth = () => {
         
         setEmail(ADMIN_TEST_EMAIL);
         setPassword(ADMIN_TEST_PASSWORD);
+        setAdminSetupSuccess(true);
       }
     } catch (error: any) {
       console.error('Error creating admin account:', error);
@@ -268,7 +277,7 @@ const Auth = () => {
                             <LoaderIcon className="mr-2 h-3 w-3 animate-spin" />
                             Setting up...
                           </>
-                        ) : "Setup admin account"}
+                        ) : adminSetupSuccess ? "Admin setup complete" : "Setup admin account"}
                       </Button>
                     </div>
                   </AlertDescription>

@@ -38,7 +38,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
       if (requiredRole && userRole !== requiredRole) {
         console.log(`Required role: ${requiredRole}, User role: ${userRole}`);
         
-        if (requiredRole === 'admin') {
+        if (requiredRole === 'admin' && userRole !== 'admin') {
           console.log('Admin role required but user is not admin, redirecting to dashboard');
           toast({
             title: "Access restricted",
@@ -46,7 +46,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
             variant: "destructive",
           });
           navigate('/dashboard');
-        } else if (userRole === 'admin') {
+        } else if (requiredRole === 'user' && userRole === 'admin') {
           console.log('User role required but user is admin, redirecting to admin');
           navigate('/admin');
         }
