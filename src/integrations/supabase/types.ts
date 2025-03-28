@@ -9,16 +9,342 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          application_id: string | null
+          created_at: string
+          date: string
+          id: string
+          location: string
+          time: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          location: string
+          time: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          location?: string
+          time?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "visa_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      countries: {
+        Row: {
+          banner: string
+          created_at: string
+          description: string
+          entry_type: string
+          flag: string
+          id: string
+          length_of_stay: string
+          name: string
+          processing_time: string
+          updated_at: string
+          validity: string
+        }
+        Insert: {
+          banner: string
+          created_at?: string
+          description: string
+          entry_type: string
+          flag: string
+          id?: string
+          length_of_stay: string
+          name: string
+          processing_time: string
+          updated_at?: string
+          validity: string
+        }
+        Update: {
+          banner?: string
+          created_at?: string
+          description?: string
+          entry_type?: string
+          flag?: string
+          id?: string
+          length_of_stay?: string
+          name?: string
+          processing_time?: string
+          updated_at?: string
+          validity?: string
+        }
+        Relationships: []
+      }
+      package_features: {
+        Row: {
+          created_at: string
+          feature_text: string
+          id: string
+          package_id: string
+        }
+        Insert: {
+          created_at?: string
+          feature_text: string
+          id?: string
+          package_id: string
+        }
+        Update: {
+          created_at?: string
+          feature_text?: string
+          id?: string
+          package_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_features_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "visa_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      required_documents: {
+        Row: {
+          country_id: string
+          created_at: string
+          document_name: string
+          id: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          document_name: string
+          id?: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          document_name?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "required_documents_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visa_applications: {
+        Row: {
+          created_at: string
+          id: string
+          next_step: string | null
+          package_id: string
+          status: string
+          submitted_date: string
+          updated_at: string
+          user_id: string
+          visa_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          next_step?: string | null
+          package_id: string
+          status?: string
+          submitted_date?: string
+          updated_at?: string
+          user_id: string
+          visa_type_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          next_step?: string | null
+          package_id?: string
+          status?: string
+          submitted_date?: string
+          updated_at?: string
+          user_id?: string
+          visa_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visa_applications_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "visa_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visa_applications_visa_type_id_fkey"
+            columns: ["visa_type_id"]
+            isOneToOne: false
+            referencedRelation: "visa_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visa_packages: {
+        Row: {
+          country_id: string
+          created_at: string
+          id: string
+          name: string
+          price: string
+          processing_time: string
+          updated_at: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          id?: string
+          name: string
+          price: string
+          processing_time: string
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          price?: string
+          processing_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visa_packages_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visa_requirements: {
+        Row: {
+          created_at: string
+          id: string
+          requirement_text: string
+          visa_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requirement_text: string
+          visa_type_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requirement_text?: string
+          visa_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visa_requirements_visa_type_id_fkey"
+            columns: ["visa_type_id"]
+            isOneToOne: false
+            referencedRelation: "visa_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visa_types: {
+        Row: {
+          country_id: string
+          created_at: string
+          fee: string
+          id: string
+          name: string
+          processing_time: string
+          updated_at: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          fee: string
+          id?: string
+          name: string
+          processing_time: string
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          fee?: string
+          id?: string
+          name?: string
+          processing_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visa_types_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "user" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
