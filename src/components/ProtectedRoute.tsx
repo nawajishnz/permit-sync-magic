@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,13 +18,23 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
       // If no user is logged in, redirect to auth page
       if (!user) {
         console.log('No user found, redirecting to auth');
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to access this page",
+        });
         navigate('/auth');
       } 
       // If a specific role is required and user doesn't have it
       else if (requiredRole && userRole !== requiredRole) {
         console.log(`Required role: ${requiredRole}, User role: ${userRole}`);
+        
         if (requiredRole === 'admin') {
           console.log('Admin role required but user is not admin, redirecting to dashboard');
+          toast({
+            title: "Access restricted",
+            description: "You need administrator privileges to access this page",
+            variant: "destructive",
+          });
           navigate('/dashboard');
         } else {
           console.log('User role required but user is admin, redirecting to admin');

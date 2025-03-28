@@ -36,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log('Auth state changed:', event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -52,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Then check for existing session
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+      console.log('Initial session check:', currentSession ? 'Session found' : 'No session');
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
@@ -78,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserRole(null);
       } else {
         setUserRole(data.role);
-        console.log('User role fetched:', data.role); // Add this log
+        console.log('User role fetched:', data.role);
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -88,15 +90,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      console.log('Attempting to sign in with:', { email });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        
+        // Show specific error message
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Error signing in",
+            description: "The email or password you entered is incorrect. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error signing in",
+            description: error.message || "An error occurred during sign in.",
+            variant: "destructive",
+          });
+        }
+        
+        return;
+      }
+      
+      console.log('Sign in successful:', data.user?.id);
       
       // Get the current session after sign-in
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       
       if (currentSession?.user) {
         // Fetch user role to determine redirect
-        const { data, error: roleError } = await supabase
+        const { data: userData, error: roleError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', currentSession.user.id)
@@ -104,6 +129,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (roleError) {
           console.error('Error fetching user role after sign in:', roleError);
+          toast({
+            title: "Warning",
+            description: "Unable to determine user role. Redirecting to default dashboard.",
+          });
           navigate('/dashboard');
         } else {
           toast({
@@ -111,8 +140,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             description: "You have successfully signed in.",
           });
           
+          console.log('User role from database:', userData.role);
+          
           // Navigate based on role
-          if (data.role === 'admin') {
+          if (userData.role === 'admin') {
             console.log('Redirecting to admin dashboard');
             navigate('/admin');
           } else {
@@ -122,9 +153,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (error: any) {
+      console.error('Unexpected error during sign in:', error);
       toast({
         title: "Error signing in",
-        description: error.message || "An error occurred during sign in.",
+        description: "An unexpected error occurred. Please try again later.",
         variant: "destructive",
       });
     }
@@ -132,7 +164,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const { error } = await supabase.auth.signUp({ 
+      console.log('Attempting to sign up with:', { email, fullName });
+      const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
@@ -142,16 +175,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Sign up error:', error);
+        toast({
+          title: "Error signing up",
+          description: error.message || "An error occurred during sign up.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log('Sign up response:', data);
       
       toast({
         title: "Account created!",
-        description: "You have successfully created an account.",
+        description: "You have successfully created an account. Please sign in.",
       });
     } catch (error: any) {
+      console.error('Unexpected error during sign up:', error);
       toast({
         title: "Error signing up",
-        description: error.message || "An error occurred during sign up.",
+        description: "An unexpected error occurred. Please try again later.",
         variant: "destructive",
       });
     }
@@ -160,8 +204,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
       navigate('/auth');
     } catch (error: any) {
+      console.error('Sign out error:', error);
       toast({
         title: "Error signing out",
         description: error.message || "An error occurred during sign out.",

@@ -11,6 +11,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const Auth = () => {
   const { signIn, signUp, user, userRole } = useAuth();
@@ -21,12 +23,15 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [showSampleCreds, setShowSampleCreds] = useState(false);
   
   // Check if the user is accessing admin login from URL param
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get('admin') === 'true') {
       setIsAdminMode(true);
+      // Show sample credentials for admin demo
+      setShowSampleCreds(true);
     }
   }, [location]);
 
@@ -53,6 +58,7 @@ const Auth = () => {
           description: "Please enter both email and password",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
       
@@ -76,6 +82,17 @@ const Auth = () => {
           description: "Please fill in all fields",
           variant: "destructive",
         });
+        setIsLoading(false);
+        return;
+      }
+      
+      if (password.length < 6) {
+        toast({
+          title: "Error",
+          description: "Password must be at least 6 characters long",
+          variant: "destructive",
+        });
+        setIsLoading(false);
         return;
       }
       
@@ -83,6 +100,11 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const setDemoCredentials = () => {
+    setEmail('nawajish@gmail.com');
+    setPassword('nawajish@123');
   };
 
   return (
@@ -112,6 +134,25 @@ const Auth = () => {
               )}
             </CardHeader>
             <CardContent>
+              {showSampleCreds && (
+                <Alert className="mb-4 bg-blue-50 border-blue-200">
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-700">
+                    <p className="mb-2">Demo admin credentials:</p>
+                    <p>Email: nawajish@gmail.com</p>
+                    <p>Password: nawajish@123</p>
+                    <Button 
+                      onClick={setDemoCredentials} 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2 text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
+                    >
+                      Use demo credentials
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <Tabs defaultValue={isAdminMode ? "signin" : "signin"}>
                 <TabsList className="grid w-full grid-cols-2 mb-8">
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -211,7 +252,9 @@ const Auth = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        minLength={6}
                       />
+                      <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>
                     </div>
                     
                     <Button 
