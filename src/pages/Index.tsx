@@ -19,12 +19,7 @@ const Index = () => {
         <div className="py-20 bg-white">
           <PopularDestinations />
         </div>
-        <div className="relative py-20 overflow-hidden bg-[url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2000')] bg-cover bg-center">
-          <div className="absolute inset-0 bg-indigo-600/70 backdrop-blur-sm"></div>
-          <div className="relative z-10">
-            <HowItWorks />
-          </div>
-        </div>
+        <HowItWorks />
         <div className="py-20 bg-gradient-to-b from-blue-50/60 to-white">
           <Testimonials />
         </div>
