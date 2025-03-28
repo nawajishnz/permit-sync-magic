@@ -21,6 +21,7 @@ import Privacy from "./pages/Privacy";
 import Cookies from "./pages/Cookies";
 import Refunds from "./pages/Refunds";
 import AccountSettings from "./pages/AccountSettings";
+import VisaApplication from "./pages/VisaApplication";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/cookies" element={<Cookies />} />
             <Route path="/refunds" element={<Refunds />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/apply/:countryId/:packageId" element={<VisaApplication />} />
             <Route 
               path="/dashboard" 
               element={
