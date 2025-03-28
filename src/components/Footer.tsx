@@ -93,19 +93,19 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               <li className="flex items-center text-sm">
                 <Phone size={16} className="mr-3 text-gray-400" />
-                <span className="text-gray-500">+1 (555) 123-4567</span>
+                <span className="text-gray-500">+91 7975208649</span>
               </li>
               <li className="flex items-center text-sm">
                 <Mail size={16} className="mr-3 text-gray-400" />
-                <a href="mailto:support@permitsy.com" className="text-gray-500 hover:text-gray-800 transition-colors">
-                  support@permitsy.com
+                <a href="mailto:info@permitsy.com" className="text-gray-500 hover:text-gray-800 transition-colors">
+                  info@permitsy.com
                 </a>
               </li>
               <li className="flex items-start text-sm">
                 <MapPin size={16} className="mr-3 text-gray-400 mt-1" />
                 <span className="text-gray-500">
-                  123 Visa Avenue, <br />
-                  San Francisco, CA 94103
+                  HSR Layout, <br />
+                  Bangalore
                 </span>
               </li>
             </ul>

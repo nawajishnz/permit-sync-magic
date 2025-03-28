@@ -47,7 +47,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-medium mb-1">Phone</h3>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
+                    <p className="text-gray-600">+91 7975208649</p>
                   </div>
                 </div>
                 
@@ -57,7 +57,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-medium mb-1">Email</h3>
-                    <p className="text-gray-600">support@permitsy.com</p>
+                    <p className="text-gray-600">info@permitsy.com</p>
                   </div>
                 </div>
                 
@@ -68,9 +68,9 @@ const Contact = () => {
                   <div>
                     <h3 className="font-medium mb-1">Office Address</h3>
                     <p className="text-gray-600">
-                      123 Visa Avenue<br />
-                      San Francisco, CA 94103<br />
-                      United States
+                      HSR Layout<br />
+                      Bangalore<br />
+                      India
                     </p>
                   </div>
                 </div>
@@ -82,8 +82,8 @@ const Contact = () => {
                   <div>
                     <h3 className="font-medium mb-1">Business Hours</h3>
                     <p className="text-gray-600">
-                      Monday - Friday: 9am - 6pm EST<br />
-                      Saturday: 10am - 4pm EST<br />
+                      Monday - Friday: 9am - 6pm IST<br />
+                      Saturday: 10am - 4pm IST<br />
                       Sunday: Closed
                     </p>
                   </div>
@@ -153,7 +153,7 @@ const Contact = () => {
         {/* Map section */}
         <div className="h-96 w-full bg-gray-200 mt-8">
           <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.0468042400244!2d-122.41941372393863!3d37.7749!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80858087469b8237%3A0xaa875b9a151ab4a!2sSan%20Francisco%2C%20CA%2094103!5e0!3m2!1sen!2sus!4v1678940569109!5m2!1sen!2sus" 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15555.606369871998!2d77.62718949999999!3d12.9081754!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae144ed898fc2d%3A0x1681f38e8926eb22!2sHSR%20Layout%2C%20Bengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1649871327929!5m2!1sen!2sin" 
             width="100%" 
             height="100%" 
             style={{ border: 0 }} 
