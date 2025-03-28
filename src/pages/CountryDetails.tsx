@@ -21,7 +21,8 @@ import {
   Minus,
   Plus,
   FileCheck,
-  BadgeIndianRupee
+  BadgeIndianRupee,
+  MessageSquare
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
@@ -416,10 +417,10 @@ const CountryDetails = () => {
   // Get the selected package
   const visaPackage = country.visaPackages[selectedPackage];
   
-  // Calculate fees
-  const governmentFee = visaPackage.governmentFee ? visaPackage.governmentFee.replace('₹', '') : '0';
-  const atlysFee = visaPackage.atlysFee ? visaPackage.atlysFee.replace('₹', '') : '0';
-  const totalAmount = parseInt(governmentFee) * travellers;
+  // Calculate fees - handle different package structures
+  const governmentFee = 'governmentFee' in visaPackage ? visaPackage.governmentFee.replace('₹', '') : '6500';
+  const atlysFee = 'atlysFee' in visaPackage ? visaPackage.atlysFee.replace('₹', '') : '1000';
+  const totalAmount = parseInt(governmentFee) * travellers + parseInt(atlysFee);
   
   const handleDecreaseTravellers = () => {
     if (travellers > 1) {
