@@ -14,7 +14,7 @@ import {
   Users, 
   Check,
   Calendar,
-  Passport,
+  CreditCard,
   MapPin,
   ShieldCheck
 } from 'lucide-react';
@@ -215,7 +215,7 @@ const CountryDetails = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
                 <div className="flex flex-col">
                   <div className="flex items-center text-gray-500 mb-2">
-                    <Passport className="h-5 w-5 mr-2" />
+                    <CreditCard className="h-5 w-5 mr-2" />
                     <span className="text-sm">Visa Type:</span>
                   </div>
                   <p className="font-medium">{id?.toUpperCase()} Visa</p>
