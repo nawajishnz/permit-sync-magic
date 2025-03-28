@@ -20,7 +20,7 @@ const countryData = {
       { name: 'Work Visa (H-1B)', processingTime: '3-6 months', fee: '$190', requirements: ['Employer petition', 'Educational credentials', 'Relevant experience'] },
       { name: 'Business Visa (B-1)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Business invitation', 'Meeting agenda', 'Business credentials'] },
       { name: 'Transit Visa (C)', processingTime: '2-3 weeks', fee: '$160', requirements: ['Onward ticket', 'Visa for destination', 'Travel itinerary'] },
-      { name: 'Crew Member Visa (D)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Employer letter', 'Seaman's book', 'Shipping company letter'] },
+      { name: 'Crew Member Visa (D)', processingTime: '2-4 weeks', fee: '$160', requirements: ['Employer letter', "Seaman's book", 'Shipping company letter'] },
     ]
   },
   canada: {
