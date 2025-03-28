@@ -3,6 +3,9 @@ import React from 'react';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import PopularDestinations from '@/components/PopularDestinations';
+import HowItWorks from '@/components/HowItWorks';
+import Testimonials from '@/components/Testimonials';
+import PopularCountries from '@/components/PopularCountries';
 import Footer from '@/components/Footer';
 
 const Index = () => {
@@ -11,8 +14,10 @@ const Index = () => {
       <Header />
       <main className="flex-grow">
         <Hero />
+        <HowItWorks />
         <PopularDestinations />
-        {/* Add additional home page sections here */}
+        <Testimonials />
+        <PopularCountries />
       </main>
       <Footer />
     </div>
