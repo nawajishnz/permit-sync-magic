@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -658,3 +659,131 @@ const CountryDetails = () => {
                   </div>
                   <div className="flex-1 bg-gray-100 py-3 px-4 flex items-center">
                     <div className="flex items-center space-x-2 text-gray-600">
+                      <span>{previousDate}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Package details */}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-navy mb-2">Get Your Visa by {shortGuaranteedDate}</h3>
+                  <p className="text-teal font-medium mb-4">Guaranteed approval or money back</p>
+                  
+                  <div className="space-y-4 mb-6">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                      <span className="text-gray-600">Processing Time</span>
+                      <span className="font-medium">{visaPackage.processingTime}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                      <span className="text-gray-600">Visa Type</span>
+                      <span className="font-medium">{id?.toUpperCase() || 'e-Visa'}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                      <span className="text-gray-600">24/7 Support</span>
+                      <span className="font-medium text-teal flex items-center">
+                        <Check className="h-4 w-4 mr-1" /> Included
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Package selector */}
+                  <div className="mb-6">
+                    <div className="text-sm font-medium text-gray-700 mb-2">Select Package:</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {country.visaPackages.map((pkg, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedPackage(index)}
+                          className={`py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                            selectedPackage === index
+                              ? 'bg-navy text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {pkg.name.split(' ')[0]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Travellers counter */}
+                  <div className="mb-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">Number of Travellers</span>
+                      <div className="flex items-center space-x-3">
+                        <button 
+                          onClick={handleDecreaseTravellers}
+                          disabled={travellers <= 1}
+                          className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                            travellers <= 1 ? 'bg-gray-100 text-gray-400' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <span className="text-xl font-semibold w-6 text-center">{travellers}</span>
+                        <button 
+                          onClick={handleIncreaseTravellers}
+                          className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 flex items-center justify-center"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Pricing */}
+                  <div className="bg-gray-50 p-4 rounded-md mb-6">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center">
+                        <BadgeIndianRupee className="h-5 w-5 text-gray-500 mr-2" />
+                        <span className="text-gray-600">Government Fee ({travellers} {travellers === 1 ? 'person' : 'people'})</span>
+                      </div>
+                      <span>₹{parseInt(governmentFee) * travellers}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center">
+                        <FileCheck className="h-5 w-5 text-gray-500 mr-2" />
+                        <span className="text-gray-600">Service Fee</span>
+                      </div>
+                      <span>₹{atlysFee}</span>
+                    </div>
+                    <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between items-center">
+                      <span className="font-medium">Total</span>
+                      <span className="text-xl font-bold text-navy">₹{totalAmount}</span>
+                    </div>
+                  </div>
+                  
+                  {/* CTA Button */}
+                  <Link to={`/apply/${id}/${selectedPackage}`} className="w-full">
+                    <Button className="w-full bg-teal hover:bg-teal/90">
+                      Start Application
+                    </Button>
+                  </Link>
+                  
+                  {/* Money Back Guarantee */}
+                  <div className="mt-4 text-center">
+                    <p className="text-xs text-gray-500 flex items-center justify-center">
+                      <ShieldCheck className="h-4 w-4 text-teal mr-1" />
+                      100% Money Back Guarantee if not approved
+                    </p>
+                  </div>
+                  
+                  {/* Chat support */}
+                  <div className="mt-6 flex justify-center">
+                    <Button variant="outline" size="sm" className="text-gray-600 flex items-center">
+                      <MessageSquare className="h-4 w-4 mr-1" /> Chat with Visa Expert
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default CountryDetails;
