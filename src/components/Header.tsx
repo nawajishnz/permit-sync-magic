@@ -10,9 +10,11 @@ import {
   Search,
   MessageSquare
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -50,11 +52,21 @@ const Header: React.FC = () => {
                 className="bg-transparent border-none focus:outline-none text-sm w-32"
               />
             </div>
-            <Link to="/dashboard">
-              <Button variant="outline" size="sm" className="border-navy text-navy hover:bg-navy hover:text-white">
-                <UserCircle className="mr-2 h-4 w-4" /> Dashboard
-              </Button>
-            </Link>
+            
+            {user ? (
+              <Link to="/dashboard">
+                <Button variant="outline" size="sm" className="border-navy text-navy hover:bg-navy hover:text-white">
+                  <UserCircle className="mr-2 h-4 w-4" /> Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline" size="sm" className="border-navy text-navy hover:bg-navy hover:text-white">
+                  <UserCircle className="mr-2 h-4 w-4" /> Sign In
+                </Button>
+              </Link>
+            )}
+            
             <Link to="/apply-now">
               <Button size="sm" className="bg-teal hover:bg-teal-600 text-white">
                 Apply Now
@@ -112,13 +124,23 @@ const Header: React.FC = () => {
             >
               Contact Us
             </Link>
-            <Link 
-              to="/dashboard" 
-              className="text-navy-700 hover:text-teal px-4 py-2 rounded-md hover:bg-gray-50"
-              onClick={() => setIsOpen(false)}
-            >
-              Dashboard
-            </Link>
+            {user ? (
+              <Link 
+                to="/dashboard" 
+                className="text-navy-700 hover:text-teal px-4 py-2 rounded-md hover:bg-gray-50"
+                onClick={() => setIsOpen(false)}
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link 
+                to="/auth" 
+                className="text-navy-700 hover:text-teal px-4 py-2 rounded-md hover:bg-gray-50"
+                onClick={() => setIsOpen(false)}
+              >
+                Sign In
+              </Link>
+            )}
             <Link 
               to="/apply-now" 
               className="bg-teal hover:bg-teal-600 text-white px-4 py-2 rounded-md text-center"
