@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -23,373 +23,135 @@ import {
   FileCheck,
   BadgeIndianRupee,
   MessageSquare,
-  Star
+  Star,
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
-
-// Country data - in a real app this would come from an API
-const countryData = {
-  usa: {
-    name: 'United States',
-    flag: '🇺🇸',
-    banner: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29',
-    description: 'The United States offers various visa options for tourists, students, workers, and immigrants. Each visa type has specific requirements and application procedures.',
-    entryType: 'Single/Multiple',
-    lengthOfStay: '30-180 days',
-    validity: '10 years (for B1/B2)',
-    processingTime: '3-5 business days',
-    documentsRequired: [
-      'Valid passport with at least 6 months validity',
-      'Completed visa application form',
-      'Proof of financial stability',
-      'Proof of ties to home country',
-      'Travel itinerary',
-      'Passport-sized photographs',
-      'Previous visa copies (if applicable)'
-    ],
-    visaTypes: [
-      { name: 'Tourist Visa (B-2)', processingTime: '2-4 weeks', fee: '₹6,500', requirements: ['Valid passport', 'DS-160 form', 'Proof of funds', 'Intent to return'] },
-      { name: 'Student Visa (F-1)', processingTime: '3-5 weeks', fee: '₹8,800', requirements: ['I-20 from school', 'SEVIS fee payment', 'Academic records'] },
-      { name: 'Work Visa (H-1B)', processingTime: '3-6 months', fee: '₹12,500', requirements: ['Employer petition', 'Educational credentials', 'Relevant experience'] },
-      { name: 'Business Visa (B-1)', processingTime: '2-4 weeks', fee: '₹6,500', requirements: ['Business invitation', 'Meeting agenda', 'Business credentials'] },
-      { name: 'Transit Visa (C)', processingTime: '2-3 weeks', fee: '₹6,500', requirements: ['Onward ticket', 'Visa for destination', 'Travel itinerary'] },
-      { name: 'Crew Member Visa (D)', processingTime: '2-4 weeks', fee: '₹6,500', requirements: ['Employer letter', "Seaman's book", 'Shipping company letter'] }
-    ],
-    visaPackages: [
-      { 
-        name: 'Standard Processing', 
-        processingTime: '7-10 days', 
-        governmentFee: '₹6,500',
-        atlysFee: '₹1,000',
-        features: ['Document review', 'Application assistance', 'Email support']
-      },
-      { 
-        name: 'Express Processing', 
-        processingTime: '3-5 days', 
-        governmentFee: '₹6,500',
-        atlysFee: '₹2,500',
-        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-      },
-      { 
-        name: 'Premium Service', 
-        processingTime: '24-48 hours', 
-        governmentFee: '₹6,500',
-        atlysFee: '₹5,000',
-        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
-      }
-    ]
-  },
-  canada: {
-    name: 'Canada',
-    flag: '🇨🇦',
-    banner: 'https://images.unsplash.com/photo-1517935706615-2717063c2225',
-    description: 'Canada offers temporary and permanent visas for visitors, students, workers, and immigrants. The application process varies depending on your nationality and purpose of visit.',
-    entryType: 'Single/Multiple',
-    lengthOfStay: '6 months (typical)',
-    validity: 'Up to 10 years',
-    processingTime: '2-4 weeks',
-    documentsRequired: [
-      'Valid passport',
-      'Application forms',
-      'Photographs',
-      'Proof of financial support',
-      'Letter of invitation (if applicable)',
-      'Travel history'
-    ],
-    visaTypes: [
-      { name: 'Visitor Visa', processingTime: '2-3 weeks', fee: 'CAD $100', requirements: ['Valid passport', 'Financial proof', 'Travel history', 'Purpose of visit'] },
-      { name: 'Study Permit', processingTime: '3-6 weeks', fee: 'CAD $150', requirements: ['Acceptance letter', 'Proof of funds', 'Intent to leave'] },
-      { name: 'Work Permit', processingTime: '4-8 weeks', fee: 'CAD $155', requirements: ['Job offer', 'Labor market impact assessment', 'Qualifications'] },
-      { name: 'Express Entry', processingTime: '6 months', fee: 'CAD $1,325', requirements: ['Education credentials', 'Language tests', 'Work experience'] }
-    ],
-    visaPackages: [
-      { 
-        name: 'Standard Processing', 
-        processingTime: '2-3 weeks', 
-        price: '$249',
-        features: ['Document review', 'Application assistance', 'Email support']
-      },
-      { 
-        name: 'Express Processing', 
-        processingTime: '7-10 days', 
-        price: '$349',
-        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-      },
-      { 
-        name: 'Premium Service', 
-        processingTime: '3-5 days', 
-        price: '$499',
-        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
-      }
-    ]
-  },
-  uk: {
-    name: 'United Kingdom',
-    flag: '🇬🇧',
-    banner: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad',
-    description: 'The United Kingdom offers various visa categories for tourists, students, workers, and family members. Each visa has specific eligibility criteria and documentation requirements.',
-    entryType: 'Single/Multiple',
-    lengthOfStay: '6 months (standard visitor)',
-    validity: 'Up to 10 years (long-term)',
-    processingTime: '3-4 weeks',
-    documentsRequired: [
-      'Valid passport',
-      'Completed application',
-      'Biometric information',
-      'Proof of financial means',
-      'Accommodation details',
-      'Travel history'
-    ],
-    visaTypes: [
-      { name: 'Standard Visitor Visa', processingTime: '3 weeks', fee: '£95', requirements: ['Valid passport', 'Proof of funds', 'Accommodation details', 'Return ticket'] },
-      { name: 'Student Visa', processingTime: '3-4 weeks', fee: '£348', requirements: ['CAS from institution', 'Proof of funds', 'English language test'] },
-      { name: 'Skilled Worker Visa', processingTime: '3-8 weeks', fee: '£610+', requirements: ['Certificate of sponsorship', 'Appropriate skill level', 'English language test'] },
-      { name: 'Family Visa', processingTime: '6-12 weeks', fee: '£1,523', requirements: ['Relationship proof', 'Financial requirement', 'Accommodation details'] },
-      { name: 'Transit Visa', processingTime: '1-2 weeks', fee: '£35', requirements: ['Valid onward journey', 'Short stay proof', 'No intention to stay'] }
-    ],
-    visaPackages: [
-      { 
-        name: 'Standard Processing', 
-        processingTime: '3-4 weeks', 
-        price: '£199',
-        features: ['Document review', 'Application assistance', 'Email support']
-      },
-      { 
-        name: 'Express Processing', 
-        processingTime: '1-2 weeks', 
-        price: '£299',
-        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-      },
-      { 
-        name: 'Premium Service', 
-        processingTime: '3-5 days', 
-        price: '£399',
-        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
-      }
-    ]
-  },
-  schengen: {
-    name: 'Schengen Area',
-    flag: '🇪🇺',
-    banner: 'https://images.unsplash.com/photo-1499856871958-5b9357976b82',
-    description: 'The Schengen visa allows travel to 26 European countries. Depending on your nationality and purpose of visit, you may apply for different types of Schengen visas.',
-    entryType: 'Single/Multiple',
-    lengthOfStay: '90 days within 180 days',
-    validity: 'Up to 5 years',
-    processingTime: '10-15 days',
-    documentsRequired: [
-      'Valid passport',
-      'Visa application form',
-      'Photos',
-      'Travel insurance',
-      'Itinerary',
-      'Proof of accommodation',
-      'Proof of financial means'
-    ],
-    visaTypes: [
-      { name: 'Tourist Visa (C)', processingTime: '10-15 days', fee: '€80', requirements: ['Valid passport', 'Travel insurance', 'Itinerary', 'Proof of funds'] },
-      { name: 'Business Visa', processingTime: '10-15 days', fee: '€80', requirements: ['Business invitation', 'Company letter', 'Proof of funds'] },
-      { name: 'Student Visa', processingTime: '10-15 days', fee: '€80', requirements: ['Acceptance letter', 'Accommodation proof', 'Financial support'] }
-    ],
-    visaPackages: [
-      { 
-        name: 'Standard Processing', 
-        processingTime: '10-15 days', 
-        price: '€199',
-        features: ['Document review', 'Application assistance', 'Email support']
-      },
-      { 
-        name: 'Express Processing', 
-        processingTime: '5-7 days', 
-        price: '€299',
-        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-      },
-      { 
-        name: 'Premium Service', 
-        processingTime: '2-4 days', 
-        price: '€399',
-        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
-      }
-    ]
-  },
-  australia: {
-    name: 'Australia',
-    flag: '🇦🇺',
-    banner: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be',
-    description: 'Australia offers numerous visa options for visitors, students, workers, and immigrants. Most visa applications are processed online through the ImmiAccount portal.',
-    entryType: 'Single/Multiple',
-    lengthOfStay: '3-12 months',
-    validity: '1 year (typical)',
-    processingTime: '20-50 days',
-    documentsRequired: [
-      'Valid passport',
-      'Application form',
-      'Photographs',
-      'Health insurance',
-      'Proof of funds',
-      'Character documents'
-    ],
-    visaTypes: [
-      { name: 'Visitor Visa (600)', processingTime: '20-50 days', fee: 'AUD $145', requirements: ['Valid passport', 'Sufficient funds', 'Health insurance', 'Character requirements'] },
-      { name: 'Student Visa (500)', processingTime: '4-6 weeks', fee: 'AUD $620', requirements: ['CoE from institution', 'Health insurance', 'Financial requirements'] },
-      { name: 'Working Holiday Visa (417/462)', processingTime: '14-40 days', fee: 'AUD $485', requirements: ['Age 18-30', 'Sufficient funds', 'Health insurance'] },
-      { name: 'Skilled Visa (189/190/491)', processingTime: '6-18 months', fee: 'AUD $4,045+', requirements: ['Skills assessment', 'Points test', 'English proficiency'] }
-    ],
-    visaPackages: [
-      { 
-        name: 'Standard Processing', 
-        processingTime: '20-50 days', 
-        price: 'AUD $249',
-        features: ['Document review', 'Application assistance', 'Email support']
-      },
-      { 
-        name: 'Express Processing', 
-        processingTime: '14-20 days', 
-        price: 'AUD $349',
-        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-      },
-      { 
-        name: 'Premium Service', 
-        processingTime: '7-12 days', 
-        price: 'AUD $499',
-        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
-      }
-    ]
-  },
-  uae: {
-    name: 'UAE',
-    flag: '🇦🇪',
-    banner: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c',
-    description: 'The United Arab Emirates offers various visa types for tourists, business visitors, workers, and residents. The process and requirements vary based on nationality and purpose.',
-    entryType: 'Single/Multiple',
-    lengthOfStay: '30-90 days',
-    validity: '1-3 months',
-    processingTime: '3-5 days',
-    documentsRequired: [
-      'Valid passport',
-      'Photographs',
-      'Application form',
-      'Return ticket',
-      'Hotel bookings',
-      'Financial statements'
-    ],
-    visaTypes: [
-      { name: 'Tourist Visa', processingTime: '3-5 days', fee: '$90-$180', requirements: ['Valid passport', 'Return ticket', 'Hotel booking', 'Sufficient funds'] },
-      { name: 'Visit Visa', processingTime: '3-5 days', fee: '$180-$270', requirements: ['Host invitation', 'Valid passport', 'Photographs'] },
-      { name: 'Employment Visa', processingTime: '2-3 weeks', fee: 'Varies', requirements: ['Job offer', 'Medical test', 'Educational certificates'] }
-    ],
-    visaPackages: [
-      { 
-        name: 'Standard Processing', 
-        processingTime: '3-5 days', 
-        price: '$199',
-        features: ['Document review', 'Application assistance', 'Email support']
-      },
-      { 
-        name: 'Express Processing', 
-        processingTime: '24-48 hours', 
-        price: '$299',
-        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-      },
-      { 
-        name: 'Premium Service', 
-        processingTime: 'Same day', 
-        price: '$399',
-        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'VIP service']
-      }
-    ]
-  },
-  japan: {
-    name: 'Japan',
-    flag: '🇯🇵',
-    banner: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989',
-    description: 'Japan offers various visa categories for short-term visits, business, study, work, and long-term residency. Application procedures depend on your nationality and purpose of visit.',
-    entryType: 'Single/Multiple',
-    lengthOfStay: '15-90 days',
-    validity: '3 months - 5 years',
-    processingTime: '5-7 days',
-    documentsRequired: [
-      'Valid passport',
-      'Visa application form',
-      'Photos',
-      'Itinerary',
-      'Financial documents',
-      'Invitation letter (if applicable)'
-    ],
-    visaTypes: [
-      { name: 'Tourist Visa', processingTime: '5-7 days', fee: '¥3,000', requirements: ['Valid passport', 'Itinerary', 'Sufficient funds', 'Return ticket'] },
-      { name: 'Business Visa', processingTime: '5-7 days', fee: '¥3,000', requirements: ['Business invitation', 'Company letter', 'Itinerary'] }
-    ],
-    visaPackages: [
-      { 
-        name: 'Standard Processing', 
-        processingTime: '5-7 days', 
-        price: '¥20,000',
-        features: ['Document review', 'Application assistance', 'Email support']
-      },
-      { 
-        name: 'Express Processing', 
-        processingTime: '3-4 days', 
-        price: '¥30,000',
-        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-      },
-      { 
-        name: 'Premium Service', 
-        processingTime: '1-2 days', 
-        price: '¥45,000',
-        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'Interview preparation']
-      }
-    ]
-  },
-  singapore: {
-    name: 'Singapore',
-    flag: '🇸🇬',
-    banner: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd',
-    description: 'Singapore offers various visa options for tourists, business visitors, students, and workers. Many nationalities enjoy visa-free entry for short visits.',
-    entryType: 'Single/Multiple',
-    lengthOfStay: '30-90 days',
-    validity: '2 years (multiple entry)',
-    processingTime: '3-5 days',
-    documentsRequired: [
-      'Valid passport',
-      'Completed form',
-      'Recent photograph',
-      'Return ticket',
-      'Proof of funds',
-      'Travel itinerary'
-    ],
-    visaTypes: [
-      { name: 'Tourist Visa', processingTime: '3-5 days', fee: 'SGD $30', requirements: ['Valid passport', 'Return ticket', 'Proof of funds', 'Travel itinerary'] },
-      { name: 'Business Visa', processingTime: '3-5 days', fee: 'SGD $30', requirements: ['Business invitation', 'Company letter', 'Meeting schedule'] }
-    ],
-    visaPackages: [
-      { 
-        name: 'Standard Processing', 
-        processingTime: '3-5 days', 
-        price: 'SGD $159',
-        features: ['Document review', 'Application assistance', 'Email support']
-      },
-      { 
-        name: 'Express Processing', 
-        processingTime: '1-2 days', 
-        price: 'SGD $259',
-        features: ['Document review', 'Application assistance', '24/7 support', 'Express processing']
-      },
-      { 
-        name: 'Premium Service', 
-        processingTime: 'Same day', 
-        price: 'SGD $359',
-        features: ['Document review', 'Application assistance', 'Dedicated agent', 'Rush processing', 'VIP treatment']
-      }
-    ]
-  }
-};
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const country = id && countryData[id as keyof typeof countryData];
+  const [country, setCountry] = useState<any>(null);
+  const [visaTypes, setVisaTypes] = useState<any[]>([]);
+  const [visaPackages, setVisaPackages] = useState<any[]>([]);
+  const [requiredDocuments, setRequiredDocuments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(0);
   const [travellers, setTravellers] = useState(1);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const fetchCountryData = async () => {
+      try {
+        setIsLoading(true);
+        
+        if (!id) {
+          toast({
+            title: "Error",
+            description: "Country ID is missing",
+            variant: "destructive",
+          });
+          navigate('/countries');
+          return;
+        }
+        
+        // Fetch country data
+        const { data: countryData, error: countryError } = await supabase
+          .from('countries')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (countryError) {
+          console.error('Error fetching country:', countryError);
+          toast({
+            title: "Error loading country",
+            description: countryError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (!countryData) {
+          toast({
+            title: "Country not found",
+            description: "The requested country does not exist",
+            variant: "destructive",
+          });
+          navigate('/countries');
+          return;
+        }
+        
+        setCountry(countryData);
+        
+        // Fetch visa types for this country
+        const { data: visaTypesData, error: visaTypesError } = await supabase
+          .from('visa_types')
+          .select('*, visa_requirements(*)')
+          .eq('country_id', id);
+        
+        if (visaTypesError) {
+          console.error('Error fetching visa types:', visaTypesError);
+        } else {
+          setVisaTypes(visaTypesData || []);
+        }
+        
+        // Fetch visa packages for this country
+        const { data: packagesData, error: packagesError } = await supabase
+          .from('visa_packages')
+          .select('*, package_features(*)')
+          .eq('country_id', id);
+        
+        if (packagesError) {
+          console.error('Error fetching packages:', packagesError);
+        } else {
+          setVisaPackages(packagesData || []);
+        }
+        
+        // Fetch required documents for this country
+        const { data: documentsData, error: documentsError } = await supabase
+          .from('required_documents')
+          .select('*')
+          .eq('country_id', id);
+        
+        if (documentsError) {
+          console.error('Error fetching documents:', documentsError);
+        } else {
+          setRequiredDocuments(documentsData || []);
+        }
+      } catch (err) {
+        console.error('Error in fetchCountryData:', err);
+        toast({
+          title: "Error loading data",
+          description: "Something went wrong while loading country data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCountryData();
+  }, [id, toast, navigate]);
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-navy mb-2">Loading Country Details</h1>
+            <p className="text-gray-600">Please wait while we fetch the latest information</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
   
   if (!country) {
     return (
@@ -398,8 +160,9 @@ const CountryDetails = () => {
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-navy mb-4">Country not found</h1>
-            <Link to="/">
-              <Button>Return to home</Button>
+            <p className="text-gray-600 mb-6">The country you're looking for doesn't exist or has been removed.</p>
+            <Link to="/countries">
+              <Button>Browse All Countries</Button>
             </Link>
           </div>
         </main>
@@ -416,12 +179,17 @@ const CountryDetails = () => {
   const previousDate = format(addDays(guaranteedDate, -2), "d MMMM");
   
   // Get the selected package
-  const visaPackage = country.visaPackages[selectedPackage];
+  const visaPackage = visaPackages.length > 0 && visaPackages[selectedPackage] ? visaPackages[selectedPackage] : {
+    name: 'Standard Processing',
+    processing_time: '7-10 days',
+    price: '₹8,500',
+    features: []
+  };
   
-  // Calculate fees - handle different package structures
-  const governmentFee = 'governmentFee' in visaPackage ? visaPackage.governmentFee.replace('₹', '') : '6500';
-  const atlysFee = 'atlysFee' in visaPackage ? visaPackage.atlysFee.replace('₹', '') : '1000';
-  const totalAmount = parseInt(governmentFee) * travellers + parseInt(atlysFee);
+  // Extract price for calculation (remove currency symbol and commas)
+  const priceString = visaPackage.price ? visaPackage.price.replace(/[₹,]/g, '') : '8500';
+  const basePrice = parseInt(priceString) || 8500;
+  const totalAmount = basePrice * travellers;
   
   const handleDecreaseTravellers = () => {
     if (travellers > 1) {
@@ -433,31 +201,62 @@ const CountryDetails = () => {
     setTravellers(travellers + 1);
   };
 
+  // Get country emoji flag based on name
+  const getCountryEmoji = (countryName: string) => {
+    const emojiMap: Record<string, string> = {
+      'United States': '🇺🇸',
+      'Canada': '🇨🇦',
+      'United Kingdom': '🇬🇧',
+      'Australia': '🇦🇺',
+      'Japan': '🇯🇵',
+      'Germany': '🇩🇪',
+      'France': '🇫🇷',
+      'Singapore': '🇸🇬',
+      'UAE': '🇦🇪',
+      'India': '🇮🇳',
+      'China': '🇨🇳',
+      'Italy': '🇮🇹',
+      'Spain': '🇪🇸'
+    };
+    
+    return emojiMap[countryName] || '🏳️';
+  };
+
   // Image grid layout for country banner
   const getImageUrlsForCountry = () => {
-    if (id === 'singapore') {
+    // Use the country's banner if available
+    const mainImage = country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+    
+    // For smaller images, use predefined ones based on country name or fallbacks
+    if (country.name === 'United States') {
       return [
-        'https://images.unsplash.com/photo-1525625293386-3f8f99389edd', // Main Singapore image
-        'https://images.unsplash.com/photo-1570375309836-a2976045b372', // Gardens by the Bay
-        'https://images.unsplash.com/photo-1565552645632-d725f8bfc19a', // Marina Bay Sands
-        'https://images.unsplash.com/photo-1573655349936-b9def0b9a7b3', // City skyline
-      ];
-    } else if (id === 'japan') {
-      return [
-        'https://images.unsplash.com/photo-1542051841857-5f90071e7989', // Main Japan image
-        'https://images.unsplash.com/photo-1528164344705-47542687000d', // Tokyo Tower
-        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e', // Kyoto Temple
-        'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3', // Cherry Blossoms
-      ];
-    } else if (id === 'usa') {
-      return [
-        'https://images.unsplash.com/photo-1501594907352-04cda38ebc29', // New York
+        mainImage,
         'https://images.unsplash.com/photo-1501466044931-62695aada8e9', // Golden Gate Bridge
         'https://images.unsplash.com/photo-1543158266-0066955047b0', // Washington DC
         'https://images.unsplash.com/photo-1570755324166-49694643b334', // Las Vegas
       ];
+    } else if (country.name === 'Japan') {
+      return [
+        mainImage,
+        'https://images.unsplash.com/photo-1528164344705-47542687000d', // Tokyo Tower
+        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e', // Kyoto Temple
+        'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3', // Cherry Blossoms
+      ];
+    } else if (country.name === 'Singapore') {
+      return [
+        mainImage,
+        'https://images.unsplash.com/photo-1570375309836-a2976045b372', // Gardens by the Bay
+        'https://images.unsplash.com/photo-1565552645632-d725f8bfc19a', // Marina Bay Sands
+        'https://images.unsplash.com/photo-1573655349936-b9def0b9a7b3', // City skyline
+      ];
     } else {
-      return [country.banner]; // Default to single banner image
+      // For other countries, use a mix of travel-related images
+      return [
+        mainImage,
+        'https://images.unsplash.com/photo-1488085061387-422e29b40080', // Travel image 1
+        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1', // Travel image 2
+        'https://images.unsplash.com/photo-1504150558240-0b4fd8946624', // Travel image 3
+      ];
     }
   };
   
@@ -481,6 +280,10 @@ const CountryDetails = () => {
                   src={images[0]}
                   alt={country.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                  }}
                 />
               </div>
               
@@ -490,6 +293,10 @@ const CountryDetails = () => {
                   src={images[1] || images[0]}
                   alt={`${country.name} attraction`}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://images.unsplash.com/photo-1488085061387-422e29b40080';
+                  }}
                 />
               </div>
               <div className="col-span-1 row-span-1">
@@ -499,6 +306,10 @@ const CountryDetails = () => {
                       src={images[2] || images[0]}
                       alt={`${country.name} attraction`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1';
+                      }}
                     />
                   </div>
                   <div>
@@ -506,6 +317,10 @@ const CountryDetails = () => {
                       src={images[3] || images[0]}
                       alt={`${country.name} attraction`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.unsplash.com/photo-1504150558240-0b4fd8946624';
+                      }}
                     />
                   </div>
                 </div>
@@ -513,9 +328,13 @@ const CountryDetails = () => {
             </div>
           ) : (
             <img 
-              src={country.banner}
+              src={country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000'}
               alt={country.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+              }}
             />
           )}
         </div>
@@ -524,13 +343,13 @@ const CountryDetails = () => {
         <div className="absolute top-0 left-0 right-0 bottom-0 z-20 flex flex-col justify-end">
           <div className="container mx-auto max-w-7xl px-6 py-8">
             <div className="flex flex-col space-y-4 text-white">
-              <Link to="/" className="flex items-center text-white/90 w-fit hover:text-white transition-colors">
+              <Link to="/countries" className="flex items-center text-white/90 w-fit hover:text-white transition-colors">
                 <ChevronLeft className="h-5 w-5 mr-1" />
-                <span>Back to Home</span>
+                <span>Back to Countries</span>
               </Link>
 
               <div className="flex items-center mb-1">
-                <span className="text-5xl mr-4">{country.flag}</span>
+                <span className="text-5xl mr-4">{country.flag || getCountryEmoji(country.name)}</span>
                 <div>
                   <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{country.name} Visa</h1>
                   <div className="flex items-center mt-2">
@@ -550,15 +369,15 @@ const CountryDetails = () => {
               <div className="flex flex-wrap gap-6 mt-4">
                 <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                   <Calendar className="h-4 w-4 mr-2 text-white/70" />
-                  <span>Stay: <strong>{country.lengthOfStay}</strong></span>
+                  <span>Stay: <strong>{country.length_of_stay || 'Up to 90 days'}</strong></span>
                 </div>
                 <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                   <Clock className="h-4 w-4 mr-2 text-white/70" />
-                  <span>Processing: <strong>{country.processingTime}</strong></span>
+                  <span>Processing: <strong>{country.processing_time || '3-5 days'}</strong></span>
                 </div>
                 <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                   <Globe className="h-4 w-4 mr-2 text-white/70" />
-                  <span>Entry: <strong>{country.entryType}</strong></span>
+                  <span>Entry: <strong>{country.entry_type || 'Single/Multiple'}</strong></span>
                 </div>
               </div>
             </div>
@@ -581,7 +400,7 @@ const CountryDetails = () => {
                     <CreditCard className="h-5 w-5 mr-2" />
                     <span className="text-sm">Visa Type:</span>
                   </div>
-                  <p className="font-medium">{id?.toUpperCase()} Visa</p>
+                  <p className="font-medium">{country.name} Visa</p>
                 </div>
                 
                 <div className="flex flex-col">
@@ -589,7 +408,7 @@ const CountryDetails = () => {
                     <Calendar className="h-5 w-5 mr-2" />
                     <span className="text-sm">Length of Stay:</span>
                   </div>
-                  <p className="font-medium">{country.lengthOfStay || '30 days'}</p>
+                  <p className="font-medium">{country.length_of_stay || 'Up to 90 days'}</p>
                 </div>
                 
                 <div className="flex flex-col">
@@ -597,7 +416,7 @@ const CountryDetails = () => {
                     <Clock className="h-5 w-5 mr-2" />
                     <span className="text-sm">Validity:</span>
                   </div>
-                  <p className="font-medium">{country.validity || '60 days'}</p>
+                  <p className="font-medium">{country.validity || 'Up to 180 days'}</p>
                 </div>
                 
                 <div className="flex flex-col">
@@ -605,35 +424,112 @@ const CountryDetails = () => {
                     <Globe className="h-5 w-5 mr-2" />
                     <span className="text-sm">Entry:</span>
                   </div>
-                  <p className="font-medium">{country.entryType || 'Single'}</p>
+                  <p className="font-medium">{country.entry_type || 'Single/Multiple'}</p>
                 </div>
               </div>
               
               <div className="prose max-w-none">
-                <p className="text-gray-600">{country.description}</p>
+                <p className="text-gray-600">{country.description || 'This country offers various visa options for tourists, students, workers, and immigrants. Each visa type has specific requirements and application procedures.'}</p>
               </div>
+            </section>
+            
+            {/* Visa Types Section */}
+            <section className="bg-white rounded-2xl shadow-sm p-8">
+              <h2 className="text-2xl font-bold text-navy mb-6">Available Visa Types</h2>
+              
+              {visaTypes.length === 0 ? (
+                <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
+                  <h3 className="text-lg font-medium text-gray-500">Visa type information coming soon</h3>
+                  <p className="text-gray-400 mt-2">Our team is currently updating the available visa types</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {visaTypes.map((visaType: any) => (
+                    <Card key={visaType.id} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+                      <CardContent className="p-0">
+                        <div className="flex flex-col md:flex-row">
+                          <div className="p-6 flex-1">
+                            <h3 className="font-bold text-lg text-navy mb-2">{visaType.name}</h3>
+                            <div className="flex flex-col space-y-2 text-sm text-gray-600 mb-4">
+                              <div className="flex items-center">
+                                <Clock className="h-4 w-4 mr-2 text-indigo-600" />
+                                <span>Processing Time: <span className="font-medium">{visaType.processing_time}</span></span>
+                              </div>
+                              <div className="flex items-center">
+                                <DollarSign className="h-4 w-4 mr-2 text-indigo-600" />
+                                <span>Fee: <span className="font-medium">{visaType.fee}</span></span>
+                              </div>
+                            </div>
+                            
+                            {visaType.visa_requirements && visaType.visa_requirements.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-navy mb-2">Requirements:</h4>
+                                <ul className="space-y-1 text-sm">
+                                  {visaType.visa_requirements.map((req: any) => (
+                                    <li key={req.id} className="flex items-start">
+                                      <Check className="h-4 w-4 text-teal mt-0.5 mr-2 flex-shrink-0" />
+                                      <span>{req.requirement_text}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="bg-indigo-50 p-6 flex flex-col justify-center items-center md:w-64">
+                            <span className="text-2xl font-bold text-indigo-600 mb-2">{visaType.fee}</span>
+                            <Button className="w-full mt-2">
+                              Apply Now
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              
+              {visaTypes.length > 0 && (
+                <div className="mt-6 text-center">
+                  <Button variant="outline" className="group">
+                    <span>View all visa options</span>
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </div>
+              )}
             </section>
             
             {/* Documents Required Section */}
             <section className="bg-white rounded-2xl shadow-sm p-8">
               <h2 className="text-2xl font-bold text-navy mb-6">Required Documents</h2>
               
-              <ul className="space-y-3">
-                {(country.documentsRequired || [
-                  'Valid passport',
-                  'Completed application form',
-                  'Passport-sized photos',
-                  'Proof of accommodation',
-                  'Proof of sufficient funds',
-                  'Return ticket',
-                  'Travel insurance'
-                ]).map((doc, index) => (
-                  <li key={index} className="flex items-start">
-                    <Check className="h-5 w-5 text-teal flex-shrink-0 mr-3 mt-0.5" />
-                    <span>{doc}</span>
-                  </li>
-                ))}
-              </ul>
+              {requiredDocuments.length === 0 ? (
+                <ul className="space-y-3">
+                  {(country.documentsRequired || [
+                    'Valid passport with at least 6 months validity',
+                    'Completed visa application form',
+                    'Recent passport-sized photographs',
+                    'Proof of accommodation',
+                    'Proof of sufficient funds',
+                    'Return ticket',
+                    'Travel insurance'
+                  ]).map((doc, index) => (
+                    <li key={index} className="flex items-start">
+                      <Check className="h-5 w-5 text-teal flex-shrink-0 mr-3 mt-0.5" />
+                      <span>{doc}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="space-y-3">
+                  {requiredDocuments.map((doc: any) => (
+                    <li key={doc.id} className="flex items-start">
+                      <Check className="h-5 w-5 text-teal flex-shrink-0 mr-3 mt-0.5" />
+                      <span>{doc.document_name}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
             
             {/* Processing Timeline */}
@@ -662,55 +558,10 @@ const CountryDetails = () => {
                 <div className="relative pl-8">
                   <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
                   <h3 className="font-semibold text-navy mb-1">Visa Issuance</h3>
-                  <p className="text-gray-600">Receive your visa within the standard processing time of {country.processingTime || '3-5 business days'}.</p>
+                  <p className="text-gray-600">Receive your visa within the standard processing time of {country.processing_time || '3-5 business days'}.</p>
                 </div>
               </div>
             </section>
-            
-            {/* Popular Destinations */}
-            {id === 'uae' && (
-              <section className="bg-white rounded-2xl shadow-sm p-8">
-                <h2 className="text-2xl font-bold text-navy mb-6">All 7 Emirates with 1 Visa</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="relative h-48 rounded-xl overflow-hidden group">
-                    <img 
-                      src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c" 
-                      alt="Dubai"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <h3 className="text-xl font-bold">Dubai</h3>
-                    </div>
-                  </div>
-                  
-                  <div className="relative h-48 rounded-xl overflow-hidden group">
-                    <img 
-                      src="https://images.unsplash.com/photo-1570375309836-a2976045b372" 
-                      alt="Abu Dhabi"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <h3 className="text-xl font-bold">Abu Dhabi</h3>
-                    </div>
-                  </div>
-                  
-                  <div className="relative h-48 rounded-xl overflow-hidden group">
-                    <img 
-                      src="https://images.unsplash.com/photo-1565552645632-d725f8bfc19a" 
-                      alt="Sharjah"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <h3 className="text-xl font-bold">Sharjah</h3>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
             
             {/* Testimonials or Additional Info */}
             <section className="bg-white rounded-2xl shadow-sm p-8">
@@ -739,6 +590,33 @@ const CountryDetails = () => {
                   </div>
                   <h3 className="font-bold text-navy mb-2">24/7 Support</h3>
                   <p className="text-gray-600 text-sm">Our visa experts are always available to answer your questions.</p>
+                </div>
+              </div>
+            </section>
+            
+            {/* FAQ Section */}
+            <section className="bg-white rounded-2xl shadow-sm p-8">
+              <h2 className="text-2xl font-bold text-navy mb-6">Frequently Asked Questions</h2>
+              
+              <div className="space-y-4">
+                <div className="border-b pb-4">
+                  <h3 className="font-semibold text-navy mb-2">How long does it take to process a {country.name} visa?</h3>
+                  <p className="text-gray-600">Standard processing time for a {country.name} visa is {country.processing_time || '3-5 business days'}, but this can vary based on the type of visa and your specific circumstances.</p>
+                </div>
+                
+                <div className="border-b pb-4">
+                  <h3 className="font-semibold text-navy mb-2">Can I expedite my visa application?</h3>
+                  <p className="text-gray-600">Yes, we offer premium processing options that can expedite your visa application. Our Express and Premium packages include faster processing times.</p>
+                </div>
+                
+                <div className="border-b pb-4">
+                  <h3 className="font-semibold text-navy mb-2">What happens if my visa is denied?</h3>
+                  <p className="text-gray-600">If your visa is denied, we offer a 100% money-back guarantee on our service fees. We will also provide guidance on reapplying or exploring alternative options.</p>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-navy mb-2">Do I need to visit an embassy in person?</h3>
+                  <p className="text-gray-600">For most visa types, you can complete the entire application process online without visiting an embassy. However, some visa categories may require an in-person interview.</p>
                 </div>
               </div>
             </section>
@@ -774,11 +652,11 @@ const CountryDetails = () => {
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-gray-600">Processing Time</span>
-                      <span className="font-medium">{visaPackage.processingTime}</span>
+                      <span className="font-medium">{visaPackage.processing_time}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-gray-600">Visa Type</span>
-                      <span className="font-medium">{id?.toUpperCase() || 'e-Visa'}</span>
+                      <span className="font-medium">{country.name} Visa</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-gray-600">24/7 Support</span>
@@ -792,19 +670,42 @@ const CountryDetails = () => {
                   <div className="mb-6">
                     <div className="text-sm font-medium text-gray-700 mb-2">Select Package:</div>
                     <div className="grid grid-cols-3 gap-2">
-                      {country.visaPackages.map((pkg, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setSelectedPackage(index)}
-                          className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                            selectedPackage === index
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {pkg.name.split(' ')[0]}
-                        </button>
-                      ))}
+                      {visaPackages.length > 0 ? (
+                        visaPackages.map((pkg: any, index: number) => (
+                          <button
+                            key={pkg.id}
+                            onClick={() => setSelectedPackage(index)}
+                            className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                              selectedPackage === index
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {pkg.name.split(' ')[0]}
+                          </button>
+                        ))
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setSelectedPackage(0)}
+                            className="bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-medium"
+                          >
+                            Standard
+                          </button>
+                          <button
+                            onClick={() => setSelectedPackage(1)}
+                            className="bg-gray-100 text-gray-700 hover:bg-gray-200 py-2 px-4 rounded-lg text-sm font-medium"
+                          >
+                            Express
+                          </button>
+                          <button
+                            onClick={() => setSelectedPackage(2)}
+                            className="bg-gray-100 text-gray-700 hover:bg-gray-200 py-2 px-4 rounded-lg text-sm font-medium"
+                          >
+                            Premium
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                   
@@ -838,16 +739,16 @@ const CountryDetails = () => {
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center">
                         <BadgeIndianRupee className="h-5 w-5 text-gray-500 mr-2" />
-                        <span className="text-gray-600">Government Fee ({travellers} {travellers === 1 ? 'person' : 'people'})</span>
+                        <span className="text-gray-600">Visa Fee ({travellers} {travellers === 1 ? 'person' : 'people'})</span>
                       </div>
-                      <span>₹{parseInt(governmentFee) * travellers}</span>
+                      <span>₹{basePrice * travellers}</span>
                     </div>
                     <div className="flex justify-between items-center mb-3">
                       <div className="flex items-center">
                         <FileCheck className="h-5 w-5 text-gray-500 mr-2" />
                         <span className="text-gray-600">Service Fee</span>
                       </div>
-                      <span>₹{atlysFee}</span>
+                      <span>Included</span>
                     </div>
                     <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between items-center">
                       <span className="font-medium">Total</span>
@@ -878,6 +779,70 @@ const CountryDetails = () => {
                   </div>
                 </div>
               </div>
+              
+              {/* Statistics Card */}
+              <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+                <h3 className="font-bold text-navy mb-4">Visa Statistics</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Success Rate</span>
+                    <div className="flex items-center">
+                      <span className="font-medium text-teal mr-1">98%</span>
+                      <div className="w-24 h-2 bg-gray-200 rounded-full ml-2">
+                        <div className="w-[98%] h-full bg-teal rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Average Processing</span>
+                    <span className="font-medium">{country.processing_time || '3-5 days'}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Visas Issued Monthly</span>
+                    <span className="font-medium">5,000+</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Customer Rating</span>
+                    <div className="flex items-center">
+                      <span className="font-medium mr-1">4.8</span>
+                      <div className="flex text-yellow-400">
+                        <Star className="h-4 w-4 fill-yellow-400" />
+                        <Star className="h-4 w-4 fill-yellow-400" />
+                        <Star className="h-4 w-4 fill-yellow-400" />
+                        <Star className="h-4 w-4 fill-yellow-400" />
+                        <Star className="h-4 w-4 fill-yellow-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Help Card */}
+              <div className="bg-indigo-50 rounded-2xl p-6">
+                <h3 className="font-bold text-navy mb-2">Need Help?</h3>
+                <p className="text-sm text-gray-600 mb-4">Our visa experts are ready to assist you with any questions about your {country.name} visa application.</p>
+                
+                <div className="space-y-3">
+                  <Button variant="outline" className="w-full justify-start bg-white">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    <span>Live Chat</span>
+                  </Button>
+                  
+                  <Button variant="outline" className="w-full justify-start bg-white">
+                    <Phone className="h-4 w-4 mr-2" />
+                    <span>Call Us</span>
+                  </Button>
+                  
+                  <Button variant="outline" className="w-full justify-start bg-white">
+                    <Mail className="h-4 w-4 mr-2" />
+                    <span>Email Support</span>
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -889,3 +854,43 @@ const CountryDetails = () => {
 };
 
 export default CountryDetails;
+
+function Phone(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  );
+}
+
+function Mail(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
+  );
+}
+
