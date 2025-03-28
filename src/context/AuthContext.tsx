@@ -78,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserRole(null);
       } else {
         setUserRole(data.role);
+        console.log('User role fetched:', data.role); // Add this log
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -89,11 +90,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      toast({
-        title: "Success!",
-        description: "You have successfully signed in.",
-      });
-      navigate('/dashboard');
+      
+      // Get the current session after sign-in
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (currentSession?.user) {
+        // Fetch user role to determine redirect
+        const { data, error: roleError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', currentSession.user.id)
+          .single();
+        
+        if (roleError) {
+          console.error('Error fetching user role after sign in:', roleError);
+          navigate('/dashboard');
+        } else {
+          toast({
+            title: "Success!",
+            description: "You have successfully signed in.",
+          });
+          
+          // Navigate based on role
+          if (data.role === 'admin') {
+            console.log('Redirecting to admin dashboard');
+            navigate('/admin');
+          } else {
+            console.log('Redirecting to user dashboard');
+            navigate('/dashboard');
+          }
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error signing in",

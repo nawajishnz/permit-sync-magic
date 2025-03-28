@@ -14,15 +14,25 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
 
   useEffect(() => {
     if (!loading) {
+      // If no user is logged in, redirect to auth page
       if (!user) {
+        console.log('No user found, redirecting to auth');
         navigate('/auth');
-      } else if (requiredRole && userRole !== requiredRole) {
+      } 
+      // If a specific role is required and user doesn't have it
+      else if (requiredRole && userRole !== requiredRole) {
+        console.log(`Required role: ${requiredRole}, User role: ${userRole}`);
         if (requiredRole === 'admin') {
+          console.log('Admin role required but user is not admin, redirecting to dashboard');
           navigate('/dashboard');
         } else {
+          console.log('User role required but user is admin, redirecting to admin');
           navigate('/admin');
         }
       }
+      
+      // If everything is fine, the component will render the children
+      console.log('Protected route check passed:', { user: !!user, userRole, requiredRole });
     }
   }, [user, userRole, loading, navigate, requiredRole]);
 
@@ -34,6 +44,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     );
   }
 
+  // Don't render children if authentication or authorization failed
   if (!user || (requiredRole && userRole !== requiredRole)) {
     return null;
   }

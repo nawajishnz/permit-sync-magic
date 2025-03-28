@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const { signIn, signUp, user, userRole } = useAuth();
@@ -32,6 +33,7 @@ const Auth = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
+      console.log('Auth page - User role:', userRole);
       if (userRole === 'admin') {
         navigate('/admin');
       } else {
@@ -43,8 +45,22 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
+      if (!email.trim() || !password.trim()) {
+        toast({
+          title: "Error",
+          description: "Please enter both email and password",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       await signIn(email, password);
+      
+      // Note: Navigation will be handled in the AuthContext based on user role
+    } catch (error) {
+      console.error('Sign in error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -54,6 +70,15 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      if (!email.trim() || !password.trim() || !fullName.trim()) {
+        toast({
+          title: "Error",
+          description: "Please fill in all fields",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       await signUp(email, password, fullName);
     } finally {
       setIsLoading(false);
