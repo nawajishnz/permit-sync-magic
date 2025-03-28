@@ -76,7 +76,7 @@ const CountriesPage = () => {
                     <SelectValue placeholder="Continent" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Continents</SelectItem>
+                    <SelectItem value="all">All Continents</SelectItem>
                     <SelectItem value="asia">Asia</SelectItem>
                     <SelectItem value="europe">Europe</SelectItem>
                     <SelectItem value="north-america">North America</SelectItem>
