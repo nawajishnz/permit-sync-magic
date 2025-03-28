@@ -4,40 +4,46 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash, PlusCircle, X } from 'lucide-react';
+import { Plus, Edit, Trash, PlusCircle, X, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const PackagesManager = () => {
-  const [packages, setPackages] = useState<any[]>([]);
-  const [countries, setCountries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentPackage, setCurrentPackage] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  
+  // Get countryId and countryName from URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const countryId = searchParams.get('countryId');
+  const countryName = searchParams.get('countryName') || 'All Countries';
   
   const [formData, setFormData] = useState({
     name: '',
-    country_id: '',
+    country_id: countryId || '',
     price: '',
     processing_time: '',
     features: ['']
   });
 
-  useEffect(() => {
-    fetchPackages();
-    fetchCountries();
-  }, []);
-
-  const fetchPackages = async () => {
-    try {
-      setLoading(true);
+  const { 
+    data: packages = [], 
+    isLoading, 
+    isError,
+    error
+  } = useQuery({
+    queryKey: ['packages', countryId],
+    queryFn: async () => {
       // Fetch packages
-      const { data: packagesData, error: packagesError } = await supabase
+      let query = supabase
         .from('visa_packages')
         .select(`
           *,
@@ -45,6 +51,11 @@ const PackagesManager = () => {
         `)
         .order('name');
         
+      if (countryId) {
+        query = query.eq('country_id', countryId);
+      }
+      
+      const { data: packagesData, error: packagesError } = await query;
       if (packagesError) throw packagesError;
       
       // Fetch features for each package
@@ -64,46 +75,25 @@ const PackagesManager = () => {
           };
         }));
         
-        setPackages(packagesWithFeatures);
+        return packagesWithFeatures;
       }
-    } catch (error: any) {
-      console.error('Error fetching packages:', error);
+      
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    if (isError && error instanceof Error) {
       toast({
         title: "Error fetching packages",
         description: error.message || "Failed to load packages data",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const fetchCountries = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('countries')
-        .select('id, name')
-        .order('name');
-        
-      if (error) throw error;
-      
-      setCountries(data || []);
-    } catch (error: any) {
-      console.error('Error fetching countries:', error);
-      toast({
-        title: "Error fetching countries",
-        description: error.message || "Failed to load countries data",
-        variant: "destructive",
-      });
-    }
-  };
+  }, [isError, error, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -129,7 +119,7 @@ const PackagesManager = () => {
   const handleAddNew = () => {
     setFormData({
       name: '',
-      country_id: '',
+      country_id: countryId || '',
       price: '',
       processing_time: '',
       features: ['']
@@ -177,7 +167,7 @@ const PackagesManager = () => {
       });
       
       // Refresh the packages list
-      fetchPackages();
+      queryClient.invalidateQueries({ queryKey: ['packages', countryId] });
     } catch (error: any) {
       console.error('Error deleting package:', error);
       toast({
@@ -267,7 +257,7 @@ const PackagesManager = () => {
       
       // Close dialog and refresh packages
       setIsDialogOpen(false);
-      fetchPackages();
+      queryClient.invalidateQueries({ queryKey: ['packages', countryId] });
     } catch (error: any) {
       console.error('Error saving package:', error);
       toast({
@@ -278,10 +268,21 @@ const PackagesManager = () => {
     }
   };
 
+  const goBackToCountries = () => {
+    navigate('/admin/countries');
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Packages Manager</h1>
+        <div className="flex items-center">
+          <Button variant="ghost" onClick={goBackToCountries} className="mr-2">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Countries
+          </Button>
+          <h1 className="text-2xl font-bold">
+            Packages for {countryName ? decodeURIComponent(countryName) : 'All Countries'}
+          </h1>
+        </div>
         <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
           <Plus className="mr-2 h-4 w-4" /> Add Package
         </Button>
@@ -292,7 +293,7 @@ const PackagesManager = () => {
           <CardTitle>Manage Service Packages</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin h-8 w-8 border-4 border-teal border-t-transparent rounded-full" />
             </div>
@@ -372,22 +373,11 @@ const PackagesManager = () => {
                 placeholder="e.g. Standard"
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="country_id">Country *</Label>
-              <Select
-                value={formData.country_id}
-                onValueChange={(value) => handleSelectChange('country_id', value)}
-              >
-                <SelectTrigger id="country_id">
-                  <SelectValue placeholder="Select a country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map(country => (
-                    <SelectItem key={country.id} value={country.id}>{country.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <input 
+              type="hidden" 
+              name="country_id" 
+              value={formData.country_id} 
+            />
             <div className="grid gap-2">
               <Label htmlFor="price">Price *</Label>
               <Input

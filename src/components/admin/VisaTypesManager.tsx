@@ -4,38 +4,44 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash } from 'lucide-react';
+import { Plus, Edit, Trash, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const VisaTypesManager = () => {
-  const [visaTypes, setVisaTypes] = useState<any[]>([]);
-  const [countries, setCountries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentVisaType, setCurrentVisaType] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  
+  // Get countryId and countryName from URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const countryId = searchParams.get('countryId');
+  const countryName = searchParams.get('countryName') || 'All Countries';
   
   const [formData, setFormData] = useState({
     name: '',
-    country_id: '',
+    country_id: countryId || '',
     processing_time: '',
     fee: ''
   });
 
-  useEffect(() => {
-    fetchVisaTypes();
-    fetchCountries();
-  }, []);
-
-  const fetchVisaTypes = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
+  const { 
+    data: visaTypes = [], 
+    isLoading, 
+    isError,
+    error
+  } = useQuery({
+    queryKey: ['visaTypes', countryId],
+    queryFn: async () => {
+      let query = supabase
         .from('visa_types')
         .select(`
           *,
@@ -43,54 +49,36 @@ const VisaTypesManager = () => {
         `)
         .order('name');
         
+      if (countryId) {
+        query = query.eq('country_id', countryId);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       
-      setVisaTypes(data || []);
-    } catch (error: any) {
-      console.error('Error fetching visa types:', error);
+      return data || [];
+    }
+  });
+
+  useEffect(() => {
+    if (isError && error instanceof Error) {
       toast({
         title: "Error fetching visa types",
         description: error.message || "Failed to load visa types data",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const fetchCountries = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('countries')
-        .select('id, name')
-        .order('name');
-        
-      if (error) throw error;
-      
-      setCountries(data || []);
-    } catch (error: any) {
-      console.error('Error fetching countries:', error);
-      toast({
-        title: "Error fetching countries",
-        description: error.message || "Failed to load countries data",
-        variant: "destructive",
-      });
-    }
-  };
+  }, [isError, error, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   const handleAddNew = () => {
     setFormData({
       name: '',
-      country_id: '',
+      country_id: countryId || '',
       processing_time: '',
       fee: ''
     });
@@ -125,7 +113,7 @@ const VisaTypesManager = () => {
       });
       
       // Refresh the visa types list
-      fetchVisaTypes();
+      queryClient.invalidateQueries({ queryKey: ['visaTypes', countryId] });
     } catch (error: any) {
       console.error('Error deleting visa type:', error);
       toast({
@@ -177,7 +165,7 @@ const VisaTypesManager = () => {
       
       // Close dialog and refresh visa types
       setIsDialogOpen(false);
-      fetchVisaTypes();
+      queryClient.invalidateQueries({ queryKey: ['visaTypes', countryId] });
     } catch (error: any) {
       console.error('Error saving visa type:', error);
       toast({
@@ -188,10 +176,21 @@ const VisaTypesManager = () => {
     }
   };
 
+  const goBackToCountries = () => {
+    navigate('/admin/countries');
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Visa Types Manager</h1>
+        <div className="flex items-center">
+          <Button variant="ghost" onClick={goBackToCountries} className="mr-2">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Countries
+          </Button>
+          <h1 className="text-2xl font-bold">
+            Visa Types for {countryName ? decodeURIComponent(countryName) : 'All Countries'}
+          </h1>
+        </div>
         <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
           <Plus className="mr-2 h-4 w-4" /> Add Visa Type
         </Button>
@@ -202,7 +201,7 @@ const VisaTypesManager = () => {
           <CardTitle>Manage Visa Types</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin h-8 w-8 border-4 border-teal border-t-transparent rounded-full" />
             </div>
@@ -270,22 +269,11 @@ const VisaTypesManager = () => {
                 placeholder="e.g. Tourist Visa"
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="country_id">Country *</Label>
-              <Select
-                value={formData.country_id}
-                onValueChange={(value) => handleSelectChange('country_id', value)}
-              >
-                <SelectTrigger id="country_id">
-                  <SelectValue placeholder="Select a country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map(country => (
-                    <SelectItem key={country.id} value={country.id}>{country.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <input 
+              type="hidden" 
+              name="country_id" 
+              value={formData.country_id} 
+            />
             <div className="grid gap-2">
               <Label htmlFor="processing_time">Processing Time</Label>
               <Input

@@ -5,19 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash, ChevronRight, Package, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const CountriesManager = () => {
-  const [countries, setCountries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -30,13 +32,14 @@ const CountriesManager = () => {
     length_of_stay: ''
   });
 
-  useEffect(() => {
-    fetchCountries();
-  }, []);
-
-  const fetchCountries = async () => {
-    try {
-      setLoading(true);
+  const { 
+    data: countries = [], 
+    isLoading, 
+    isError, 
+    error 
+  } = useQuery({
+    queryKey: ['countries'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('countries')
         .select('*')
@@ -44,18 +47,19 @@ const CountriesManager = () => {
         
       if (error) throw error;
       
-      setCountries(data || []);
-    } catch (error: any) {
-      console.error('Error fetching countries:', error);
+      return data || [];
+    }
+  });
+
+  useEffect(() => {
+    if (isError && error instanceof Error) {
       toast({
         title: "Error fetching countries",
         description: error.message || "Failed to load countries data",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isError, error, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -108,7 +112,7 @@ const CountriesManager = () => {
       });
       
       // Refresh the countries list
-      fetchCountries();
+      queryClient.invalidateQueries({ queryKey: ['countries'] });
     } catch (error: any) {
       console.error('Error deleting country:', error);
       toast({
@@ -160,7 +164,7 @@ const CountriesManager = () => {
       
       // Close dialog and refresh countries
       setIsDialogOpen(false);
-      fetchCountries();
+      queryClient.invalidateQueries({ queryKey: ['countries'] });
     } catch (error: any) {
       console.error('Error saving country:', error);
       toast({
@@ -169,6 +173,14 @@ const CountriesManager = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const navigateToVisaTypes = (countryId: string, countryName: string) => {
+    navigate(`/admin/visa-types?countryId=${countryId}&countryName=${encodeURIComponent(countryName)}`);
+  };
+
+  const navigateToPackages = (countryId: string, countryName: string) => {
+    navigate(`/admin/packages?countryId=${countryId}&countryName=${encodeURIComponent(countryName)}`);
   };
 
   return (
@@ -185,7 +197,7 @@ const CountriesManager = () => {
           <CardTitle>Manage Countries</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin h-8 w-8 border-4 border-teal border-t-transparent rounded-full" />
             </div>
@@ -198,6 +210,7 @@ const CountriesManager = () => {
                     <TableHead>Entry Type</TableHead>
                     <TableHead>Validity</TableHead>
                     <TableHead>Processing Time</TableHead>
+                    <TableHead>Related Content</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -208,6 +221,28 @@ const CountriesManager = () => {
                       <TableCell>{country.entry_type}</TableCell>
                       <TableCell>{country.validity}</TableCell>
                       <TableCell>{country.processing_time}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigateToVisaTypes(country.id, country.name)}
+                            className="flex items-center"
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Visa Types
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigateToPackages(country.id, country.name)}
+                            className="flex items-center"
+                          >
+                            <Package className="h-4 w-4 mr-1" />
+                            Packages
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button variant="outline" size="sm" onClick={() => handleEdit(country)}>
