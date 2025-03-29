@@ -1,14 +1,66 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, MapPin, Compass, CalendarClock, Search, Play, Zap, FileText, CreditCard, Globe } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Input } from '@/components/ui/input';
+import { ArrowRight, Check, Compass, CalendarClock, Search, Play, Zap, FileText, CreditCard, Globe, MapPin, ChevronDown } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from '@/hooks/use-toast';
 
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [countries, setCountries] = useState<Array<{id: string, name: string}>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch countries from database
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('countries')
+          .select('id, name')
+          .order('name');
+          
+        if (error) {
+          console.error('Error fetching countries:', error);
+          toast({
+            title: "Error loading countries",
+            description: "Could not load countries from database",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('Countries fetched:', data?.length);
+        setCountries(data || []);
+      } catch (err) {
+        console.error('Exception when fetching countries:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCountries();
+  }, [toast]);
+  
+  const handleCountrySelect = (value: string) => {
+    setSelectedCountry(value);
+    if (value) {
+      navigate(`/country/${value}`);
+    }
+  };
   
   // Animation variants for the dashboard preview
   const dashboardVariants = {
@@ -82,28 +134,58 @@ const Hero: React.FC = () => {
             
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-gray-900 mb-4 sm:mb-6">
               <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
-                Expert Application
+                Visa Simplified
               </span>
-              <span className="block mt-1">With Teleport</span>
+              <span className="block mt-1">With Permitsy</span>
             </h1>
             
             <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 max-w-lg mx-auto lg:mx-0">
               4 simple steps to apply for your visa. Skip the embassy lines and paperwork with our streamlined process.
             </p>
             
-            {/* Search box */}
+            {/* Country Dropdown */}
             <div className="relative mb-8 sm:mb-10 max-w-md mx-auto lg:mx-0">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <MapPin className="h-5 w-5 text-gray-400" />
-              </div>
-              <Input 
-                type="text" 
-                placeholder="Where do you want to travel?" 
-                className="w-full pl-12 pr-28 py-3 rounded-full border-gray-200 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-14"
-              />
-              <div className="absolute inset-y-0 right-2 flex items-center">
-                <Button size="sm" className="rounded-full bg-indigo-600 hover:bg-indigo-700 pr-4">
-                  <Search className="h-4 w-4 mr-1" /> Search
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-grow">
+                  <Select value={selectedCountry} onValueChange={handleCountrySelect}>
+                    <SelectTrigger className="w-full h-14 pl-12 rounded-full border-gray-200 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 bg-white">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <MapPin className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <SelectValue placeholder="Where do you want to travel?" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px] overflow-y-auto bg-white">
+                      {isLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Search className="h-5 w-5 mr-2 animate-spin text-indigo-600" />
+                          <span>Loading countries...</span>
+                        </div>
+                      ) : countries.length > 0 ? (
+                        countries.map((country) => (
+                          <SelectItem key={country.id} value={country.id}>
+                            {country.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-3 text-center text-gray-500">
+                          No countries found
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  size="lg"
+                  className="rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-md"
+                  onClick={() => {
+                    if (selectedCountry) {
+                      navigate(`/country/${selectedCountry}`);
+                    } else {
+                      navigate("/countries");
+                    }
+                  }}
+                >
+                  <Search className="h-4 w-4 mr-1" /> Find
                 </Button>
               </div>
             </div>
@@ -151,7 +233,7 @@ const Hero: React.FC = () => {
             </motion.div>
           </motion.div>
           
-          {/* Application Process Visualization - New component inspired by reference image */}
+          {/* Application Process Visualization */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
