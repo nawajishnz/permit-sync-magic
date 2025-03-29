@@ -9,11 +9,16 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CountryTable from './CountryTable';
 import CountryDialog from './CountryDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DocumentChecklistManager from './DocumentChecklistManager';
+import PricingTierManager from './PricingTierManager';
 
 const CountriesManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<any>(null);
+  const [currentTab, setCurrentTab] = useState('countries');
+  const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -26,7 +31,18 @@ const CountriesManager = () => {
     entry_type: '',
     validity: '',
     processing_time: '',
-    length_of_stay: ''
+    length_of_stay: '',
+    requirements_description: '',
+    visa_includes: [] as string[],
+    visa_assistance: [] as string[],
+    processing_steps: [] as any[],
+    faq: [] as any[],
+    embassy_details: {
+      address: '',
+      phone: '',
+      email: '',
+      hours: ''
+    }
   });
 
   // Fetch countries data with enhanced error handling and debugging
@@ -104,7 +120,18 @@ const CountriesManager = () => {
       entry_type: '',
       validity: '',
       processing_time: '',
-      length_of_stay: ''
+      length_of_stay: '',
+      requirements_description: '',
+      visa_includes: [],
+      visa_assistance: [],
+      processing_steps: [],
+      faq: [],
+      embassy_details: {
+        address: '',
+        phone: '',
+        email: '',
+        hours: ''
+      }
     });
     setIsEditMode(false);
     setIsDialogOpen(true);
@@ -120,7 +147,18 @@ const CountriesManager = () => {
       entry_type: country.entry_type || '',
       validity: country.validity || '',
       processing_time: country.processing_time || '',
-      length_of_stay: country.length_of_stay || ''
+      length_of_stay: country.length_of_stay || '',
+      requirements_description: country.requirements_description || '',
+      visa_includes: country.visa_includes || [],
+      visa_assistance: country.visa_assistance || [],
+      processing_steps: country.processing_steps || [],
+      faq: country.faq || [],
+      embassy_details: country.embassy_details || {
+        address: '',
+        phone: '',
+        email: '',
+        hours: ''
+      }
     });
     setCurrentCountry(country);
     setIsEditMode(true);
@@ -237,6 +275,10 @@ const CountriesManager = () => {
     navigate(`/admin/packages?countryId=${countryId}&countryName=${encodeURIComponent(countryName)}`);
   };
 
+  const handleSelectCountry = (countryId: string) => {
+    setSelectedCountryId(countryId);
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -251,23 +293,50 @@ const CountriesManager = () => {
         </div>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Countries</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CountryTable 
+      <Tabs value={currentTab} onValueChange={setCurrentTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="countries">Countries</TabsTrigger>
+          <TabsTrigger value="documents">Document Checklist</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing Tiers</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="countries">
+          <Card>
+            <CardHeader>
+              <CardTitle>Manage Countries</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CountryTable 
+                countries={countries}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                navigateToVisaTypes={navigateToVisaTypes}
+                navigateToPackages={navigateToPackages}
+                isLoading={isLoading}
+                isError={isError}
+                error={error as Error | null}
+                onSelectCountry={handleSelectCountry}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="documents">
+          <DocumentChecklistManager
             countries={countries}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            navigateToVisaTypes={navigateToVisaTypes}
-            navigateToPackages={navigateToPackages}
-            isLoading={isLoading}
-            isError={isError}
-            error={error as Error | null}
+            selectedCountryId={selectedCountryId}
+            onSelectCountry={handleSelectCountry}
           />
-        </CardContent>
-      </Card>
+        </TabsContent>
+        
+        <TabsContent value="pricing">
+          <PricingTierManager
+            countries={countries}
+            selectedCountryId={selectedCountryId}
+            onSelectCountry={handleSelectCountry}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Add/Edit Country Dialog */}
       <CountryDialog 

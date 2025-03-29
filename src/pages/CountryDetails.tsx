@@ -1,143 +1,61 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ChevronLeft, 
   Globe, 
-  FileText, 
   Clock, 
-  DollarSign, 
-  Users, 
-  Check,
   Calendar,
   CreditCard,
+  ArrowRight,
+  Loader2,
+  Star,
   MapPin,
-  ShieldCheck,
   Minus,
   Plus,
-  FileCheck,
-  BadgeIndianRupee,
   MessageSquare,
-  Star,
-  ArrowRight,
-  Loader2
+  Check,
+  Users,
+  ShieldCheck,
+  BarChart,
+  FileCheck,
+  BadgeCheck,
+  Award
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCountryData } from '@/hooks/useCountryData';
+import VisaDocument from '@/components/country/VisaDocument';
+import ProcessStep from '@/components/country/ProcessStep';
+import FAQItem from '@/components/country/FAQItem';
+import PricingTier from '@/components/country/PricingTier';
+import VisaIncludesCard from '@/components/country/VisaIncludesCard';
+import EmbassyCard from '@/components/country/EmbassyCard';
 
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const [country, setCountry] = useState<any>(null);
-  const [visaTypes, setVisaTypes] = useState<any[]>([]);
-  const [visaPackages, setVisaPackages] = useState<any[]>([]);
-  const [requiredDocuments, setRequiredDocuments] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedPackage, setSelectedPackage] = useState(0);
   const [travellers, setTravellers] = useState(1);
+  const [selectedPackageIndex, setSelectedPackageIndex] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  useEffect(() => {
-    const fetchCountryData = async () => {
-      try {
-        setIsLoading(true);
-        
-        if (!id) {
-          toast({
-            title: "Error",
-            description: "Country ID is missing",
-            variant: "destructive",
-          });
-          navigate('/countries');
-          return;
-        }
-        
-        // Fetch country data
-        const { data: countryData, error: countryError } = await supabase
-          .from('countries')
-          .select('*')
-          .eq('id', id)
-          .single();
-        
-        if (countryError) {
-          console.error('Error fetching country:', countryError);
-          toast({
-            title: "Error loading country",
-            description: countryError.message,
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        if (!countryData) {
-          toast({
-            title: "Country not found",
-            description: "The requested country does not exist",
-            variant: "destructive",
-          });
-          navigate('/countries');
-          return;
-        }
-        
-        setCountry(countryData);
-        
-        // Fetch visa types for this country
-        const { data: visaTypesData, error: visaTypesError } = await supabase
-          .from('visa_types')
-          .select('*, visa_requirements(*)')
-          .eq('country_id', id);
-        
-        if (visaTypesError) {
-          console.error('Error fetching visa types:', visaTypesError);
-        } else {
-          setVisaTypes(visaTypesData || []);
-        }
-        
-        // Fetch visa packages for this country
-        const { data: packagesData, error: packagesError } = await supabase
-          .from('visa_packages')
-          .select('*, package_features(*)')
-          .eq('country_id', id);
-        
-        if (packagesError) {
-          console.error('Error fetching packages:', packagesError);
-        } else {
-          setVisaPackages(packagesData || []);
-        }
-        
-        // Fetch required documents for this country
-        const { data: documentsData, error: documentsError } = await supabase
-          .from('required_documents')
-          .select('*')
-          .eq('country_id', id);
-        
-        if (documentsError) {
-          console.error('Error fetching documents:', documentsError);
-        } else {
-          setRequiredDocuments(documentsData || []);
-        }
-      } catch (err) {
-        console.error('Error in fetchCountryData:', err);
-        toast({
-          title: "Error loading data",
-          description: "Something went wrong while loading country data",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchCountryData();
-  }, [id, toast, navigate]);
-  
+  // Use our new hook to fetch all country data
+  const { 
+    data: country, 
+    isLoading, 
+    isError,
+    error
+  } = useCountryData(id);
+
+  // Handle loading and error states
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -147,6 +65,24 @@ const CountryDetails = () => {
             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
             <h1 className="text-xl md:text-2xl font-bold text-navy mb-2">Loading Country Details</h1>
             <p className="text-gray-600">Please wait while we fetch the latest information</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center px-4">
+            <h1 className="text-xl md:text-2xl font-bold text-navy mb-4">Error Loading Country</h1>
+            <p className="text-gray-600 mb-6">{error instanceof Error ? error.message : "Failed to load country information"}</p>
+            <Link to="/countries">
+              <Button>Browse All Countries</Button>
+            </Link>
           </div>
         </main>
         <Footer />
@@ -172,67 +108,9 @@ const CountryDetails = () => {
     );
   }
 
-  // Helper function to get correct flag URL format based on country name
-  const getCountryFlagUrl = (countryName) => {
-    // If there's already a valid flag URL stored, use that
-    if (country.flag && country.flag.includes('http')) {
-      return country.flag;
-    }
-    
-    // Convert country name to ISO code for flag CDN usage
-    const countryIsoMap = {
-      'United States': 'us',
-      'Canada': 'ca',
-      'United Kingdom': 'gb',
-      'Australia': 'au',
-      'Japan': 'jp',
-      'Germany': 'de',
-      'France': 'fr',
-      'Singapore': 'sg',
-      'UAE': 'ae',
-      'India': 'in',
-      'China': 'cn',
-      'Italy': 'it',
-      'Spain': 'es'
-    };
-    
-    const isoCode = countryIsoMap[countryName] || 'xx';
-    return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
-  };
-  
-  // Calculate visa dates
-  const today = new Date();
-  const guaranteedDate = addDays(today, 3);
-  const formattedGuaranteedDate = format(guaranteedDate, "d MMM yyyy 'at' h:mm a");
-  const shortGuaranteedDate = format(guaranteedDate, "d MMMM");
-  const previousDate = format(addDays(guaranteedDate, -2), "d MMMM");
-  
-  // Get the selected package
-  const visaPackage = visaPackages.length > 0 && visaPackages[selectedPackage] ? visaPackages[selectedPackage] : {
-    name: 'Standard Processing',
-    processing_time: '7-10 days',
-    price: '₹8,500',
-    features: []
-  };
-  
-  // Extract price for calculation (remove currency symbol and commas)
-  const priceString = visaPackage.price ? visaPackage.price.replace(/[₹,]/g, '') : '8500';
-  const basePrice = parseInt(priceString) || 8500;
-  const totalAmount = basePrice * travellers;
-  
-  const handleDecreaseTravellers = () => {
-    if (travellers > 1) {
-      setTravellers(travellers - 1);
-    }
-  };
-  
-  const handleIncreaseTravellers = () => {
-    setTravellers(travellers + 1);
-  };
-
-  // Get country emoji flag based on name
-  const getCountryEmoji = (countryName) => {
-    const emojiMap = {
+  // Helper function to get country emoji flag based on name
+  const getCountryEmoji = (countryName: string) => {
+    const emojiMap: {[key: string]: string} = {
       'United States': '🇺🇸',
       'Canada': '🇨🇦',
       'United Kingdom': '🇬🇧',
@@ -251,40 +129,60 @@ const CountryDetails = () => {
     return emojiMap[countryName] || '🏳️';
   };
 
-  // Image grid layout for country banner
+  const handleDecreaseTravellers = () => {
+    if (travellers > 1) {
+      setTravellers(travellers - 1);
+    }
+  };
+  
+  const handleIncreaseTravellers = () => {
+    setTravellers(travellers + 1);
+  };
+
+  // Get the selected package or use default if none available
+  const selectedPackage = country.pricingTiers.length > 0 && country.pricingTiers[selectedPackageIndex] 
+    ? country.pricingTiers[selectedPackageIndex] 
+    : { name: 'Standard', price: '₹3,999', processing_time: '3-5 days', features: [] };
+
+  // Extract price for calculation (remove currency symbol and commas)
+  const priceString = selectedPackage.price ? selectedPackage.price.replace(/[₹,]/g, '') : '3999';
+  const basePrice = parseInt(priceString) || 3999;
+  const totalAmount = basePrice * travellers;
+
+  // Calculate processing dates based on the selected package
+  const today = new Date();
+  const processingText = selectedPackage.processing_time || '3-5 days';
+  let processingDays = 3; // default
+
+  if (processingText.includes('24-48 hours')) {
+    processingDays = 2;
+  } else if (processingText.includes('Same day')) {
+    processingDays = 1;
+  } else if (processingText.includes('3-5')) {
+    processingDays = 5;
+  }
+
+  const estimatedDate = addDays(today, processingDays);
+  const formattedEstimatedDate = format(estimatedDate, "d MMMM yyyy");
+
+  // Get image URLs for the country
   const getImageUrlsForCountry = () => {
-    // Use the country's banner if available
-    const mainImage = country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+    const mainImage = country.banner || 'https://images.unsplash.com/photo-1565967511849-76a60a516170?q=80&w=1000';
     
-    // For smaller images, use predefined ones based on country name or fallbacks
-    if (country.name === 'United States') {
+    if (country.name === 'Singapore') {
       return [
         mainImage,
-        'https://images.unsplash.com/photo-1501466044931-62695aada8e9', // Golden Gate Bridge
-        'https://images.unsplash.com/photo-1543158266-0066955047b0', // Washington DC
-        'https://images.unsplash.com/photo-1570755324166-49694643b334', // Las Vegas
-      ];
-    } else if (country.name === 'Japan') {
-      return [
-        mainImage,
-        'https://images.unsplash.com/photo-1528164344705-47542687000d', // Tokyo Tower
-        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e', // Kyoto Temple
-        'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3', // Cherry Blossoms
-      ];
-    } else if (country.name === 'Singapore') {
-      return [
-        mainImage,
-        'https://images.unsplash.com/photo-1570375309836-a2976045b372', // Gardens by the Bay
-        'https://images.unsplash.com/photo-1565552645632-d725f8bfc19a', // Marina Bay Sands
-        'https://images.unsplash.com/photo-1573655349936-b9def0b9a7b3', // City skyline
+        'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000', // Marina Bay Sands
+        'https://images.unsplash.com/photo-1565538810643-b5bdb714032a?q=80&w=1000', // Gardens by the Bay
+        'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000', // City skyline
       ];
     } else {
       // For other countries, use a mix of travel-related images
       return [
         mainImage,
-        'https://images.unsplash.com/photo-1488085061387-422e29b40080', // Travel image 1
-        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1', // Travel image 2
-        'https://images.unsplash.com/photo-1504150558240-0b4fd8946624', // Travel image 3
+        'https://images.unsplash.com/photo-1488085061387-422e29b40080',
+        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1',
+        'https://images.unsplash.com/photo-1504150558240-0b4fd8946624',
       ];
     }
   };
@@ -295,7 +193,7 @@ const CountryDetails = () => {
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <Header />
       
-      {/* Enhanced Banner with multiple images - optimized for mobile */}
+      {/* Enhanced Banner with multiple images */}
       <div className="relative bg-gradient-to-r from-indigo-600 to-blue-500">
         <div className="absolute inset-0 bg-black/30 z-10"></div>
         
@@ -311,7 +209,7 @@ const CountryDetails = () => {
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                    target.src = 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000';
                   }}
                 />
               </div>
@@ -357,12 +255,12 @@ const CountryDetails = () => {
             </div>
           ) : (
             <img 
-              src={country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000'}
+              src={country.banner || 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000'}
               alt={country.name}
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                target.src = 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000';
               }}
             />
           )}
@@ -404,7 +302,7 @@ const CountryDetails = () => {
               <div className="flex flex-wrap gap-3 mt-4">
                 <div className="flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
                   <Calendar className="h-3.5 w-3.5 mr-1.5 text-white/70" />
-                  <span>Stay: <strong>{country.length_of_stay || 'Up to 90 days'}</strong></span>
+                  <span>Stay: <strong>{country.length_of_stay || 'Up to 30 days'}</strong></span>
                 </div>
                 <div className="flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
                   <Clock className="h-3.5 w-3.5 mr-1.5 text-white/70" />
@@ -433,23 +331,23 @@ const CountryDetails = () => {
                 <div className="flex flex-col">
                   <div className="flex items-center text-gray-500 mb-1.5">
                     <CreditCard className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs md:text-sm">Visa Type:</span>
+                    <span className="text-xs md:text-sm">Visa Type</span>
                   </div>
-                  <p className="font-medium text-sm md:text-base">{country.name} Visa</p>
+                  <p className="font-medium text-sm md:text-base">{country.name} Tourist Visa</p>
                 </div>
                 
                 <div className="flex flex-col">
                   <div className="flex items-center text-gray-500 mb-1.5">
                     <Calendar className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs md:text-sm">Length of Stay:</span>
+                    <span className="text-xs md:text-sm">Length of Stay</span>
                   </div>
-                  <p className="font-medium text-sm md:text-base">{country.length_of_stay || 'Up to 90 days'}</p>
+                  <p className="font-medium text-sm md:text-base">{country.length_of_stay || 'Up to 30 days'}</p>
                 </div>
                 
                 <div className="flex flex-col">
                   <div className="flex items-center text-gray-500 mb-1.5">
                     <Clock className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs md:text-sm">Validity:</span>
+                    <span className="text-xs md:text-sm">Validity</span>
                   </div>
                   <p className="font-medium text-sm md:text-base">{country.validity || 'Up to 180 days'}</p>
                 </div>
@@ -457,193 +355,119 @@ const CountryDetails = () => {
                 <div className="flex flex-col">
                   <div className="flex items-center text-gray-500 mb-1.5">
                     <Globe className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs md:text-sm">Entry:</span>
+                    <span className="text-xs md:text-sm">Entry</span>
                   </div>
-                  <p className="font-medium text-sm md:text-base">{country.entry_type || 'Single/Multiple'}</p>
+                  <p className="font-medium text-sm md:text-base">{country.entry_type || 'Single'}</p>
                 </div>
               </div>
               
               <div className="prose max-w-none text-sm md:text-base">
-                <p className="text-gray-600">{country.description || 'This country offers various visa options for tourists, students, workers, and immigrants. Each visa type has specific requirements and application procedures.'}</p>
+                <p className="text-gray-600">{country.description}</p>
               </div>
             </section>
             
-            {/* Visa Types Section */}
-            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
-              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Available Visa Types</h2>
+            {/* What's Included */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <VisaIncludesCard 
+                title="What's Included" 
+                items={country.visa_includes} 
+              />
+              <VisaIncludesCard 
+                title="Permitsy Assistance" 
+                items={country.visa_assistance} 
+              />
+            </div>
+            
+            {/* Tabs Section */}
+            <Tabs defaultValue="requirements" className="bg-white rounded-xl md:rounded-2xl shadow-sm">
+              <TabsList className="w-full justify-start p-1 px-5 border-b">
+                <TabsTrigger value="requirements" className="rounded-full">Requirements</TabsTrigger>
+                <TabsTrigger value="process" className="rounded-full">Process</TabsTrigger>
+                <TabsTrigger value="faq" className="rounded-full">FAQ</TabsTrigger>
+                <TabsTrigger value="embassy" className="rounded-full">Embassy</TabsTrigger>
+              </TabsList>
               
-              {visaTypes.length === 0 ? (
-                <div className="text-center py-6 md:py-8 border border-dashed border-gray-200 rounded-lg">
-                  <h3 className="text-base md:text-lg font-medium text-gray-500">Visa type information coming soon</h3>
-                  <p className="text-gray-400 mt-2 text-sm">Our team is currently updating the available visa types</p>
-                </div>
-              ) : (
-                <div className="space-y-4 md:space-y-6">
-                  {visaTypes.map((visaType: any) => (
-                    <Card key={visaType.id} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row">
-                          <div className="p-4 md:p-6 flex-1">
-                            <h3 className="font-bold text-base md:text-lg text-navy mb-2">{visaType.name}</h3>
-                            <div className="flex flex-col space-y-2 text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
-                              <div className="flex items-center">
-                                <Clock className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
-                                <span>Processing Time: <span className="font-medium">{visaType.processing_time}</span></span>
-                              </div>
-                              <div className="flex items-center">
-                                <DollarSign className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
-                                <span>Fee: <span className="font-medium">{visaType.fee}</span></span>
-                              </div>
-                            </div>
-                            
-                            {visaType.visa_requirements && visaType.visa_requirements.length > 0 && (
-                              <div>
-                                <h4 className="font-medium text-navy mb-1.5 text-sm">Requirements:</h4>
-                                <ul className="space-y-1 text-xs md:text-sm">
-                                  {visaType.visa_requirements.map((req: any) => (
-                                    <li key={req.id} className="flex items-start">
-                                      <Check className="h-3.5 w-3.5 text-teal mt-0.5 mr-1.5 flex-shrink-0" />
-                                      <span>{req.requirement_text}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="bg-indigo-50 p-4 md:p-6 flex flex-row md:flex-col justify-between md:justify-center items-center md:w-auto lg:w-64">
-                            <span className="text-lg md:text-2xl font-bold text-indigo-600 mb-0 md:mb-2">{visaType.fee}</span>
-                            <Button size={isMobile ? "sm" : "default"} className="w-auto md:w-full mt-0 md:mt-2">
-                              Apply Now
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+              {/* Requirements Tab */}
+              <TabsContent value="requirements" className="p-5 md:p-8 focus:outline-none">
+                <h3 className="text-lg md:text-xl font-semibold text-navy mb-4">Document Requirements</h3>
+                <p className="text-gray-600 mb-6">{country.requirements_description}</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {country.documents.map((doc) => (
+                    <VisaDocument 
+                      key={doc.id}
+                      name={doc.document_name}
+                      description={doc.document_description}
+                      required={doc.required}
+                    />
                   ))}
                 </div>
-              )}
+              </TabsContent>
               
-              {visaTypes.length > 0 && (
-                <div className="mt-4 md:mt-6 text-center">
-                  <Button variant="outline" className="group text-sm">
-                    <span>View all visa options</span>
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Button>
+              {/* Process Tab */}
+              <TabsContent value="process" className="p-5 md:p-8 focus:outline-none">
+                <h3 className="text-lg md:text-xl font-semibold text-navy mb-4">Application Process</h3>
+                <div className="mt-6 space-y-0">
+                  {country.processing_steps.map((step, index) => (
+                    <ProcessStep
+                      key={index}
+                      step={step.step}
+                      title={step.title}
+                      description={step.description}
+                      isLast={index === country.processing_steps.length - 1}
+                    />
+                  ))}
                 </div>
-              )}
-            </section>
+              </TabsContent>
+              
+              {/* FAQ Tab */}
+              <TabsContent value="faq" className="p-5 md:p-8 focus:outline-none">
+                <h3 className="text-lg md:text-xl font-semibold text-navy mb-4">Frequently Asked Questions</h3>
+                <div className="space-y-2 md:space-y-0">
+                  {country.faq.map((item, index) => (
+                    <FAQItem 
+                      key={index}
+                      question={item.question}
+                      answer={item.answer}
+                    />
+                  ))}
+                </div>
+              </TabsContent>
+              
+              {/* Embassy Tab */}
+              <TabsContent value="embassy" className="p-5 md:p-8 focus:outline-none">
+                <h3 className="text-lg md:text-xl font-semibold text-navy mb-4">Embassy & Consulate Information</h3>
+                <EmbassyCard details={country.embassy_details} />
+              </TabsContent>
+            </Tabs>
             
-            {/* Documents Required Section */}
+            {/* Why Choose Us */}
             <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
-              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Required Documents</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Why Choose Permitsy</h2>
               
-              <ul className="space-y-2 md:space-y-3 text-sm md:text-base">
-                {(requiredDocuments.length === 0 
-                  ? (country.documentsRequired || [
-                      'Valid passport with at least 6 months validity',
-                      'Completed visa application form',
-                      'Recent passport-sized photographs',
-                      'Proof of accommodation',
-                      'Proof of sufficient funds',
-                      'Return ticket',
-                      'Travel insurance'
-                    ])
-                  : requiredDocuments.map((doc: any) => doc.document_name)
-                ).map((doc, index) => (
-                  <li key={index} className="flex items-start">
-                    <Check className="h-4 w-4 md:h-5 md:w-5 text-teal flex-shrink-0 mr-2 md:mr-3 mt-0.5" />
-                    <span>{doc}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            
-            {/* Processing Timeline - Compact on mobile */}
-            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
-              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Processing Timeline</h2>
-              
-              <div className="space-y-4 md:space-y-6">
-                <div className="relative pl-6 md:pl-8 pb-4 md:pb-6 border-l-2 border-teal">
-                  <div className="absolute left-[-4px] md:left-[-8px] top-0 h-3 w-3 md:h-4 md:w-4 rounded-full bg-teal"></div>
-                  <h3 className="font-semibold text-navy mb-0.5 md:mb-1 text-sm md:text-base">Application Submission</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Complete and submit your visa application with all required documents.</p>
-                </div>
-                
-                <div className="relative pl-6 md:pl-8 pb-4 md:pb-6 border-l-2 border-teal">
-                  <div className="absolute left-[-4px] md:left-[-8px] top-0 h-3 w-3 md:h-4 md:w-4 rounded-full bg-teal"></div>
-                  <h3 className="font-semibold text-navy mb-0.5 md:mb-1 text-sm md:text-base">Document Verification</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Your documents will be reviewed by our team and the embassy.</p>
-                </div>
-                
-                <div className="relative pl-6 md:pl-8 pb-4 md:pb-6 border-l-2 border-teal">
-                  <div className="absolute left-[-4px] md:left-[-8px] top-0 h-3 w-3 md:h-4 md:w-4 rounded-full bg-teal"></div>
-                  <h3 className="font-semibold text-navy mb-0.5 md:mb-1 text-sm md:text-base">Processing</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Your application is processed by the embassy or consulate.</p>
-                </div>
-                
-                <div className="relative pl-6 md:pl-8">
-                  <div className="absolute left-[-4px] md:left-[-8px] top-0 h-3 w-3 md:h-4 md:w-4 rounded-full bg-teal"></div>
-                  <h3 className="font-semibold text-navy mb-0.5 md:mb-1 text-sm md:text-base">Visa Issuance</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Receive your visa within the standard processing time of {country.processing_time || '3-5 business days'}.</p>
-                </div>
-              </div>
-            </section>
-            
-            {/* Testimonials or Additional Info - Mobile-optimized */}
-            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
-              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Why Choose Us</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                <div className="text-center p-3 md:p-4">
-                  <div className="bg-teal/10 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-teal" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center px-3 py-6">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center mb-4">
+                    <BarChart className="h-7 w-7 text-teal-600" />
                   </div>
-                  <h3 className="font-bold text-navy mb-1 md:mb-2 text-base md:text-lg">Fast Processing</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Get your visa approved quickly with our expedited service options.</p>
+                  <h3 className="font-semibold text-navy text-lg mb-2">98% Success Rate</h3>
+                  <p className="text-gray-600 text-sm">Our visa experts ensure your application has the highest chance of approval.</p>
                 </div>
                 
-                <div className="text-center p-3 md:p-4">
-                  <div className="bg-teal/10 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                    <ShieldCheck className="h-6 w-6 md:h-8 md:w-8 text-teal" />
+                <div className="text-center px-3 py-6">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center mb-4">
+                    <FileCheck className="h-7 w-7 text-teal-600" />
                   </div>
-                  <h3 className="font-bold text-navy mb-1 md:mb-2 text-base md:text-lg">100% Success Rate</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Our experienced team ensures your application meets all requirements.</p>
+                  <h3 className="font-semibold text-navy text-lg mb-2">Document Verification</h3>
+                  <p className="text-gray-600 text-sm">We thoroughly check all documents before submission to avoid any rejections.</p>
                 </div>
                 
-                <div className="text-center p-3 md:p-4">
-                  <div className="bg-teal/10 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                    <Users className="h-6 w-6 md:h-8 md:w-8 text-teal" />
+                <div className="text-center px-3 py-6">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center mb-4">
+                    <BadgeCheck className="h-7 w-7 text-teal-600" />
                   </div>
-                  <h3 className="font-bold text-navy mb-1 md:mb-2 text-base md:text-lg">24/7 Support</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Our visa experts are always available to answer your questions.</p>
-                </div>
-              </div>
-            </section>
-            
-            {/* FAQ Section - Condensed for mobile */}
-            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
-              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Frequently Asked Questions</h2>
-              
-              <div className="space-y-4">
-                <div className="border-b pb-3 md:pb-4">
-                  <h3 className="font-semibold text-navy mb-1 md:mb-2 text-sm md:text-base">How long does it take to process a {country.name} visa?</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Standard processing time for a {country.name} visa is {country.processing_time || '3-5 business days'}, but this can vary based on the type of visa and your specific circumstances.</p>
-                </div>
-                
-                <div className="border-b pb-3 md:pb-4">
-                  <h3 className="font-semibold text-navy mb-1 md:mb-2 text-sm md:text-base">Can I expedite my visa application?</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Yes, we offer expedited processing for urgent travel needs. Additional fees may apply for this service.</p>
-                </div>
-                
-                <div className="border-b pb-3 md:pb-4">
-                  <h3 className="font-semibold text-navy mb-1 md:mb-2 text-sm md:text-base">What happens if my visa application is rejected?</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">If your application is rejected, our team will help you understand the reasons and guide you through the reapplication process with the necessary corrections.</p>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold text-navy mb-1 md:mb-2 text-sm md:text-base">Do I need travel insurance for my visa application?</h3>
-                  <p className="text-gray-600 text-xs md:text-sm">Most countries require travel insurance that covers medical expenses and repatriation. We recommend obtaining comprehensive travel insurance for your trip.</p>
+                  <h3 className="font-semibold text-navy text-lg mb-2">Trusted Partner</h3>
+                  <p className="text-gray-600 text-sm">We're the preferred visa partner for thousands of travelers worldwide.</p>
                 </div>
               </div>
             </section>
@@ -653,46 +477,53 @@ const CountryDetails = () => {
           <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
             <div className="sticky top-24">
               <div className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
-                <h2 className="text-xl font-bold text-navy mb-5">Start Your Application</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-navy">Apply Now</h2>
+                  <Badge className="bg-teal-500 hover:bg-teal-600">Fast Process</Badge>
+                </div>
                 
-                {/* Package selection */}
-                <div className="mb-5">
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Select Package</label>
+                {/* Pricing Tier Selection */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Select Processing Speed</h3>
                   <div className="grid grid-cols-1 gap-3">
-                    {visaPackages.length === 0 ? (
-                      <div className="border border-dashed border-gray-200 rounded-lg p-3 text-center">
-                        <p className="text-gray-500 text-sm">Package details coming soon</p>
-                      </div>
+                    {country.pricingTiers.length === 0 ? (
+                      <Card className="border border-dashed border-gray-200 p-4 text-center text-gray-500">
+                        No pricing options available
+                      </Card>
                     ) : (
-                      visaPackages.map((pkg, index) => (
-                        <div 
-                          key={pkg.id || index}
-                          className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                            selectedPackage === index 
-                              ? 'border-teal bg-teal/5' 
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => setSelectedPackage(index)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-semibold text-navy">{pkg.name}</h3>
-                              <p className="text-xs text-gray-500">Processing time: {pkg.processing_time}</p>
-                            </div>
-                            <span className="font-bold text-indigo-600">{pkg.price}</span>
-                          </div>
-                        </div>
+                      country.pricingTiers.map((tier, index) => (
+                        <PricingTier
+                          key={tier.id}
+                          name={tier.name}
+                          price={tier.price}
+                          processingTime={tier.processing_time}
+                          features={tier.features}
+                          isRecommended={tier.is_recommended}
+                          onSelect={() => setSelectedPackageIndex(index)}
+                          isSelected={selectedPackageIndex === index}
+                        />
                       ))
                     )}
                   </div>
                 </div>
                 
+                {/* Expected delivery date */}
+                <div className="bg-teal-50 border border-teal-100 rounded-lg p-3 mb-6">
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-teal-600 mr-2 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-teal-900">Estimated Delivery</p>
+                      <p className="text-sm text-teal-700">{formattedEstimatedDate}</p>
+                    </div>
+                  </div>
+                </div>
+                
                 {/* Number of travelers */}
-                <div className="mb-5">
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Number of Travelers</label>
-                  <div className="flex items-center border border-gray-200 rounded-lg">
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Number of Travelers</h3>
+                  <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                     <button 
-                      className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                      className="px-4 py-3 text-gray-500 hover:text-gray-700 disabled:opacity-50 flex-shrink-0"
                       onClick={handleDecreaseTravellers}
                       disabled={travellers <= 1}
                     >
@@ -700,7 +531,7 @@ const CountryDetails = () => {
                     </button>
                     <div className="flex-1 text-center font-medium">{travellers}</div>
                     <button 
-                      className="px-3 py-2 text-gray-500 hover:text-gray-700"
+                      className="px-4 py-3 text-gray-500 hover:text-gray-700 flex-shrink-0"
                       onClick={handleIncreaseTravellers}
                     >
                       <Plus className="h-4 w-4" />
@@ -712,7 +543,7 @@ const CountryDetails = () => {
                 <div className="border-t border-b border-gray-100 py-4 mb-5">
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600 text-sm">Base price</span>
-                    <span className="font-medium">{visaPackage.price}</span>
+                    <span className="font-medium">{selectedPackage.price}</span>
                   </div>
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600 text-sm">Travelers</span>
@@ -725,35 +556,33 @@ const CountryDetails = () => {
                 </div>
                 
                 {/* Apply now button */}
-                <Button className="w-full mb-3">
+                <Button className="w-full mb-3 bg-teal-600 hover:bg-teal-700">
                   Apply Now
                 </Button>
                 
-                {/* Guarantees */}
-                <div className="space-y-3 mt-6">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <Check className="h-4 w-4 text-teal" />
+                <div className="flex items-center justify-center text-xs text-gray-500 mb-6">
+                  <ShieldCheck className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                  <span>Secure payment • Money-back guarantee</span>
+                </div>
+                
+                {/* Trustpilot-style reviews */}
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <Award className="h-4 w-4 mr-1.5 text-green-600" />
+                      <span className="text-sm font-medium">Trusted by thousands</span>
                     </div>
-                    <div className="ml-2">
-                      <p className="text-xs text-gray-600">Money-back guarantee if your visa is denied</p>
+                    <div className="flex">
+                      {Array(5).fill(0).map((_, i) => (
+                        <Star key={i} className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <Check className="h-4 w-4 text-teal" />
-                    </div>
-                    <div className="ml-2">
-                      <p className="text-xs text-gray-600">Dedicated visa expert to handle your application</p>
-                    </div>
+                  <div className="text-xs text-gray-500 italic">
+                    "The visa process was incredibly smooth. Permitsy handled everything efficiently and my Singapore visa was approved in just 2 days!"
                   </div>
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <Check className="h-4 w-4 text-teal" />
-                    </div>
-                    <div className="ml-2">
-                      <p className="text-xs text-gray-600">Free cancellation before document processing begins</p>
-                    </div>
+                  <div className="text-xs font-medium mt-1">
+                    Amit P. • Verified customer
                   </div>
                 </div>
                 

@@ -49,8 +49,8 @@ const PopularCountries = () => {
   }, [error, toast]);
 
   // Get country emoji flag (placeholder function)
-  const getCountryEmoji = (countryName) => {
-    const emojiMap = {
+  const getCountryEmoji = (countryName: string) => {
+    const emojiMap: {[key: string]: string} = {
       'United States': '🇺🇸',
       'Canada': '🇨🇦',
       'United Kingdom': '🇬🇧',
@@ -66,6 +66,34 @@ const PopularCountries = () => {
     };
     
     return emojiMap[countryName] || '🏳️';
+  };
+
+  // Helper function to get correct flag URL format based on country name
+  const getCountryFlagUrl = (country: any) => {
+    // If there's already a valid flag URL stored, use that
+    if (country.flag && country.flag.includes('http')) {
+      return country.flag;
+    }
+    
+    // Convert country name to ISO code for flag CDN usage
+    const countryIsoMap: {[key: string]: string} = {
+      'United States': 'us',
+      'Canada': 'ca',
+      'United Kingdom': 'gb',
+      'Australia': 'au',
+      'Japan': 'jp',
+      'Germany': 'de',
+      'France': 'fr',
+      'Singapore': 'sg',
+      'UAE': 'ae',
+      'India': 'in',
+      'China': 'cn',
+      'Italy': 'it',
+      'Spain': 'es'
+    };
+    
+    const isoCode = countryIsoMap[country.name] || 'xx';
+    return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
   };
 
   return (
@@ -91,12 +119,20 @@ const PopularCountries = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {countries.map((country) => (
               <Link to={`/country/${country.id}`} key={country.id}>
-                <Card className="overflow-hidden hover:shadow-md transition-shadow p-4 cursor-pointer h-full flex flex-col">
+                <Card className="overflow-hidden hover:shadow-md transition-shadow p-4 cursor-pointer h-full flex flex-col group">
                   <div className="flex items-center space-x-3">
-                    <span className="text-3xl">{getCountryEmoji(country.name)}</span>
+                    {country.flag && country.flag.includes('http') ? (
+                      <img 
+                        src={country.flag} 
+                        alt={country.name} 
+                        className="w-10 h-10 rounded-full object-cover transition-transform group-hover:scale-110" 
+                      />
+                    ) : (
+                      <span className="text-3xl">{getCountryEmoji(country.name)}</span>
+                    )}
                     <div>
                       <h3 className="font-medium text-navy">{country.name}</h3>
-                      <p className="text-sm text-gray-500">{country.entry_type} visa</p>
+                      <p className="text-sm text-gray-500">{country.entry_type || 'Tourist'} visa</p>
                     </div>
                   </div>
                 </Card>

@@ -58,42 +58,95 @@ export type Database = {
           banner: string
           created_at: string
           description: string
+          embassy_details: Json | null
           entry_type: string
+          faq: Json | null
           flag: string
           id: string
           length_of_stay: string
           name: string
+          processing_steps: Json | null
           processing_time: string
+          requirements_description: string | null
           updated_at: string
           validity: string
+          visa_assistance: string[] | null
+          visa_includes: string[] | null
         }
         Insert: {
           banner: string
           created_at?: string
           description: string
+          embassy_details?: Json | null
           entry_type: string
+          faq?: Json | null
           flag: string
           id?: string
           length_of_stay: string
           name: string
+          processing_steps?: Json | null
           processing_time: string
+          requirements_description?: string | null
           updated_at?: string
           validity: string
+          visa_assistance?: string[] | null
+          visa_includes?: string[] | null
         }
         Update: {
           banner?: string
           created_at?: string
           description?: string
+          embassy_details?: Json | null
           entry_type?: string
+          faq?: Json | null
           flag?: string
           id?: string
           length_of_stay?: string
           name?: string
+          processing_steps?: Json | null
           processing_time?: string
+          requirements_description?: string | null
           updated_at?: string
           validity?: string
+          visa_assistance?: string[] | null
+          visa_includes?: string[] | null
         }
         Relationships: []
+      }
+      document_checklist: {
+        Row: {
+          country_id: string
+          created_at: string | null
+          document_description: string | null
+          document_name: string
+          id: string
+          required: boolean | null
+        }
+        Insert: {
+          country_id: string
+          created_at?: string | null
+          document_description?: string | null
+          document_name: string
+          id?: string
+          required?: boolean | null
+        }
+        Update: {
+          country_id?: string
+          created_at?: string | null
+          document_description?: string | null
+          document_name?: string
+          id?: string
+          required?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_checklist_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       package_features: {
         Row: {
@@ -259,6 +312,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "visa_packages_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visa_pricing_tiers: {
+        Row: {
+          country_id: string
+          created_at: string | null
+          features: string[] | null
+          id: string
+          is_recommended: boolean | null
+          name: string
+          price: string
+          processing_time: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string | null
+          features?: string[] | null
+          id?: string
+          is_recommended?: boolean | null
+          name: string
+          price: string
+          processing_time: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string | null
+          features?: string[] | null
+          id?: string
+          is_recommended?: boolean | null
+          name?: string
+          price?: string
+          processing_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visa_pricing_tiers_country_id_fkey"
             columns: ["country_id"]
             isOneToOne: false
             referencedRelation: "countries"
