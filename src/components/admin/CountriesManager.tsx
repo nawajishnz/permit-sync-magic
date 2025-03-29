@@ -37,9 +37,9 @@ const CountriesManager = () => {
     error,
     refetch 
   } = useQuery({
-    queryKey: ['countries'],
+    queryKey: ['adminCountries'],
     queryFn: async () => {
-      console.log('Fetching countries...');
+      console.log('Fetching countries for admin...');
       const { data, error } = await supabase
         .from('countries')
         .select('*')
@@ -60,13 +60,20 @@ const CountriesManager = () => {
 
   // Debug log countries when data changes
   useEffect(() => {
-    console.log('Countries data in component:', countries);
+    console.log('Countries data in admin component:', countries);
   }, [countries]);
 
   // Add a manual refresh capability for testing
   const handleRefresh = () => {
     console.log('Manually refreshing countries data...');
     refetch();
+    
+    // Also invalidate the main countries queries to ensure all components get fresh data
+    queryClient.invalidateQueries({ queryKey: ['countries'] });
+    queryClient.invalidateQueries({ queryKey: ['popularCountries'] });
+    queryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
+    queryClient.invalidateQueries({ queryKey: ['heroCountries'] });
+    
     toast({
       title: "Refreshing data",
       description: "Fetching the latest countries data",
@@ -134,8 +141,12 @@ const CountriesManager = () => {
         description: "Country has been successfully removed",
       });
       
-      // Refresh the countries list
+      // Refresh all country queries to ensure UI is up-to-date everywhere
+      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       queryClient.invalidateQueries({ queryKey: ['countries'] });
+      queryClient.invalidateQueries({ queryKey: ['popularCountries'] });
+      queryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
+      queryClient.invalidateQueries({ queryKey: ['heroCountries'] });
     } catch (error: any) {
       console.error('Error deleting country:', error);
       toast({
@@ -195,7 +206,13 @@ const CountriesManager = () => {
       
       // Close dialog and refresh countries
       setIsDialogOpen(false);
+      
+      // Invalidate all country queries to ensure fresh data everywhere in the app
+      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       queryClient.invalidateQueries({ queryKey: ['countries'] });
+      queryClient.invalidateQueries({ queryKey: ['popularCountries'] });
+      queryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
+      queryClient.invalidateQueries({ queryKey: ['heroCountries'] });
       
       // After a slight delay, manually refetch to ensure we have the latest data
       setTimeout(() => {

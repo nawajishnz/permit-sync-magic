@@ -1,20 +1,20 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Globe, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 const PopularCountries = () => {
-  const [countries, setCountries] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchCountries = async () => {
+  // Use React Query for better caching and optimized fetching
+  const { data: countries = [], isLoading, error } = useQuery({
+    queryKey: ['popularCountries'],
+    queryFn: async () => {
       try {
-        setIsLoading(true);
         const { data, error } = await supabase
           .from('countries')
           .select('*')
@@ -23,29 +23,29 @@ const PopularCountries = () => {
         
         if (error) {
           console.error('Error fetching countries:', error);
-          toast({
-            title: "Error loading countries",
-            description: error.message,
-            variant: "destructive",
-          });
-          return;
+          throw error;
         }
         
-        setCountries(data || []);
+        return data || [];
       } catch (err) {
         console.error('Error in fetchCountries:', err);
-        toast({
-          title: "Error loading countries",
-          description: "Something went wrong while loading countries",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+        throw err;
       }
-    };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+  });
 
-    fetchCountries();
-  }, [toast]);
+  // Show error toast if query fails
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error loading countries",
+        description: error instanceof Error ? error.message : "Something went wrong while loading countries",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   // Get country emoji flag (placeholder function)
   const getCountryEmoji = (countryName) => {
@@ -58,6 +58,10 @@ const PopularCountries = () => {
       'Germany': '🇩🇪',
       'France': '🇫🇷',
       'Singapore': '🇸🇬',
+      'India': '🇮🇳',
+      'China': '🇨🇳',
+      'Italy': '🇮🇹',
+      'Spain': '🇪🇸'
     };
     
     return emojiMap[countryName] || '🏳️';

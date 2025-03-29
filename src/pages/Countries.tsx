@@ -29,7 +29,7 @@ const CountriesPage = () => {
     }
   }, [location.search]);
 
-  // Use react-query to fetch countries
+  // Use react-query to fetch countries with better caching
   const { 
     data: countries = [], 
     isLoading, 
@@ -51,7 +51,9 @@ const CountriesPage = () => {
         
       console.log('Countries fetched:', data?.length);
       return data || [];
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minute cache
+    refetchOnWindowFocus: false // Prevent unnecessary refetches
   });
 
   // Show error toast if query fails
@@ -78,11 +80,8 @@ const CountriesPage = () => {
       );
     }
     
-    // Filter by continent (simplified approach since we don't have continent in the database)
-    // In a real implementation, you would have a continent field in your database
+    // Filter by continent
     if (continent && continent !== 'all') {
-      // This is a placeholder. For now, we're not filtering by continent
-      // since that data isn't in our database
       console.log('Continent filtering not implemented yet:', continent);
     }
     
@@ -91,8 +90,6 @@ const CountriesPage = () => {
 
   // Get visa types for a country (placeholder function)
   const getVisaTypes = (country) => {
-    // This would normally come from the database
-    // For now, we'll generate some based on entry_type
     const visaType = country.entry_type || 'Tourist';
     return [visaType, 'Business', 'Student'];
   };
@@ -139,6 +136,20 @@ const CountriesPage = () => {
     
     const isoCode = countryIsoMap[country.name] || 'xx';
     return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
+  };
+
+  // Helper function to format price in INR
+  const formatPriceInINR = (price) => {
+    if (!price) return '₹0';
+    
+    // Remove any currency symbols and commas, then parse as number
+    const numericValue = parseFloat(price.replace(/[^0-9.-]+/g, ''));
+    
+    // If it was in USD, convert to INR (approximate exchange rate)
+    const inrValue = numericValue * 75;
+    
+    // Format with INR symbol and thousands separator
+    return `₹${inrValue.toLocaleString('en-IN')}`;
   };
 
   return (
@@ -286,7 +297,7 @@ const CountriesPage = () => {
                             className="object-cover w-full h-full"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = 'https://flagcdn.com/w320/us.png';
+                              target.src = 'https://via.placeholder.com/320x160?text=Flag';
                             }}
                           />
                         </div>

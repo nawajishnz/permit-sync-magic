@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Compass, CalendarClock, Search, Play, Zap, FileText, CreditCard, Globe, MapPin, ChevronDown } from 'lucide-react';
+import { ArrowRight, Check, Compass, CalendarClock, Search, Zap, FileText, CreditCard, Globe, MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
@@ -14,19 +14,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedCountry, setSelectedCountry] = useState<string>("");
-  const [countries, setCountries] = useState<Array<{id: string, name: string}>>([]);
-  const [isLoading, setIsLoading] = useState(false);
   
-  // Fetch countries from database
-  useEffect(() => {
-    const fetchCountries = async () => {
-      setIsLoading(true);
+  // Use React Query for better caching and optimized fetching
+  const { data: countries = [], isLoading } = useQuery({
+    queryKey: ['heroCountries'],
+    queryFn: async () => {
       try {
         const { data, error } = await supabase
           .from('countries')
@@ -40,20 +39,19 @@ const Hero: React.FC = () => {
             description: "Could not load countries from database",
             variant: "destructive",
           });
-          return;
+          throw error;
         }
         
-        console.log('Countries fetched:', data?.length);
-        setCountries(data || []);
+        console.log('Countries fetched for hero:', data?.length);
+        return data || [];
       } catch (err) {
         console.error('Exception when fetching countries:', err);
-      } finally {
-        setIsLoading(false);
+        throw err;
       }
-    };
-
-    fetchCountries();
-  }, [toast]);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false
+  });
   
   const handleCountrySelect = (value: string) => {
     setSelectedCountry(value);
@@ -225,7 +223,7 @@ const Hero: React.FC = () => {
                   Find My Visa
                 </Button>
               </Link>
-              <Link to="/apply-now">
+              <Link to="/visa-finder">
                 <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 text-white rounded-full w-full sm:w-auto shadow-md group transition-all duration-300">
                   Apply Now <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>

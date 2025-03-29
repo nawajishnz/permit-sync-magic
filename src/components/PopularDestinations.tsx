@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 const PopularDestinations = () => {
   const { toast } = useToast();
 
-  // Use react-query to fetch destinations
+  // Use react-query to fetch destinations with improved caching
   const { 
     data: destinations = [],
     isLoading, 
@@ -33,31 +33,30 @@ const PopularDestinations = () => {
       
       console.log('Destinations fetched:', data?.length);
       
-      // Transform the data to match the expected format
+      // Transform the data to match the expected format with INR prices
       return data.map(country => ({
         id: country.id,
         name: country.name,
         imageUrl: country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
         processingTime: country.processing_time || '2-4 weeks',
-        startingPrice: country.name === 'United States' ? '$1,950' :
-                      country.name === 'Japan' ? '$2,340' :
-                      country.name === 'Singapore' ? '$3,200' : '$1,800',
+        startingPrice: country.name === 'United States' ? '₹1,46,250' :
+                      country.name === 'Japan' ? '₹1,75,500' :
+                      country.name === 'Singapore' ? '₹2,40,000' : '₹1,35,000',
         visaCount: country.name === 'United States' ? '25K+' :
                   country.name === 'Japan' ? '21K+' :
                   country.name === 'Singapore' ? '11K+' : '15K+',
         date: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-        directFlights: country.name === 'United States' ? '2 direct flights from $90k' :
-                      country.name === 'Japan' ? '2 direct flights from $56k' :
-                      country.name === 'Singapore' ? '10 direct flights from $44k' : '5 direct flights from $60k'
+        directFlights: country.name === 'United States' ? '2 direct flights from ₹90,000' :
+                      country.name === 'Japan' ? '2 direct flights from ₹56,000' :
+                      country.name === 'Singapore' ? '10 direct flights from ₹44,000' : '5 direct flights from ₹60,000'
       }));
     },
-    // Add error handling
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 
   // Show toast if error occurs
-  useEffect(() => {
+  React.useEffect(() => {
     if (error) {
       console.error('Error in useQuery:', error);
       toast({
@@ -104,6 +103,7 @@ const PopularDestinations = () => {
                         src={destination.imageUrl} 
                         alt={destination.name}
                         className="h-full w-full object-cover transition-transform duration-700 hover:scale-110"
+                        loading="lazy"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
