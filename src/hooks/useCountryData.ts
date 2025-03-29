@@ -109,19 +109,26 @@ export const useCountryData = (countryId: string | undefined) => {
             }))
           : [];
           
-        const embassyDetails: EmbassyDetails = typeof country.embassy_details === 'object' && country.embassy_details !== null
-          ? {
-              address: String(country.embassy_details.address || ''),
-              phone: String(country.embassy_details.phone || ''),
-              email: String(country.embassy_details.email || ''),
-              hours: String(country.embassy_details.hours || '')
-            }
-          : {
-              address: '',
-              phone: '',
-              email: '',
-              hours: ''
-            };
+        // Handle embassy_details properly with better type checking
+        let embassyDetails: EmbassyDetails = {
+          address: '',
+          phone: '',
+          email: '',
+          hours: ''
+        };
+        
+        if (country.embassy_details && 
+            typeof country.embassy_details === 'object' && 
+            !Array.isArray(country.embassy_details)) {
+          // Now TypeScript knows this is an object, not an array
+          const details = country.embassy_details as Record<string, Json>;
+          embassyDetails = {
+            address: details.address ? String(details.address) : '',
+            phone: details.phone ? String(details.phone) : '',
+            email: details.email ? String(details.email) : '',
+            hours: details.hours ? String(details.hours) : ''
+          };
+        }
 
         // Combine all data
         return {
