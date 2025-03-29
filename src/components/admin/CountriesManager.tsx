@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +36,11 @@ interface CountryFormData {
   };
 }
 
-const CountriesManager = () => {
+interface CountriesManagerProps {
+  queryClient?: any;
+}
+
+const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<any>(null);
@@ -44,7 +48,10 @@ const CountriesManager = () => {
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const localQueryClient = useQueryClient();
+  
+  // Use the passed queryClient or the local one
+  const activeQueryClient = queryClient || localQueryClient;
   
   const [formData, setFormData] = useState<CountryFormData>({
     name: '',
@@ -105,18 +112,30 @@ const CountriesManager = () => {
   // Add a manual refresh capability for testing
   const handleRefresh = () => {
     console.log('Manually refreshing countries data...');
-    refetch();
     
-    // Also invalidate the main countries queries to ensure all components get fresh data
-    queryClient.invalidateQueries({ queryKey: ['countries'] });
-    queryClient.invalidateQueries({ queryKey: ['popularCountries'] });
-    queryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
-    queryClient.invalidateQueries({ queryKey: ['heroCountries'] });
+    // Invalidate ALL country-related queries to ensure complete refresh
+    invalidateAllCountryQueries();
     
     toast({
       title: "Refreshing data",
       description: "Fetching the latest countries data",
     });
+  };
+
+  // Helper function to invalidate all country-related queries
+  const invalidateAllCountryQueries = () => {
+    // Invalidate all the country queries
+    activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+    activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
+    activeQueryClient.invalidateQueries({ queryKey: ['popularCountries'] });
+    activeQueryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
+    activeQueryClient.invalidateQueries({ queryKey: ['heroCountries'] });
+    activeQueryClient.invalidateQueries({ queryKey: ['countryDetails'] });
+    
+    // Force refetch after a slight delay to ensure we have fresh data
+    setTimeout(() => {
+      refetch();
+    }, 300);
   };
 
   useEffect(() => {
@@ -202,12 +221,8 @@ const CountriesManager = () => {
         description: "Country has been successfully removed",
       });
       
-      // Refresh all country queries to ensure UI is up-to-date everywhere
-      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
-      queryClient.invalidateQueries({ queryKey: ['countries'] });
-      queryClient.invalidateQueries({ queryKey: ['popularCountries'] });
-      queryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
-      queryClient.invalidateQueries({ queryKey: ['heroCountries'] });
+      // Refresh all country queries
+      invalidateAllCountryQueries();
     } catch (error: any) {
       console.error('Error deleting country:', error);
       toast({
@@ -238,7 +253,8 @@ const CountriesManager = () => {
         const { data, error } = await supabase
           .from('countries')
           .update(formData)
-          .eq('id', currentCountry.id);
+          .eq('id', currentCountry.id)
+          .select();
           
         console.log('Update response:', { data, error });
           
@@ -253,7 +269,8 @@ const CountriesManager = () => {
         console.log('Creating new country');
         const { data, error } = await supabase
           .from('countries')
-          .insert([formData]);
+          .insert([formData])
+          .select();
           
         console.log('Insert response:', { data, error });
           
@@ -268,18 +285,8 @@ const CountriesManager = () => {
       // Close dialog and refresh countries
       setIsDialogOpen(false);
       
-      // Invalidate all country queries to ensure fresh data everywhere in the app
-      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
-      queryClient.invalidateQueries({ queryKey: ['countries'] });
-      queryClient.invalidateQueries({ queryKey: ['popularCountries'] });
-      queryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
-      queryClient.invalidateQueries({ queryKey: ['heroCountries'] });
-      
-      // After a slight delay, manually refetch to ensure we have the latest data
-      setTimeout(() => {
-        console.log('Performing delayed refetch after submit');
-        refetch();
-      }, 500);
+      // Invalidate all queries to ensure fresh data
+      invalidateAllCountryQueries();
     } catch (error: any) {
       console.error('Error saving country:', error);
       toast({
@@ -312,8 +319,8 @@ const CountriesManager = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Countries Manager</h1>
         <div className="flex gap-2">
-          <Button onClick={handleRefresh} variant="outline">
-            Refresh Data
+          <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> Refresh Data
           </Button>
           <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
             <Plus className="mr-2 h-4 w-4" /> Add Country
@@ -354,6 +361,7 @@ const CountriesManager = () => {
             countries={countries}
             selectedCountryId={selectedCountryId}
             onSelectCountry={handleSelectCountry}
+            queryClient={activeQueryClient}
           />
         </TabsContent>
         
@@ -362,6 +370,7 @@ const CountriesManager = () => {
             countries={countries}
             selectedCountryId={selectedCountryId}
             onSelectCountry={handleSelectCountry}
+            queryClient={activeQueryClient}
           />
         </TabsContent>
       </Tabs>

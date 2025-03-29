@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Trash, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,14 +12,21 @@ import { Label } from '@/components/ui/label';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-const VisaTypesManager = () => {
+interface VisaTypesManagerProps {
+  queryClient?: any;
+}
+
+const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentVisaType, setCurrentVisaType] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient();
+  const localQueryClient = useQueryClient();
+  
+  // Use the passed queryClient or the local one
+  const activeQueryClient = queryClient || localQueryClient;
   
   // Get countryId and countryName from URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -41,7 +49,8 @@ const VisaTypesManager = () => {
     data: visaTypes = [], 
     isLoading, 
     isError,
-    error
+    error,
+    refetch
   } = useQuery({
     queryKey: ['visaTypes', countryId],
     queryFn: async () => {
@@ -61,7 +70,7 @@ const VisaTypesManager = () => {
       
       const { data, error } = await query;
       
-      console.log('Visa types response:', { data, error });
+      console.log('Visa types response:', { data, error, count: data?.length });
       
       if (error) {
         console.error('Error fetching visa types:', error);
@@ -69,13 +78,33 @@ const VisaTypesManager = () => {
       }
       
       return data || [];
-    }
+    },
+    // Disable stale time to ensure fresh data
+    staleTime: 0
   });
   
   // Log visa types when they change
   useEffect(() => {
     console.log('Visa types in component:', visaTypes);
   }, [visaTypes]);
+
+  const handleRefresh = () => {
+    console.log('Manually refreshing visa types data...');
+    
+    // Invalidate ALL visa type queries
+    activeQueryClient.invalidateQueries({ queryKey: ['visaTypes'] });
+    activeQueryClient.invalidateQueries({ queryKey: ['countryVisaTypes'] });
+    
+    // Force refetch after a slight delay
+    setTimeout(() => {
+      refetch();
+    }, 300);
+    
+    toast({
+      title: "Refreshing data",
+      description: "Fetching the latest visa types data",
+    });
+  };
 
   useEffect(() => {
     if (isError && error instanceof Error) {
@@ -129,8 +158,10 @@ const VisaTypesManager = () => {
         description: "Visa type has been successfully removed",
       });
       
-      // Refresh the visa types list
-      queryClient.invalidateQueries({ queryKey: ['visaTypes', countryId] });
+      // Refresh the visa types list and other related queries
+      activeQueryClient.invalidateQueries({ queryKey: ['visaTypes'] });
+      activeQueryClient.invalidateQueries({ queryKey: ['countryVisaTypes'] });
+      refetch();
     } catch (error: any) {
       console.error('Error deleting visa type:', error);
       toast({
@@ -182,7 +213,16 @@ const VisaTypesManager = () => {
       
       // Close dialog and refresh visa types
       setIsDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['visaTypes', countryId] });
+      
+      // Invalidate all queries to ensure UI is updated
+      activeQueryClient.invalidateQueries({ queryKey: ['visaTypes'] });
+      activeQueryClient.invalidateQueries({ queryKey: ['countryVisaTypes'] });
+      activeQueryClient.invalidateQueries({ queryKey: ['countryDetails'] });
+      
+      // Force refetch
+      setTimeout(() => {
+        refetch();
+      }, 300);
     } catch (error: any) {
       console.error('Error saving visa type:', error);
       toast({
@@ -208,9 +248,14 @@ const VisaTypesManager = () => {
             Visa Types for {countryName ? decodeURIComponent(countryName) : 'All Countries'}
           </h1>
         </div>
-        <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
-          <Plus className="mr-2 h-4 w-4" /> Add Visa Type
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </Button>
+          <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
+            <Plus className="mr-2 h-4 w-4" /> Add Visa Type
+          </Button>
+        </div>
       </div>
       
       <Card>
