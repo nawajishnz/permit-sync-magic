@@ -68,37 +68,37 @@ const PopularDestinations = () => {
   }, [error, toast]);
 
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-navy">Popular Destinations</h2>
-          <div className="flex space-x-2">
-            <button className="bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full font-medium text-sm">All</button>
-            <button className="text-gray-500 px-4 py-1 rounded-full font-medium text-sm hover:bg-gray-100">Instant</button>
-            <button className="text-gray-500 px-4 py-1 rounded-full font-medium text-sm hover:bg-gray-100">In a week</button>
-            <button className="text-gray-500 px-4 py-1 rounded-full font-medium text-sm hover:bg-gray-100">In a month</button>
+    <section className="py-8">
+      <div className="container mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 px-4 sm:px-0">
+          <h2 className="text-2xl sm:text-3xl font-bold text-navy mb-4 sm:mb-0">Popular Destinations</h2>
+          <div className="flex flex-wrap gap-2">
+            <button className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-medium text-sm">All</button>
+            <button className="text-gray-500 px-3 py-1 rounded-full font-medium text-sm hover:bg-gray-100">Instant</button>
+            <button className="text-gray-500 px-3 py-1 rounded-full font-medium text-sm hover:bg-gray-100">In a week</button>
+            <button className="text-gray-500 px-3 py-1 rounded-full font-medium text-sm hover:bg-gray-100">In a month</button>
           </div>
         </div>
         
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
+          <div className="flex justify-center items-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
             <span className="ml-3 text-gray-700">Loading destinations...</span>
           </div>
         ) : destinations.length === 0 ? (
-          <div className="text-center py-20">
+          <div className="text-center py-16 px-4">
             <p className="text-gray-500 mb-4">No destinations available yet.</p>
             <p className="text-sm text-gray-400">
-              Check the Supabase database to ensure countries are added in the 'countries' table.
+              Please check back soon for exciting new destinations.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 sm:px-0">
             {destinations.map((destination) => (
               <Link to={`/country/${destination.id}`} key={destination.id}>
                 <Card className="overflow-hidden h-full rounded-xl border-0 shadow-md hover:shadow-lg transition-all duration-300">
                   <div className="relative">
-                    <div className="relative h-64 w-full overflow-hidden">
+                    <div className="relative h-48 sm:h-64 w-full overflow-hidden">
                       <img 
                         src={destination.imageUrl} 
                         alt={destination.name}
@@ -142,7 +142,7 @@ const PopularDestinations = () => {
           </div>
         )}
         
-        <div className="text-center mt-10">
+        <div className="text-center mt-8">
           <Link to="/countries" className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center">
             View all destinations
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">

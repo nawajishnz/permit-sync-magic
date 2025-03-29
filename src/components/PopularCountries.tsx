@@ -69,10 +69,10 @@ const PopularCountries = () => {
   };
 
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-navy mb-4">Countries We Cover</h2>
+    <section className="py-8">
+      <div className="container mx-auto px-4 sm:px-0">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-navy mb-4">Countries We Cover</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             We provide visa services for {countries.length > 0 ? countries.length + '+' : 'many'} countries worldwide. Explore our top destinations below.
           </p>
@@ -85,7 +85,7 @@ const PopularCountries = () => {
           </div>
         ) : countries.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-gray-500">Our team is working on adding more countries. Check back soon!</p>
+            <p className="text-gray-500">We're working on adding more countries. Check back soon!</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -105,7 +105,7 @@ const PopularCountries = () => {
           </div>
         )}
         
-        <div className="text-center mt-10">
+        <div className="text-center mt-8">
           <Link to="/countries" className="inline-flex items-center text-teal hover:text-teal-600 font-medium">
             <Globe className="mr-2 h-4 w-4" />
             View all countries

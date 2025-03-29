@@ -12,6 +12,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CountriesPage = () => {
   const [continent, setContinent] = useState('');
@@ -19,6 +20,7 @@ const CountriesPage = () => {
   const [filteredCountries, setFilteredCountries] = useState([]);
   const { toast } = useToast();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   // Extract search term from URL if present
   useEffect(() => {
@@ -154,26 +156,26 @@ const CountriesPage = () => {
   }, [countries, isLoading, refetch]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white overflow-x-hidden">
       <Header />
       <main className="flex-grow">
-        {/* Hero section */}
+        {/* Hero section - more compact on mobile */}
         <div className="bg-gradient-to-r from-navy-500 to-navy-700 text-white">
-          <div className="container mx-auto px-4 py-20">
+          <div className="container mx-auto px-4 py-12 md:py-20">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Explore Visa Requirements Worldwide</h1>
-              <p className="text-xl opacity-90 max-w-2xl mx-auto mb-8">
+              <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 tracking-tight">Explore Visa Requirements Worldwide</h1>
+              <p className="text-base md:text-xl opacity-90 max-w-2xl mx-auto mb-6 md:mb-8">
                 Find the perfect destination for your next trip or relocation and get all the visa information you need.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mt-6 md:mt-8">
                 <Link to="/visa-finder">
-                  <Button variant="gradient" size="lg" className="rounded-full w-full sm:w-auto">
-                    <Globe className="mr-2 h-5 w-5" />
+                  <Button variant="gradient" size={isMobile ? "default" : "lg"} className="rounded-full w-full sm:w-auto">
+                    <Globe className="mr-2 h-4 w-4 md:h-5 md:w-5" />
                     View Popular Destinations
                   </Button>
                 </Link>
                 <Link to="/visa-finder">
-                  <Button variant="outline" size="lg" className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-full w-full sm:w-auto">
+                  <Button variant="outline" size={isMobile ? "default" : "lg"} className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-full w-full sm:w-auto mt-3 sm:mt-0">
                     Find Your Ideal Visa
                   </Button>
                 </Link>
@@ -182,17 +184,17 @@ const CountriesPage = () => {
           </div>
 
           {/* Wave divider */}
-          <div className="h-24 md:h-32 bg-white relative overflow-hidden">
+          <div className="h-16 md:h-24 lg:h-32 bg-white relative overflow-hidden">
             <svg className="absolute -top-1 left-0 w-full text-navy-500 fill-current" viewBox="0 0 1200 120" preserveAspectRatio="none">
               <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"></path>
             </svg>
           </div>
         </div>
 
-        {/* Search and filters */}
-        <div className="container mx-auto px-4 -mt-20 mb-16 relative z-10">
-          <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-            <div className="flex flex-col md:flex-row gap-4">
+        {/* Search and filters - stacked on mobile */}
+        <div className="container mx-auto px-4 -mt-12 md:-mt-20 mb-8 md:mb-16 relative z-10">
+          <div className="bg-white rounded-xl md:rounded-2xl shadow-lg md:shadow-xl p-4 md:p-6 lg:p-8">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4">
               <div className="relative flex-grow">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 <Input 
@@ -227,24 +229,24 @@ const CountriesPage = () => {
         </div>
 
         {/* Section title */}
-        <div className="container mx-auto px-4 mb-8">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-navy-700">Browse Countries</h2>
-            <p className="text-gray-500">{filteredCountries.length} countries available</p>
+        <div className="container mx-auto px-4 mb-6 md:mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+            <h2 className="text-xl md:text-3xl font-bold text-navy-700 mb-2 sm:mb-0">Browse Countries</h2>
+            <p className="text-gray-500 text-sm md:text-base">{filteredCountries.length} countries available</p>
           </div>
         </div>
 
         {/* Countries grid */}
-        <div className="container mx-auto px-4 pb-20">
+        <div className="container mx-auto px-4 pb-12 md:pb-20">
           {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="h-10 w-10 animate-spin text-navy-500" />
-              <span className="ml-3 text-lg text-navy-700">Loading countries...</span>
+            <div className="flex justify-center items-center py-16 md:py-20">
+              <Loader2 className="h-8 w-8 md:h-10 md:w-10 animate-spin text-navy-500" />
+              <span className="ml-3 text-base md:text-lg text-navy-700">Loading countries...</span>
             </div>
           ) : filteredCountries.length === 0 ? (
-            <div className="text-center py-20">
-              <Globe className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">No countries found</h3>
+            <div className="text-center py-16 md:py-20">
+              <Globe className="h-12 w-12 md:h-16 md:w-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-2">No countries found</h3>
               <p className="text-gray-500 mb-6">
                 {searchTerm ? `No countries match "${searchTerm}"` : 'We\'re updating our database with new countries. Please check back soon!'}
               </p>
@@ -255,10 +257,10 @@ const CountriesPage = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {filteredCountries.map((country) => (
                 <Link to={`/country/${country.id}`} key={country.id}>
-                  <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 rounded-2xl border-none group">
+                  <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 rounded-xl md:rounded-2xl border-none group">
                     <div className="relative">
                       <AspectRatio ratio={16/9} className="bg-gray-100 overflow-hidden">
                         <img 
@@ -274,17 +276,17 @@ const CountriesPage = () => {
                       </AspectRatio>
                       
                       {/* Country name and continent */}
-                      <div className="absolute bottom-4 left-4 z-20">
-                        <h3 className="font-semibold text-xl text-white mb-1">{country.name}</h3>
-                        <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
-                          <MapPin size={14} className="mr-1" /> 
+                      <div className="absolute bottom-3 md:bottom-4 left-3 md:left-4 z-20">
+                        <h3 className="font-semibold text-base md:text-xl text-white mb-1">{country.name}</h3>
+                        <div className="flex items-center text-xs md:text-sm text-white/90 bg-black/30 backdrop-blur-sm px-2 md:px-3 py-0.5 md:py-1 rounded-full">
+                          <MapPin size={12} className="mr-1" /> 
                           <span>{getContinent(country.name)}</span>
                         </div>
                       </div>
                       
                       {/* Flag at top right */}
-                      <div className="absolute top-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
-                        <div className="w-8 h-8 rounded-full overflow-hidden">
+                      <div className="absolute top-2 md:top-3 right-2 md:right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full overflow-hidden">
                           <img 
                             src={getCountryFlagUrl(country)}
                             alt={`${country.name} flag`} 
@@ -297,10 +299,10 @@ const CountriesPage = () => {
                         </div>
                       </div>
                     </div>
-                    <CardContent className="p-5">
-                      <div className="flex flex-wrap gap-2">
+                    <CardContent className="p-3 md:p-5">
+                      <div className="flex flex-wrap gap-1.5 md:gap-2">
                         {getVisaTypes(country).map((type, i) => (
-                          <span key={i} className="text-xs bg-navy-50 text-navy-700 px-3 py-1 rounded-full">
+                          <span key={i} className="text-xs bg-navy-50 text-navy-700 px-2 md:px-3 py-0.5 md:py-1 rounded-full">
                             {type}
                           </span>
                         ))}
@@ -314,8 +316,8 @@ const CountriesPage = () => {
           
           {/* Pagination or load more */}
           {filteredCountries.length > 0 && (
-            <div className="mt-12 text-center">
-              <Button variant="outline" className="rounded-full border-gray-200 px-8">
+            <div className="mt-8 md:mt-12 text-center">
+              <Button variant="outline" className="rounded-full border-gray-200 px-6 md:px-8">
                 Load More Countries
               </Button>
             </div>

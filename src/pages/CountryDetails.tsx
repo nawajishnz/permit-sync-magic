@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ChevronLeft, 
   Globe, 
@@ -30,6 +28,7 @@ import {
 import { format, addDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +41,7 @@ const CountryDetails = () => {
   const [travellers, setTravellers] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     const fetchCountryData = async () => {
@@ -142,9 +142,9 @@ const CountryDetails = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
+          <div className="text-center px-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-navy mb-2">Loading Country Details</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-navy mb-2">Loading Country Details</h1>
             <p className="text-gray-600">Please wait while we fetch the latest information</p>
           </div>
         </main>
@@ -158,8 +158,8 @@ const CountryDetails = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-navy mb-4">Country not found</h1>
+          <div className="text-center px-4">
+            <h1 className="text-xl md:text-2xl font-bold text-navy mb-4">Country not found</h1>
             <p className="text-gray-600 mb-6">The country you're looking for doesn't exist or has been removed.</p>
             <Link to="/countries">
               <Button>Browse All Countries</Button>
@@ -291,16 +291,16 @@ const CountryDetails = () => {
   const images = getImageUrlsForCountry();
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
       <Header />
       
-      {/* Enhanced Banner with multiple images */}
+      {/* Enhanced Banner with multiple images - optimized for mobile */}
       <div className="relative bg-gradient-to-r from-indigo-600 to-blue-500">
         <div className="absolute inset-0 bg-black/30 z-10"></div>
         
-        {/* Image Grid */}
-        <div className="relative h-96">
-          {images.length > 1 ? (
+        {/* Image Grid - simplified for mobile */}
+        <div className="relative h-64 md:h-96">
+          {!isMobile && images.length > 1 ? (
             <div className="grid grid-cols-3 grid-rows-2 h-full">
               {/* Main large image */}
               <div className="col-span-2 row-span-2 relative">
@@ -369,7 +369,7 @@ const CountryDetails = () => {
 
         {/* Banner Content Overlay */}
         <div className="absolute top-0 left-0 right-0 bottom-0 z-20 flex flex-col justify-end">
-          <div className="container mx-auto max-w-7xl px-6 py-8">
+          <div className="container mx-auto px-4 py-6 md:py-8">
             <div className="flex flex-col space-y-4 text-white">
               <Link to="/countries" className="flex items-center text-white/90 w-fit hover:text-white transition-colors">
                 <ChevronLeft className="h-5 w-5 mr-1" />
@@ -377,40 +377,40 @@ const CountryDetails = () => {
               </Link>
 
               <div className="flex items-center mb-1">
-                <span className="text-5xl mr-4">
+                <span className="text-4xl md:text-5xl mr-3 md:mr-4">
                   {country.flag && country.flag.includes('http') ? (
-                    <img src={country.flag} alt={country.name} className="w-12 h-12 rounded-full object-cover" />
+                    <img src={country.flag} alt={country.name} className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover" />
                   ) : (
                     <span>{getCountryEmoji(country.name)}</span>
                   )}
                 </span>
                 <div>
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{country.name} Visa</h1>
-                  <div className="flex items-center mt-2">
-                    <div className="flex items-center mr-4">
+                  <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight">{country.name} Visa</h1>
+                  <div className="flex flex-wrap items-center mt-2 gap-2">
+                    <div className="flex items-center">
                       <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
                       <span className="font-medium">4.8</span>
                       <span className="mx-1 text-white/70">•</span>
                       <span className="text-white/70">821 Reviews</span>
                     </div>
-                    <div className="px-3 py-1 rounded-full bg-teal-500/90 text-white text-sm font-medium">
+                    <div className="px-2 py-1 rounded-full bg-teal-500/90 text-white text-xs font-medium">
                       98% Success Rate
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-6 mt-4">
-                <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <Calendar className="h-4 w-4 mr-2 text-white/70" />
+              <div className="flex flex-wrap gap-3 mt-4">
+                <div className="flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
+                  <Calendar className="h-3.5 w-3.5 mr-1.5 text-white/70" />
                   <span>Stay: <strong>{country.length_of_stay || 'Up to 90 days'}</strong></span>
                 </div>
-                <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <Clock className="h-4 w-4 mr-2 text-white/70" />
+                <div className="flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
+                  <Clock className="h-3.5 w-3.5 mr-1.5 text-white/70" />
                   <span>Processing: <strong>{country.processing_time || '3-5 days'}</strong></span>
                 </div>
-                <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <Globe className="h-4 w-4 mr-2 text-white/70" />
+                <div className="flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
+                  <Globe className="h-3.5 w-3.5 mr-1.5 text-white/70" />
                   <span>Entry: <strong>{country.entry_type || 'Single/Multiple'}</strong></span>
                 </div>
               </div>
@@ -419,89 +419,89 @@ const CountryDetails = () => {
         </div>
       </div>
       
-      {/* Two-column layout */}
-      <div className="container mx-auto max-w-7xl px-4 py-8">
+      {/* Two-column layout - stacked on mobile */}
+      <div className="container mx-auto px-4 py-6 md:py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left column - scrollable content */}
-          <div className="w-full lg:w-2/3 space-y-8">
+          <div className="w-full lg:w-2/3 space-y-6 md:space-y-8">
             {/* Visa Overview Section */}
-            <section className="bg-white rounded-2xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-navy mb-6">Visa Overview</h2>
+            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Visa Overview</h2>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 mb-6">
                 <div className="flex flex-col">
-                  <div className="flex items-center text-gray-500 mb-2">
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    <span className="text-sm">Visa Type:</span>
+                  <div className="flex items-center text-gray-500 mb-1.5">
+                    <CreditCard className="h-4 w-4 mr-1.5" />
+                    <span className="text-xs md:text-sm">Visa Type:</span>
                   </div>
-                  <p className="font-medium">{country.name} Visa</p>
+                  <p className="font-medium text-sm md:text-base">{country.name} Visa</p>
                 </div>
                 
                 <div className="flex flex-col">
-                  <div className="flex items-center text-gray-500 mb-2">
-                    <Calendar className="h-5 w-5 mr-2" />
-                    <span className="text-sm">Length of Stay:</span>
+                  <div className="flex items-center text-gray-500 mb-1.5">
+                    <Calendar className="h-4 w-4 mr-1.5" />
+                    <span className="text-xs md:text-sm">Length of Stay:</span>
                   </div>
-                  <p className="font-medium">{country.length_of_stay || 'Up to 90 days'}</p>
+                  <p className="font-medium text-sm md:text-base">{country.length_of_stay || 'Up to 90 days'}</p>
                 </div>
                 
                 <div className="flex flex-col">
-                  <div className="flex items-center text-gray-500 mb-2">
-                    <Clock className="h-5 w-5 mr-2" />
-                    <span className="text-sm">Validity:</span>
+                  <div className="flex items-center text-gray-500 mb-1.5">
+                    <Clock className="h-4 w-4 mr-1.5" />
+                    <span className="text-xs md:text-sm">Validity:</span>
                   </div>
-                  <p className="font-medium">{country.validity || 'Up to 180 days'}</p>
+                  <p className="font-medium text-sm md:text-base">{country.validity || 'Up to 180 days'}</p>
                 </div>
                 
                 <div className="flex flex-col">
-                  <div className="flex items-center text-gray-500 mb-2">
-                    <Globe className="h-5 w-5 mr-2" />
-                    <span className="text-sm">Entry:</span>
+                  <div className="flex items-center text-gray-500 mb-1.5">
+                    <Globe className="h-4 w-4 mr-1.5" />
+                    <span className="text-xs md:text-sm">Entry:</span>
                   </div>
-                  <p className="font-medium">{country.entry_type || 'Single/Multiple'}</p>
+                  <p className="font-medium text-sm md:text-base">{country.entry_type || 'Single/Multiple'}</p>
                 </div>
               </div>
               
-              <div className="prose max-w-none">
+              <div className="prose max-w-none text-sm md:text-base">
                 <p className="text-gray-600">{country.description || 'This country offers various visa options for tourists, students, workers, and immigrants. Each visa type has specific requirements and application procedures.'}</p>
               </div>
             </section>
             
             {/* Visa Types Section */}
-            <section className="bg-white rounded-2xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-navy mb-6">Available Visa Types</h2>
+            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Available Visa Types</h2>
               
               {visaTypes.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-500">Visa type information coming soon</h3>
-                  <p className="text-gray-400 mt-2">Our team is currently updating the available visa types</p>
+                <div className="text-center py-6 md:py-8 border border-dashed border-gray-200 rounded-lg">
+                  <h3 className="text-base md:text-lg font-medium text-gray-500">Visa type information coming soon</h3>
+                  <p className="text-gray-400 mt-2 text-sm">Our team is currently updating the available visa types</p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                   {visaTypes.map((visaType: any) => (
                     <Card key={visaType.id} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row">
-                          <div className="p-6 flex-1">
-                            <h3 className="font-bold text-lg text-navy mb-2">{visaType.name}</h3>
-                            <div className="flex flex-col space-y-2 text-sm text-gray-600 mb-4">
+                          <div className="p-4 md:p-6 flex-1">
+                            <h3 className="font-bold text-base md:text-lg text-navy mb-2">{visaType.name}</h3>
+                            <div className="flex flex-col space-y-2 text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
                               <div className="flex items-center">
-                                <Clock className="h-4 w-4 mr-2 text-indigo-600" />
+                                <Clock className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
                                 <span>Processing Time: <span className="font-medium">{visaType.processing_time}</span></span>
                               </div>
                               <div className="flex items-center">
-                                <DollarSign className="h-4 w-4 mr-2 text-indigo-600" />
+                                <DollarSign className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
                                 <span>Fee: <span className="font-medium">{visaType.fee}</span></span>
                               </div>
                             </div>
                             
                             {visaType.visa_requirements && visaType.visa_requirements.length > 0 && (
                               <div>
-                                <h4 className="font-medium text-navy mb-2">Requirements:</h4>
-                                <ul className="space-y-1 text-sm">
+                                <h4 className="font-medium text-navy mb-1.5 text-sm">Requirements:</h4>
+                                <ul className="space-y-1 text-xs md:text-sm">
                                   {visaType.visa_requirements.map((req: any) => (
                                     <li key={req.id} className="flex items-start">
-                                      <Check className="h-4 w-4 text-teal mt-0.5 mr-2 flex-shrink-0" />
+                                      <Check className="h-3.5 w-3.5 text-teal mt-0.5 mr-1.5 flex-shrink-0" />
                                       <span>{req.requirement_text}</span>
                                     </li>
                                   ))}
@@ -510,9 +510,9 @@ const CountryDetails = () => {
                             )}
                           </div>
                           
-                          <div className="bg-indigo-50 p-6 flex flex-col justify-center items-center md:w-64">
-                            <span className="text-2xl font-bold text-indigo-600 mb-2">{visaType.fee}</span>
-                            <Button className="w-full mt-2">
+                          <div className="bg-indigo-50 p-4 md:p-6 flex flex-row md:flex-col justify-between md:justify-center items-center md:w-auto lg:w-64">
+                            <span className="text-lg md:text-2xl font-bold text-indigo-600 mb-0 md:mb-2">{visaType.fee}</span>
+                            <Button size={isMobile ? "sm" : "default"} className="w-auto md:w-full mt-0 md:mt-2">
                               Apply Now
                             </Button>
                           </div>
@@ -524,8 +524,8 @@ const CountryDetails = () => {
               )}
               
               {visaTypes.length > 0 && (
-                <div className="mt-6 text-center">
-                  <Button variant="outline" className="group">
+                <div className="mt-4 md:mt-6 text-center">
+                  <Button variant="outline" className="group text-sm">
                     <span>View all visa options</span>
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
@@ -534,396 +534,100 @@ const CountryDetails = () => {
             </section>
             
             {/* Documents Required Section */}
-            <section className="bg-white rounded-2xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-navy mb-6">Required Documents</h2>
+            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Required Documents</h2>
               
-              {requiredDocuments.length === 0 ? (
-                <ul className="space-y-3">
-                  {(country.documentsRequired || [
-                    'Valid passport with at least 6 months validity',
-                    'Completed visa application form',
-                    'Recent passport-sized photographs',
-                    'Proof of accommodation',
-                    'Proof of sufficient funds',
-                    'Return ticket',
-                    'Travel insurance'
-                  ]).map((doc, index) => (
-                    <li key={index} className="flex items-start">
-                      <Check className="h-5 w-5 text-teal flex-shrink-0 mr-3 mt-0.5" />
-                      <span>{doc}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <ul className="space-y-3">
-                  {requiredDocuments.map((doc: any) => (
-                    <li key={doc.id} className="flex items-start">
-                      <Check className="h-5 w-5 text-teal flex-shrink-0 mr-3 mt-0.5" />
-                      <span>{doc.document_name}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <ul className="space-y-2 md:space-y-3 text-sm md:text-base">
+                {(requiredDocuments.length === 0 
+                  ? (country.documentsRequired || [
+                      'Valid passport with at least 6 months validity',
+                      'Completed visa application form',
+                      'Recent passport-sized photographs',
+                      'Proof of accommodation',
+                      'Proof of sufficient funds',
+                      'Return ticket',
+                      'Travel insurance'
+                    ])
+                  : requiredDocuments.map((doc: any) => doc.document_name)
+                ).map((doc, index) => (
+                  <li key={index} className="flex items-start">
+                    <Check className="h-4 w-4 md:h-5 md:w-5 text-teal flex-shrink-0 mr-2 md:mr-3 mt-0.5" />
+                    <span>{doc}</span>
+                  </li>
+                ))}
+              </ul>
             </section>
             
-            {/* Processing Timeline */}
-            <section className="bg-white rounded-2xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-navy mb-6">Processing Timeline</h2>
+            {/* Processing Timeline - Compact on mobile */}
+            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Processing Timeline</h2>
               
-              <div className="space-y-6">
-                <div className="relative pl-8 pb-6 border-l-2 border-teal">
-                  <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
-                  <h3 className="font-semibold text-navy mb-1">Application Submission</h3>
-                  <p className="text-gray-600">Complete and submit your visa application with all required documents.</p>
+              <div className="space-y-4 md:space-y-6">
+                <div className="relative pl-6 md:pl-8 pb-4 md:pb-6 border-l-2 border-teal">
+                  <div className="absolute left-[-4px] md:left-[-8px] top-0 h-3 w-3 md:h-4 md:w-4 rounded-full bg-teal"></div>
+                  <h3 className="font-semibold text-navy mb-0.5 md:mb-1 text-sm md:text-base">Application Submission</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Complete and submit your visa application with all required documents.</p>
                 </div>
                 
-                <div className="relative pl-8 pb-6 border-l-2 border-teal">
-                  <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
-                  <h3 className="font-semibold text-navy mb-1">Document Verification</h3>
-                  <p className="text-gray-600">Your documents will be reviewed by our team and the embassy.</p>
+                <div className="relative pl-6 md:pl-8 pb-4 md:pb-6 border-l-2 border-teal">
+                  <div className="absolute left-[-4px] md:left-[-8px] top-0 h-3 w-3 md:h-4 md:w-4 rounded-full bg-teal"></div>
+                  <h3 className="font-semibold text-navy mb-0.5 md:mb-1 text-sm md:text-base">Document Verification</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Your documents will be reviewed by our team and the embassy.</p>
                 </div>
                 
-                <div className="relative pl-8 pb-6 border-l-2 border-teal">
-                  <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
-                  <h3 className="font-semibold text-navy mb-1">Processing</h3>
-                  <p className="text-gray-600">Your application is processed by the embassy or consulate.</p>
+                <div className="relative pl-6 md:pl-8 pb-4 md:pb-6 border-l-2 border-teal">
+                  <div className="absolute left-[-4px] md:left-[-8px] top-0 h-3 w-3 md:h-4 md:w-4 rounded-full bg-teal"></div>
+                  <h3 className="font-semibold text-navy mb-0.5 md:mb-1 text-sm md:text-base">Processing</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Your application is processed by the embassy or consulate.</p>
                 </div>
                 
-                <div className="relative pl-8">
-                  <div className="absolute left-[-8px] top-0 h-4 w-4 rounded-full bg-teal"></div>
-                  <h3 className="font-semibold text-navy mb-1">Visa Issuance</h3>
-                  <p className="text-gray-600">Receive your visa within the standard processing time of {country.processing_time || '3-5 business days'}.</p>
+                <div className="relative pl-6 md:pl-8">
+                  <div className="absolute left-[-4px] md:left-[-8px] top-0 h-3 w-3 md:h-4 md:w-4 rounded-full bg-teal"></div>
+                  <h3 className="font-semibold text-navy mb-0.5 md:mb-1 text-sm md:text-base">Visa Issuance</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Receive your visa within the standard processing time of {country.processing_time || '3-5 business days'}.</p>
                 </div>
               </div>
             </section>
             
-            {/* Testimonials or Additional Info */}
-            <section className="bg-white rounded-2xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-navy mb-6">Why Choose Us</h2>
+            {/* Testimonials or Additional Info - Mobile-optimized */}
+            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Why Choose Us</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4">
-                  <div className="bg-teal/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Clock className="h-8 w-8 text-teal" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <div className="text-center p-3 md:p-4">
+                  <div className="bg-teal/10 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-teal" />
                   </div>
-                  <h3 className="font-bold text-navy mb-2">Fast Processing</h3>
-                  <p className="text-gray-600 text-sm">Get your visa approved quickly with our expedited service options.</p>
+                  <h3 className="font-bold text-navy mb-1 md:mb-2 text-base md:text-lg">Fast Processing</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Get your visa approved quickly with our expedited service options.</p>
                 </div>
                 
-                <div className="text-center p-4">
-                  <div className="bg-teal/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <ShieldCheck className="h-8 w-8 text-teal" />
+                <div className="text-center p-3 md:p-4">
+                  <div className="bg-teal/10 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                    <ShieldCheck className="h-6 w-6 md:h-8 md:w-8 text-teal" />
                   </div>
-                  <h3 className="font-bold text-navy mb-2">100% Success Rate</h3>
-                  <p className="text-gray-600 text-sm">Our experienced team ensures your application meets all requirements.</p>
+                  <h3 className="font-bold text-navy mb-1 md:mb-2 text-base md:text-lg">100% Success Rate</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Our experienced team ensures your application meets all requirements.</p>
                 </div>
                 
-                <div className="text-center p-4">
-                  <div className="bg-teal/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Users className="h-8 w-8 text-teal" />
+                <div className="text-center p-3 md:p-4">
+                  <div className="bg-teal/10 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                    <Users className="h-6 w-6 md:h-8 md:w-8 text-teal" />
                   </div>
-                  <h3 className="font-bold text-navy mb-2">24/7 Support</h3>
-                  <p className="text-gray-600 text-sm">Our visa experts are always available to answer your questions.</p>
+                  <h3 className="font-bold text-navy mb-1 md:mb-2 text-base md:text-lg">24/7 Support</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Our visa experts are always available to answer your questions.</p>
                 </div>
               </div>
             </section>
             
-            {/* FAQ Section */}
-            <section className="bg-white rounded-2xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-navy mb-6">Frequently Asked Questions</h2>
+            {/* FAQ Section - Condensed for mobile */}
+            <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Frequently Asked Questions</h2>
               
               <div className="space-y-4">
-                <div className="border-b pb-4">
-                  <h3 className="font-semibold text-navy mb-2">How long does it take to process a {country.name} visa?</h3>
-                  <p className="text-gray-600">Standard processing time for a {country.name} visa is {country.processing_time || '3-5 business days'}, but this can vary based on the type of visa and your specific circumstances.</p>
+                <div className="border-b pb-3 md:pb-4">
+                  <h3 className="font-semibold text-navy mb-1 md:mb-2 text-sm md:text-base">How long does it take to process a {country.name} visa?</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Standard processing time for a {country.name} visa is {country.processing_time || '3-5 business days'}, but this can vary based on the type of visa and your specific circumstances.</p>
                 </div>
                 
-                <div className="border-b pb-4">
-                  <h3 className="font-semibold text-navy mb-2">Can I expedite my visa application?</h3>
-                  <p className="text-gray-600">Yes, we offer premium processing options that can expedite your visa application. Our Express and Premium packages include faster processing times.</p>
-                </div>
-                
-                <div className="border-b pb-4">
-                  <h3 className="font-semibold text-navy mb-2">What happens if my visa is denied?</h3>
-                  <p className="text-gray-600">If your visa is denied, we offer a 100% money-back guarantee on our service fees. We will also provide guidance on reapplying or exploring alternative options.</p>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold text-navy mb-2">Do I need to visit an embassy in person?</h3>
-                  <p className="text-gray-600">For most visa types, you can complete the entire application process online without visiting an embassy. However, some visa categories may require an in-person interview.</p>
-                </div>
-              </div>
-            </section>
-          </div>
-          
-          {/* Right column - sticky packages section */}
-          <div className="w-full lg:w-1/3">
-            <div className="sticky top-24">
-              {/* New Package Card based on the reference design */}
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
-                {/* Date selector */}
-                <div className="flex mb-2">
-                  <div className="flex-1 bg-indigo-600 text-white py-3 px-4 flex items-center rounded-t-2xl">
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-white text-indigo-600 rounded-full p-1">
-                        <Check className="h-4 w-4" />
-                      </div>
-                      <span>{shortGuaranteedDate}</span>
-                    </div>
-                  </div>
-                  <div className="flex-1 bg-gray-100 py-3 px-4 flex items-center">
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <span>{previousDate}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Package details */}
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-navy mb-2">Get Your Visa by {shortGuaranteedDate}</h3>
-                  <p className="text-teal font-medium mb-4">Guaranteed approval or money back</p>
-                  
-                  <div className="space-y-4 mb-6">
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600">Processing Time</span>
-                      <span className="font-medium">{visaPackage.processing_time}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600">Visa Type</span>
-                      <span className="font-medium">{country.name} Visa</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600">24/7 Support</span>
-                      <span className="font-medium text-teal flex items-center">
-                        <Check className="h-4 w-4 mr-1" /> Included
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Package selector */}
-                  <div className="mb-6">
-                    <div className="text-sm font-medium text-gray-700 mb-2">Select Package:</div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {visaPackages.length > 0 ? (
-                        visaPackages.map((pkg: any, index: number) => (
-                          <button
-                            key={pkg.id}
-                            onClick={() => setSelectedPackage(index)}
-                            className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                              selectedPackage === index
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {pkg.name.split(' ')[0]}
-                          </button>
-                        ))
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => setSelectedPackage(0)}
-                            className="bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-medium"
-                          >
-                            Standard
-                          </button>
-                          <button
-                            onClick={() => setSelectedPackage(1)}
-                            className="bg-gray-100 text-gray-700 hover:bg-gray-200 py-2 px-4 rounded-lg text-sm font-medium"
-                          >
-                            Express
-                          </button>
-                          <button
-                            onClick={() => setSelectedPackage(2)}
-                            className="bg-gray-100 text-gray-700 hover:bg-gray-200 py-2 px-4 rounded-lg text-sm font-medium"
-                          >
-                            Premium
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Travellers counter */}
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700">Number of Travellers</span>
-                      <div className="flex items-center space-x-3">
-                        <button 
-                          onClick={handleDecreaseTravellers}
-                          disabled={travellers <= 1}
-                          className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                            travellers <= 1 ? 'bg-gray-100 text-gray-400' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="text-xl font-semibold w-6 text-center">{travellers}</span>
-                        <button 
-                          onClick={handleIncreaseTravellers}
-                          className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 flex items-center justify-center"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Pricing */}
-                  <div className="bg-gray-50 p-4 rounded-xl mb-6">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center">
-                        <BadgeIndianRupee className="h-5 w-5 text-gray-500 mr-2" />
-                        <span className="text-gray-600">Visa Fee ({travellers} {travellers === 1 ? 'person' : 'people'})</span>
-                      </div>
-                      <span>₹{basePrice * travellers}</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center">
-                        <FileCheck className="h-5 w-5 text-gray-500 mr-2" />
-                        <span className="text-gray-600">Service Fee</span>
-                      </div>
-                      <span>Included</span>
-                    </div>
-                    <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between items-center">
-                      <span className="font-medium">Total</span>
-                      <span className="text-xl font-bold text-navy">₹{totalAmount}</span>
-                    </div>
-                  </div>
-                  
-                  {/* CTA Button */}
-                  <Link to={`/apply/${id}/${selectedPackage}`} className="w-full">
-                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                      Start Application
-                    </Button>
-                  </Link>
-                  
-                  {/* Money Back Guarantee */}
-                  <div className="mt-4 text-center">
-                    <p className="text-xs text-gray-500 flex items-center justify-center">
-                      <ShieldCheck className="h-4 w-4 text-teal mr-1" />
-                      100% Money Back Guarantee if not approved
-                    </p>
-                  </div>
-                  
-                  {/* Chat support */}
-                  <div className="mt-6 flex justify-center">
-                    <Button variant="outline" size="sm" className="text-gray-600 flex items-center">
-                      <MessageSquare className="h-4 w-4 mr-1" /> Chat with Visa Expert
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Statistics Card */}
-              <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-                <h3 className="font-bold text-navy mb-4">Visa Statistics</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Success Rate</span>
-                    <div className="flex items-center">
-                      <span className="font-medium text-teal mr-1">98%</span>
-                      <div className="w-24 h-2 bg-gray-200 rounded-full ml-2">
-                        <div className="w-[98%] h-full bg-teal rounded-full"></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Average Processing</span>
-                    <span className="font-medium">{country.processing_time || '3-5 days'}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Visas Issued Monthly</span>
-                    <span className="font-medium">5,000+</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Customer Rating</span>
-                    <div className="flex items-center">
-                      <span className="font-medium mr-1">4.8</span>
-                      <div className="flex text-yellow-400">
-                        <Star className="h-4 w-4 fill-yellow-400" />
-                        <Star className="h-4 w-4 fill-yellow-400" />
-                        <Star className="h-4 w-4 fill-yellow-400" />
-                        <Star className="h-4 w-4 fill-yellow-400" />
-                        <Star className="h-4 w-4 fill-yellow-400" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Help Card */}
-              <div className="bg-indigo-50 rounded-2xl p-6">
-                <h3 className="font-bold text-navy mb-2">Need Help?</h3>
-                <p className="text-sm text-gray-600 mb-4">Our visa experts are ready to assist you with any questions about your {country.name} visa application.</p>
-                
-                <div className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start bg-white">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    <span>Live Chat</span>
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-start bg-white">
-                    <Phone className="h-4 w-4 mr-2" />
-                    <span>Call Us</span>
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-start bg-white">
-                    <Mail className="h-4 w-4 mr-2" />
-                    <span>Email Support</span>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <Footer />
-    </div>
-  );
-};
-
-export default CountryDetails;
-
-function Phone(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    </svg>
-  );
-}
-
-function Mail(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="20" height="16" x="2" y="4" rx="2" />
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-    </svg>
-  );
-}
+                <div className="border-b pb-3 md:
