@@ -34,6 +34,7 @@ const PopularCountries = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    refetchOnMount: true, // Ensure data is fresh when component mounts
   });
 
   // Show error toast if query fails
@@ -73,7 +74,7 @@ const PopularCountries = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-navy mb-4">Countries We Cover</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            We provide visa services for {countries.length}+ countries worldwide. Explore our top destinations below.
+            We provide visa services for {countries.length > 0 ? countries.length + '+' : 'many'} countries worldwide. Explore our top destinations below.
           </p>
         </div>
         
@@ -84,7 +85,7 @@ const PopularCountries = () => {
           </div>
         ) : countries.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-gray-500">No countries available yet.</p>
+            <p className="text-gray-500">Our team is working on adding more countries. Check back soon!</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

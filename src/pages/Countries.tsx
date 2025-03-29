@@ -34,7 +34,8 @@ const CountriesPage = () => {
     data: countries = [], 
     isLoading, 
     isError,
-    error
+    error,
+    refetch
   } = useQuery({
     queryKey: ['countries'],
     queryFn: async () => {
@@ -53,7 +54,8 @@ const CountriesPage = () => {
       return data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minute cache
-    refetchOnWindowFocus: false // Prevent unnecessary refetches
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    refetchOnMount: true, // Ensure fresh data on component mount
   });
 
   // Show error toast if query fails
@@ -138,19 +140,18 @@ const CountriesPage = () => {
     return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
   };
 
-  // Helper function to format price in INR
-  const formatPriceInINR = (price) => {
-    if (!price) return '₹0';
-    
-    // Remove any currency symbols and commas, then parse as number
-    const numericValue = parseFloat(price.replace(/[^0-9.-]+/g, ''));
-    
-    // If it was in USD, convert to INR (approximate exchange rate)
-    const inrValue = numericValue * 75;
-    
-    // Format with INR symbol and thousands separator
-    return `₹${inrValue.toLocaleString('en-IN')}`;
-  };
+  // Force refetch if countries array is empty
+  useEffect(() => {
+    if (!isLoading && countries.length === 0) {
+      // Auto-retry after a short delay
+      const timer = setTimeout(() => {
+        console.log('Auto-retrying countries fetch due to empty results');
+        refetch();
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [countries, isLoading, refetch]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
@@ -245,19 +246,12 @@ const CountriesPage = () => {
               <Globe className="h-16 w-16 mx-auto text-gray-300 mb-4" />
               <h3 className="text-xl font-semibold text-gray-800 mb-2">No countries found</h3>
               <p className="text-gray-500 mb-6">
-                {searchTerm ? `No countries match "${searchTerm}"` : 'No countries available yet'}
+                {searchTerm ? `No countries match "${searchTerm}"` : 'We\'re updating our database with new countries. Please check back soon!'}
               </p>
-              {countries.length === 0 && (
-                <div className="max-w-md mx-auto">
-                  <p className="text-sm text-gray-500 mb-4">
-                    If you're an administrator, you need to add countries in the admin dashboard.
-                  </p>
-                  <Link to="/admin/countries">
-                    <Button variant="outline" className="mr-4">
-                      Go to Admin Dashboard
-                    </Button>
-                  </Link>
-                </div>
+              {searchTerm && (
+                <Button onClick={() => setSearchTerm('')} variant="outline">
+                  Clear Search
+                </Button>
               )}
             </div>
           ) : (

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
@@ -11,44 +11,11 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Shield, Users, Clock, Award, Globe, Zap, ArrowRight, LightbulbIcon, MapPin, FileCheck } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 import WhyChooseUs from '@/components/WhyChooseUs';
 import TrustedPartners from '@/components/TrustedPartners';
 import ApplicationSteps from '@/components/ApplicationSteps';
 
 const Index = () => {
-  // Check if countries exist in the database, otherwise show guidance
-  useEffect(() => {
-    const checkForCountries = async () => {
-      try {
-        const { count, error } = await supabase
-          .from('countries')
-          .select('*', { count: 'exact', head: true });
-          
-        console.log('Countries count:', count);
-        
-        if (error) {
-          console.error('Error checking countries:', error);
-          return;
-        }
-          
-        if (count === 0) {
-          // Show a toast notification to admins with guidance
-          toast({
-            title: "No countries found",
-            description: "If you're an admin, please add countries in the admin dashboard",
-            duration: 6000,
-          });
-        }
-      } catch (err) {
-        console.error('Exception when checking countries:', err);
-      }
-    };
-
-    checkForCountries();
-  }, []);
-
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
