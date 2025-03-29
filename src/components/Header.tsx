@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Menu, 
   X, 
-  UserCircle, 
-  Search,
+  UserCircle,
   LogOut,
   Settings,
   User
@@ -21,12 +20,10 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const { user, signOut, userRole } = useAuth();
   const navigate = useNavigate();
 
@@ -44,19 +41,6 @@ const Header: React.FC = () => {
       .map(n => n[0])
       .join('')
       .toUpperCase() || 'U';
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/countries?search=${encodeURIComponent(searchTerm)}`);
-    } else {
-      toast({
-        title: "Search term required",
-        description: "Please enter a country or visa type to search",
-        variant: "destructive"
-      });
-    }
   };
 
   return (
@@ -90,17 +74,6 @@ const Header: React.FC = () => {
           
           {/* Desktop CTA + User */}
           <div className="hidden md:flex items-center space-x-4">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                type="text" 
-                placeholder="Search visas..." 
-                className="w-40 pl-9 pr-3 py-1.5 h-9 rounded-full bg-gray-50 border-gray-100 text-sm focus-visible:ring-1 focus-visible:ring-gray-300"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </form>
-            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

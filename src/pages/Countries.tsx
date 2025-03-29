@@ -113,6 +113,34 @@ const CountriesPage = () => {
     return continentMap[countryName] || 'Unknown';
   };
 
+  // Helper function to get correct flag URL format based on country name
+  const getCountryFlagUrl = (country) => {
+    // If there's already a valid flag URL stored, use that
+    if (country.flag && country.flag.includes('http')) {
+      return country.flag;
+    }
+    
+    // Convert country name to ISO code for flag CDN usage
+    const countryIsoMap = {
+      'United States': 'us',
+      'Canada': 'ca',
+      'United Kingdom': 'gb',
+      'Australia': 'au',
+      'Japan': 'jp',
+      'Germany': 'de',
+      'France': 'fr',
+      'Singapore': 'sg',
+      'UAE': 'ae',
+      'India': 'in',
+      'China': 'cn',
+      'Italy': 'it',
+      'Spain': 'es'
+    };
+    
+    const isoCode = countryIsoMap[country.name] || 'xx';
+    return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
       <Header />
@@ -253,7 +281,7 @@ const CountriesPage = () => {
                       <div className="absolute top-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
                         <div className="w-8 h-8 rounded-full overflow-hidden">
                           <img 
-                            src={country.flag || `https://flagcdn.com/w320/us.png`} 
+                            src={getCountryFlagUrl(country)}
                             alt={`${country.name} flag`} 
                             className="object-cover w-full h-full"
                             onError={(e) => {

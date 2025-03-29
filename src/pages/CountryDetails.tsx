@@ -170,6 +170,34 @@ const CountryDetails = () => {
       </div>
     );
   }
+
+  // Helper function to get correct flag URL format based on country name
+  const getCountryFlagUrl = (countryName) => {
+    // If there's already a valid flag URL stored, use that
+    if (country.flag && country.flag.includes('http')) {
+      return country.flag;
+    }
+    
+    // Convert country name to ISO code for flag CDN usage
+    const countryIsoMap = {
+      'United States': 'us',
+      'Canada': 'ca',
+      'United Kingdom': 'gb',
+      'Australia': 'au',
+      'Japan': 'jp',
+      'Germany': 'de',
+      'France': 'fr',
+      'Singapore': 'sg',
+      'UAE': 'ae',
+      'India': 'in',
+      'China': 'cn',
+      'Italy': 'it',
+      'Spain': 'es'
+    };
+    
+    const isoCode = countryIsoMap[countryName] || 'xx';
+    return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
+  };
   
   // Calculate visa dates
   const today = new Date();
@@ -202,8 +230,8 @@ const CountryDetails = () => {
   };
 
   // Get country emoji flag based on name
-  const getCountryEmoji = (countryName: string) => {
-    const emojiMap: Record<string, string> = {
+  const getCountryEmoji = (countryName) => {
+    const emojiMap = {
       'United States': '🇺🇸',
       'Canada': '🇨🇦',
       'United Kingdom': '🇬🇧',
@@ -349,7 +377,13 @@ const CountryDetails = () => {
               </Link>
 
               <div className="flex items-center mb-1">
-                <span className="text-5xl mr-4">{country.flag || getCountryEmoji(country.name)}</span>
+                <span className="text-5xl mr-4">
+                  {country.flag && country.flag.includes('http') ? (
+                    <img src={country.flag} alt={country.name} className="w-12 h-12 rounded-full object-cover" />
+                  ) : (
+                    <span>{getCountryEmoji(country.name)}</span>
+                  )}
+                </span>
                 <div>
                   <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{country.name} Visa</h1>
                   <div className="flex items-center mt-2">
@@ -893,4 +927,3 @@ function Mail(props: any) {
     </svg>
   );
 }
-
