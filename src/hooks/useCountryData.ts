@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 export interface DocumentChecklistItem {
   id: string;
@@ -93,16 +94,28 @@ export const useCountryData = (countryId: string | undefined) => {
         if (pricingError) throw pricingError;
 
         // Parse JSON fields with proper type casting
-        const processingSteps = Array.isArray(country.processing_steps) 
-          ? country.processing_steps as ProcessStep[]
+        const processingSteps: ProcessStep[] = Array.isArray(country.processing_steps) 
+          ? country.processing_steps.map((step: any) => ({
+              step: Number(step.step) || 0,
+              title: String(step.title || ''),
+              description: String(step.description || '')
+            }))
           : [];
           
-        const faq = Array.isArray(country.faq) 
-          ? country.faq as FAQItem[]
+        const faq: FAQItem[] = Array.isArray(country.faq) 
+          ? country.faq.map((item: any) => ({
+              question: String(item.question || ''),
+              answer: String(item.answer || '')
+            }))
           : [];
           
         const embassyDetails: EmbassyDetails = typeof country.embassy_details === 'object' && country.embassy_details !== null
-          ? country.embassy_details as EmbassyDetails
+          ? {
+              address: String(country.embassy_details.address || ''),
+              phone: String(country.embassy_details.phone || ''),
+              email: String(country.embassy_details.email || ''),
+              hours: String(country.embassy_details.hours || '')
+            }
           : {
               address: '',
               phone: '',
