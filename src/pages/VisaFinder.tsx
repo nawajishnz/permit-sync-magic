@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -86,7 +87,7 @@ const VisaFinder = () => {
       description: "For tourism, pleasure, or visiting friends and family",
       processingTime: "2-3 weeks",
       validityPeriod: "Up to 6 months",
-      price: "$160",
+      price: "₹12,000",
       successRate: "97%",
       requirements: [
         "Valid passport",
@@ -103,7 +104,7 @@ const VisaFinder = () => {
       description: "For business-related activities, meetings, and conferences",
       processingTime: "2-3 weeks",
       validityPeriod: "Up to 6 months",
-      price: "$160",
+      price: "₹12,000",
       successRate: "95%",
       requirements: [
         "Valid passport",
@@ -120,7 +121,7 @@ const VisaFinder = () => {
       description: "Quick online pre-authorization for eligible travelers",
       processingTime: "72 hours",
       validityPeriod: "Up to 2 years (multiple entry)",
-      price: "$29",
+      price: "₹2,175",
       successRate: "99%",
       requirements: [
         "Valid passport",

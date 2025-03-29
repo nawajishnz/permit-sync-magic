@@ -91,9 +91,9 @@ const Hero: React.FC = () => {
     },
     { 
       id: 2, 
-      title: "AI-Powered Documentation", 
+      title: "Smart Documentation Review", 
       icon: Zap,
-      description: "Our AI system helps prepare and verify your documentation automatically"
+      description: "Our advanced system helps prepare and verify your documentation automatically"
     },
     { 
       id: 3, 
@@ -276,7 +276,7 @@ const Hero: React.FC = () => {
                       <div>
                         <div className="text-xs text-indigo-600 font-medium mb-1">Step 2 of 4</div>
                         <h3 className="text-base sm:text-lg font-semibold text-gray-800">Getting your documents</h3>
-                        <p className="text-xs sm:text-sm text-gray-500">Powered by AI ⚡</p>
+                        <p className="text-xs sm:text-sm text-gray-500">Smart document processing ⚡</p>
                       </div>
                     </div>
                     
@@ -377,7 +377,7 @@ const Hero: React.FC = () => {
                         Sit back as we handle your visa application
                       </h4>
                       <p className="text-xs sm:text-sm text-gray-500">
-                        Our AI-powered system is scanning and preparing your documents while our experts are standing by to review
+                        Our advanced system is scanning and preparing your documents while our experts are standing by to review
                       </p>
                     </motion.div>
                   </motion.div>
