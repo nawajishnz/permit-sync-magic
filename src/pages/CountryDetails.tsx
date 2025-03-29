@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -630,4 +631,152 @@ const CountryDetails = () => {
                   <p className="text-gray-600 text-xs md:text-sm">Standard processing time for a {country.name} visa is {country.processing_time || '3-5 business days'}, but this can vary based on the type of visa and your specific circumstances.</p>
                 </div>
                 
-                <div className="border-b pb-3 md:
+                <div className="border-b pb-3 md:pb-4">
+                  <h3 className="font-semibold text-navy mb-1 md:mb-2 text-sm md:text-base">Can I expedite my visa application?</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Yes, we offer expedited processing for urgent travel needs. Additional fees may apply for this service.</p>
+                </div>
+                
+                <div className="border-b pb-3 md:pb-4">
+                  <h3 className="font-semibold text-navy mb-1 md:mb-2 text-sm md:text-base">What happens if my visa application is rejected?</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">If your application is rejected, our team will help you understand the reasons and guide you through the reapplication process with the necessary corrections.</p>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-navy mb-1 md:mb-2 text-sm md:text-base">Do I need travel insurance for my visa application?</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">Most countries require travel insurance that covers medical expenses and repatriation. We recommend obtaining comprehensive travel insurance for your trip.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+          
+          {/* Right column - sticky booking form */}
+          <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
+            <div className="sticky top-24">
+              <div className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
+                <h2 className="text-xl font-bold text-navy mb-5">Start Your Application</h2>
+                
+                {/* Package selection */}
+                <div className="mb-5">
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Select Package</label>
+                  <div className="grid grid-cols-1 gap-3">
+                    {visaPackages.length === 0 ? (
+                      <div className="border border-dashed border-gray-200 rounded-lg p-3 text-center">
+                        <p className="text-gray-500 text-sm">Package details coming soon</p>
+                      </div>
+                    ) : (
+                      visaPackages.map((pkg, index) => (
+                        <div 
+                          key={pkg.id || index}
+                          className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                            selectedPackage === index 
+                              ? 'border-teal bg-teal/5' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => setSelectedPackage(index)}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-navy">{pkg.name}</h3>
+                              <p className="text-xs text-gray-500">Processing time: {pkg.processing_time}</p>
+                            </div>
+                            <span className="font-bold text-indigo-600">{pkg.price}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                
+                {/* Number of travelers */}
+                <div className="mb-5">
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Number of Travelers</label>
+                  <div className="flex items-center border border-gray-200 rounded-lg">
+                    <button 
+                      className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                      onClick={handleDecreaseTravellers}
+                      disabled={travellers <= 1}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <div className="flex-1 text-center font-medium">{travellers}</div>
+                    <button 
+                      className="px-3 py-2 text-gray-500 hover:text-gray-700"
+                      onClick={handleIncreaseTravellers}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Summary */}
+                <div className="border-t border-b border-gray-100 py-4 mb-5">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600 text-sm">Base price</span>
+                    <span className="font-medium">{visaPackage.price}</span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600 text-sm">Travelers</span>
+                    <span className="font-medium">{travellers}</span>
+                  </div>
+                  <div className="flex justify-between text-navy font-bold mt-3">
+                    <span>Total</span>
+                    <span>₹{totalAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+                
+                {/* Apply now button */}
+                <Button className="w-full mb-3">
+                  Apply Now
+                </Button>
+                
+                {/* Guarantees */}
+                <div className="space-y-3 mt-6">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Check className="h-4 w-4 text-teal" />
+                    </div>
+                    <div className="ml-2">
+                      <p className="text-xs text-gray-600">Money-back guarantee if your visa is denied</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Check className="h-4 w-4 text-teal" />
+                    </div>
+                    <div className="ml-2">
+                      <p className="text-xs text-gray-600">Dedicated visa expert to handle your application</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Check className="h-4 w-4 text-teal" />
+                    </div>
+                    <div className="ml-2">
+                      <p className="text-xs text-gray-600">Free cancellation before document processing begins</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Need help */}
+                <div className="mt-6 bg-blue-50 p-3 rounded-lg">
+                  <div className="flex items-center">
+                    <MessageSquare className="h-5 w-5 text-blue-600 mr-2" />
+                    <span className="font-medium text-sm text-blue-700">Need help with your visa?</span>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">Our visa experts are here to assist you with any questions.</p>
+                  <Button variant="outline" size="sm" className="w-full mt-2 bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800">
+                    Contact Support
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default CountryDetails;
