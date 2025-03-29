@@ -77,6 +77,9 @@ export const useCountryData = (countryId: string | undefined) => {
         if (countryError) throw countryError;
         if (!country) return null;
 
+        // Log the raw data to debug
+        console.log('Raw country data:', country);
+
         // Fetch document checklist
         const { data: documents, error: documentsError } = await supabase
           .from('document_checklist')
@@ -93,21 +96,37 @@ export const useCountryData = (countryId: string | undefined) => {
 
         if (pricingError) throw pricingError;
 
-        // Parse JSON fields with proper type casting
-        const processingSteps: ProcessStep[] = Array.isArray(country.processing_steps) 
-          ? country.processing_steps.map((step: any) => ({
+        // Parse JSON fields with proper type casting and ensure they have default values
+        let processingSteps: ProcessStep[] = [];
+        if (country.processing_steps) {
+          // Handle both array and string formats
+          const stepsData = typeof country.processing_steps === 'string' 
+            ? JSON.parse(country.processing_steps) 
+            : country.processing_steps;
+            
+          if (Array.isArray(stepsData)) {
+            processingSteps = stepsData.map((step: any) => ({
               step: Number(step.step) || 0,
               title: String(step.title || ''),
               description: String(step.description || '')
-            }))
-          : [];
+            }));
+          }
+        }
           
-        const faq: FAQItem[] = Array.isArray(country.faq) 
-          ? country.faq.map((item: any) => ({
+        let faq: FAQItem[] = [];
+        if (country.faq) {
+          // Handle both array and string formats
+          const faqData = typeof country.faq === 'string' 
+            ? JSON.parse(country.faq) 
+            : country.faq;
+            
+          if (Array.isArray(faqData)) {
+            faq = faqData.map((item: any) => ({
               question: String(item.question || ''),
               answer: String(item.answer || '')
-            }))
-          : [];
+            }));
+          }
+        }
           
         // Handle embassy_details properly with better type checking
         let embassyDetails: EmbassyDetails = {
@@ -130,6 +149,10 @@ export const useCountryData = (countryId: string | undefined) => {
           };
         }
 
+        // Ensure visa_includes and visa_assistance are arrays
+        const visa_includes = Array.isArray(country.visa_includes) ? country.visa_includes : [];
+        const visa_assistance = Array.isArray(country.visa_assistance) ? country.visa_assistance : [];
+
         // Combine all data
         return {
           ...country,
@@ -138,8 +161,8 @@ export const useCountryData = (countryId: string | undefined) => {
           processing_steps: processingSteps,
           faq: faq,
           embassy_details: embassyDetails,
-          visa_includes: country.visa_includes || [],
-          visa_assistance: country.visa_assistance || []
+          visa_includes: visa_includes,
+          visa_assistance: visa_assistance
         };
       } catch (error: any) {
         console.error('Error fetching country data:', error);

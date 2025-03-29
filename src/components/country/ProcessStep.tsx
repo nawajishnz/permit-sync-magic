@@ -9,6 +9,11 @@ interface ProcessStepProps {
 }
 
 const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, description, isLast = false }) => {
+  // Don't render if title is empty (handles empty process steps)
+  if (!title.trim()) {
+    return null;
+  }
+  
   return (
     <div className="relative pb-8">
       {!isLast && (

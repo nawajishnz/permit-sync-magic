@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -52,12 +51,14 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
   const [visaIncludes, setVisaIncludes] = useState<string[]>(formData.visa_includes || []);
   const [visaAssistance, setVisaAssistance] = useState<string[]>(formData.visa_assistance || []);
   const [processingSteps, setProcessingSteps] = useState<any[]>(
-    formData.processing_steps || [
-      { step: 1, title: '', description: '' },
-      { step: 2, title: '', description: '' },
-      { step: 3, title: '', description: '' },
-      { step: 4, title: '', description: '' }
-    ]
+    formData.processing_steps && formData.processing_steps.length > 0 
+      ? formData.processing_steps 
+      : [
+        { step: 1, title: '', description: '' },
+        { step: 2, title: '', description: '' },
+        { step: 3, title: '', description: '' },
+        { step: 4, title: '', description: '' }
+      ]
   );
   const [faqItems, setFaqItems] = useState<any[]>(
     formData.faq || [
@@ -80,12 +81,19 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
   useEffect(() => {
     setVisaIncludes(formData.visa_includes || []);
     setVisaAssistance(formData.visa_assistance || []);
-    setProcessingSteps(formData.processing_steps || [
-      { step: 1, title: '', description: '' },
-      { step: 2, title: '', description: '' },
-      { step: 3, title: '', description: '' },
-      { step: 4, title: '', description: '' }
-    ]);
+    
+    // Make sure processing steps are properly initialized
+    if (formData.processing_steps && Array.isArray(formData.processing_steps) && formData.processing_steps.length > 0) {
+      setProcessingSteps(formData.processing_steps);
+    } else {
+      setProcessingSteps([
+        { step: 1, title: '', description: '' },
+        { step: 2, title: '', description: '' },
+        { step: 3, title: '', description: '' },
+        { step: 4, title: '', description: '' }
+      ]);
+    }
+    
     setFaqItems(formData.faq || [
       { question: '', answer: '' },
       { question: '', answer: '' }
@@ -161,6 +169,23 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
     const newSteps = [...processingSteps];
     newSteps[index] = { ...newSteps[index], [field]: field === 'step' ? parseInt(value) : value };
     setProcessingSteps(newSteps);
+  };
+
+  const handleAddProcessingStep = () => {
+    const nextStep = processingSteps.length + 1;
+    setProcessingSteps([...processingSteps, { step: nextStep, title: '', description: '' }]);
+  };
+
+  const handleRemoveProcessingStep = (index: number) => {
+    if (processingSteps.length > 1) {
+      const newSteps = [...processingSteps];
+      newSteps.splice(index, 1);
+      // Reorder steps after removal
+      newSteps.forEach((step, idx) => {
+        step.step = idx + 1;
+      });
+      setProcessingSteps(newSteps);
+    }
   };
 
   // FAQ handlers
@@ -500,41 +525,69 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
             <div className="border p-4 rounded-md bg-gray-50">
               <div className="flex justify-between items-center mb-3">
                 <Label className="text-lg font-medium text-navy-800">Processing Steps</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAddProcessingStep}
+                  className="h-8 border-teal-500 text-teal-600 hover:bg-teal-50"
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Step
+                </Button>
               </div>
-              {processingSteps.map((step, index) => (
-                <div key={index} className="grid md:grid-cols-8 gap-2 mb-4 items-start p-3 border rounded-md bg-white">
-                  <div className="md:col-span-1">
-                    <Label className="text-xs mb-1 block">Step #</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={step.step}
-                      onChange={(e) => handleProcessingStepChange(index, 'step', e.target.value)}
-                      placeholder="Step"
-                      className="border-gray-300 focus:border-teal-500"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label className="text-xs mb-1 block">Title</Label>
-                    <Input
-                      value={step.title}
-                      onChange={(e) => handleProcessingStepChange(index, 'title', e.target.value)}
-                      placeholder="Title"
-                      className="border-gray-300 focus:border-teal-500"
-                    />
-                  </div>
-                  <div className="md:col-span-5">
-                    <Label className="text-xs mb-1 block">Description</Label>
-                    <Textarea
-                      value={step.description}
-                      onChange={(e) => handleProcessingStepChange(index, 'description', e.target.value)}
-                      placeholder="Description"
-                      rows={2}
-                      className="border-gray-300 focus:border-teal-500"
-                    />
-                  </div>
+              
+              {processingSteps.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">
+                  <p>No steps added yet. Click the Add Step button to create a step-by-step process.</p>
                 </div>
-              ))}
+              ) : (
+                processingSteps.map((step, index) => (
+                  <div key={index} className="grid md:grid-cols-8 gap-2 mb-4 items-start p-3 border rounded-md bg-white">
+                    <div className="md:col-span-1">
+                      <Label className="text-xs mb-1 block">Step #</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={step.step}
+                        onChange={(e) => handleProcessingStepChange(index, 'step', e.target.value)}
+                        placeholder="Step"
+                        className="border-gray-300 focus:border-teal-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-xs mb-1 block">Title</Label>
+                      <Input
+                        value={step.title}
+                        onChange={(e) => handleProcessingStepChange(index, 'title', e.target.value)}
+                        placeholder="Title"
+                        className="border-gray-300 focus:border-teal-500"
+                      />
+                    </div>
+                    <div className="md:col-span-4">
+                      <Label className="text-xs mb-1 block">Description</Label>
+                      <Textarea
+                        value={step.description}
+                        onChange={(e) => handleProcessingStepChange(index, 'description', e.target.value)}
+                        placeholder="Description"
+                        rows={2}
+                        className="border-gray-300 focus:border-teal-500"
+                      />
+                    </div>
+                    <div className="md:col-span-1 flex items-end justify-center h-full pb-1">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleRemoveProcessingStep(index)}
+                        className="text-red-500 h-8 w-8 p-0 hover:bg-red-50 hover:text-red-700"
+                        disabled={processingSteps.length <= 1}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </TabsContent>
           

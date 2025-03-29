@@ -22,6 +22,7 @@ const queryClient = new QueryClient({
       staleTime: 0, // Always refetch to ensure fresh data
       refetchOnWindowFocus: true, // Refetch when window gets focus
       refetchOnMount: true, // Always refetch on component mount
+      retry: 1, // Only retry once to avoid excessive requests on failure
     },
   },
 });
