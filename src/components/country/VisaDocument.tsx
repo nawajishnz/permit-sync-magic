@@ -10,7 +10,7 @@ interface VisaDocumentProps {
 
 const VisaDocument: React.FC<VisaDocumentProps> = ({ name, description, required }) => {
   return (
-    <div className="flex items-start p-4 border border-gray-100 rounded-lg bg-white hover:shadow-sm transition-shadow">
+    <div className="flex items-start p-4 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-all">
       <div className={`flex-shrink-0 p-1 rounded-full mr-3 ${required ? 'bg-teal-50' : 'bg-amber-50'}`}>
         {required ? (
           <Check className="h-5 w-5 text-teal-600" />

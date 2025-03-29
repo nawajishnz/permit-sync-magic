@@ -120,6 +120,7 @@ const CountryDetails = () => {
       'France': '🇫🇷',
       'Singapore': '🇸🇬',
       'UAE': '🇦🇪',
+      'Dubai': '🇦🇪',
       'India': '🇮🇳',
       'China': '🇨🇳',
       'Italy': '🇮🇹',
@@ -176,7 +177,16 @@ const CountryDetails = () => {
         'https://images.unsplash.com/photo-1565538810643-b5bdb714032a?q=80&w=1000', // Gardens by the Bay
         'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000', // City skyline
       ];
-    } else {
+    } 
+    else if (country.name === 'Dubai' || country.name === 'UAE') {
+      return [
+        mainImage,
+        'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1000', // Burj Khalifa
+        'https://images.unsplash.com/photo-1580674684089-5c8b0a83e6a7?q=80&w=1000', // Dubai Mall
+        'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1000', // Desert safari
+      ];
+    }
+    else {
       // For other countries, use a mix of travel-related images
       return [
         mainImage,
@@ -378,14 +388,16 @@ const CountryDetails = () => {
               />
             </div>
             
-            {/* Tabs Section */}
+            {/* Tabs Section - Sticky Tabs */}
             <Tabs defaultValue="requirements" className="bg-white rounded-xl md:rounded-2xl shadow-sm">
-              <TabsList className="w-full justify-start p-1 px-5 border-b">
-                <TabsTrigger value="requirements" className="rounded-full">Requirements</TabsTrigger>
-                <TabsTrigger value="process" className="rounded-full">Process</TabsTrigger>
-                <TabsTrigger value="faq" className="rounded-full">FAQ</TabsTrigger>
-                <TabsTrigger value="embassy" className="rounded-full">Embassy</TabsTrigger>
-              </TabsList>
+              <div className="sticky top-16 z-20 bg-white rounded-t-xl border-b">
+                <TabsList className="w-full justify-start p-1 px-5">
+                  <TabsTrigger value="requirements" className="rounded-full">Requirements</TabsTrigger>
+                  <TabsTrigger value="process" className="rounded-full">Process</TabsTrigger>
+                  <TabsTrigger value="faq" className="rounded-full">FAQ</TabsTrigger>
+                  <TabsTrigger value="embassy" className="rounded-full">Embassy</TabsTrigger>
+                </TabsList>
+              </div>
               
               {/* Requirements Tab */}
               <TabsContent value="requirements" className="p-5 md:p-8 focus:outline-none">
@@ -475,7 +487,7 @@ const CountryDetails = () => {
           
           {/* Right column - sticky booking form */}
           <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
-            <div className="sticky top-24">
+            <div className="lg:sticky lg:top-24">
               <div className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-navy">Apply Now</h2>
@@ -579,7 +591,9 @@ const CountryDetails = () => {
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 italic">
-                    "The visa process was incredibly smooth. Permitsy handled everything efficiently and my Singapore visa was approved in just 2 days!"
+                    {country.name === "Dubai" || country.name === "UAE" ? 
+                      `"The Dubai visa process was incredibly smooth. Permitsy handled everything efficiently and my visa was approved in just 2 days!"` : 
+                      `"The visa process was incredibly smooth. Permitsy handled everything efficiently and my ${country.name} visa was approved in just 2 days!"`}
                   </div>
                   <div className="text-xs font-medium mt-1">
                     Amit P. • Verified customer
