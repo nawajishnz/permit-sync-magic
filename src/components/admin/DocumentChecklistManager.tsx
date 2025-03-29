@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,23 +10,28 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, QueryClient } from '@tanstack/react-query';
 
 interface DocumentChecklistManagerProps {
   countries: any[];
   selectedCountryId: string | null;
   onSelectCountry: (countryId: string) => void;
+  queryClient?: QueryClient; // Added queryClient as an optional prop
 }
 
 const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
   countries,
   selectedCountryId,
-  onSelectCountry
+  onSelectCountry,
+  queryClient: externalQueryClient // Rename to prevent conflict with hook
 }) => {
   const [documents, setDocuments] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const localQueryClient = useQueryClient();
+  
+  // Use the passed queryClient or the local one
+  const activeQueryClient = externalQueryClient || localQueryClient;
 
   // Fetch documents for the selected country
   const { 
@@ -178,7 +182,7 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
 
       // Refresh data
       refetch();
-      queryClient.invalidateQueries({ queryKey: ['countryDetail'] });
+      activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
 
     } catch (error: any) {
       toast({
