@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ interface DocumentChecklistManagerProps {
   countries: any[];
   selectedCountryId: string | null;
   onSelectCountry: (countryId: string) => void;
-  queryClient?: QueryClient; // Added queryClient as an optional prop
+  queryClient?: QueryClient; // Made queryClient optional
 }
 
 const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
@@ -182,7 +183,11 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
 
       // Refresh data
       refetch();
+      
+      // Invalidate country detail queries to update front-end data
       activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
+      activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
+      activeQueryClient.invalidateQueries({ queryKey: ['popularCountries'] });
 
     } catch (error: any) {
       toast({

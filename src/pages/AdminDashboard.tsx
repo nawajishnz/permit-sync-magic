@@ -26,11 +26,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Define props interfaces for components that need queryClient
-interface AdminComponentProps {
-  queryClient: QueryClient;
-}
-
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
