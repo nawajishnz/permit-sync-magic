@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Menu, 
@@ -22,10 +22,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { toast } from '@/hooks/use-toast';
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { user, signOut, userRole } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
@@ -41,6 +44,19 @@ const Header: React.FC = () => {
       .map(n => n[0])
       .join('')
       .toUpperCase() || 'U';
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/countries?search=${encodeURIComponent(searchTerm)}`);
+    } else {
+      toast({
+        title: "Search term required",
+        description: "Please enter a country or visa type to search",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -74,14 +90,16 @@ const Header: React.FC = () => {
           
           {/* Desktop CTA + User */}
           <div className="hidden md:flex items-center space-x-4">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input 
                 type="text" 
                 placeholder="Search visas..." 
                 className="w-40 pl-9 pr-3 py-1.5 h-9 rounded-full bg-gray-50 border-gray-100 text-sm focus-visible:ring-1 focus-visible:ring-gray-300"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
-            </div>
+            </form>
             
             {user ? (
               <DropdownMenu>
@@ -126,7 +144,7 @@ const Header: React.FC = () => {
               </Link>
             )}
             
-            <Link to="/apply-now">
+            <Link to="/visa-finder">
               <Button size="sm" className="text-sm h-9 bg-black hover:bg-gray-800 text-white rounded-full">
                 Apply Now
               </Button>
@@ -233,7 +251,7 @@ const Header: React.FC = () => {
             )}
             
             <Link 
-              to="/apply-now" 
+              to="/visa-finder" 
               className="bg-black text-white hover:bg-gray-800 px-4 py-3 rounded-xl mt-2 text-center"
               onClick={() => setIsOpen(false)}
             >

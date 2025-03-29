@@ -6,65 +6,67 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Plane, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 const PopularDestinations = () => {
-  const [destinations, setDestinations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchDestinations = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('countries')
-          .select('*')
-          .order('name')
-          .limit(4);
-        
-        if (error) {
-          console.error('Error fetching destinations:', error);
-          toast({
-            title: "Error loading destinations",
-            description: error.message,
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        // Transform the data to match the expected format
-        const transformedData = data.map(country => ({
-          id: country.id,
-          name: country.name,
-          imageUrl: country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
-          processingTime: country.processing_time || '2-4 weeks',
-          startingPrice: country.name === 'United States' ? '$1,950' :
-                        country.name === 'Japan' ? '$2,340' :
-                        country.name === 'Singapore' ? '$3,200' : '$1,800',
-          visaCount: country.name === 'United States' ? '25K+' :
-                    country.name === 'Japan' ? '21K+' :
-                    country.name === 'Singapore' ? '11K+' : '15K+',
-          date: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-          directFlights: country.name === 'United States' ? '2 direct flights from $90k' :
-                        country.name === 'Japan' ? '2 direct flights from $56k' :
-                        country.name === 'Singapore' ? '10 direct flights from $44k' : '5 direct flights from $60k'
-        }));
-        
-        setDestinations(transformedData);
-      } catch (err) {
-        console.error('Error in fetchDestinations:', err);
-        toast({
-          title: "Error loading destinations",
-          description: "Something went wrong while loading destinations",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+  // Use react-query to fetch destinations
+  const { 
+    data: destinations = [],
+    isLoading, 
+    error,
+  } = useQuery({
+    queryKey: ['popularDestinations'],
+    queryFn: async () => {
+      console.log('Fetching popular destinations from Supabase...');
+      const { data, error } = await supabase
+        .from('countries')
+        .select('*')
+        .order('name')
+        .limit(4);
+      
+      if (error) {
+        console.error('Error fetching destinations:', error);
+        throw error;
       }
-    };
+      
+      console.log('Destinations fetched:', data?.length);
+      
+      // Transform the data to match the expected format
+      return data.map(country => ({
+        id: country.id,
+        name: country.name,
+        imageUrl: country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
+        processingTime: country.processing_time || '2-4 weeks',
+        startingPrice: country.name === 'United States' ? '$1,950' :
+                      country.name === 'Japan' ? '$2,340' :
+                      country.name === 'Singapore' ? '$3,200' : '$1,800',
+        visaCount: country.name === 'United States' ? '25K+' :
+                  country.name === 'Japan' ? '21K+' :
+                  country.name === 'Singapore' ? '11K+' : '15K+',
+        date: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+        directFlights: country.name === 'United States' ? '2 direct flights from $90k' :
+                      country.name === 'Japan' ? '2 direct flights from $56k' :
+                      country.name === 'Singapore' ? '10 direct flights from $44k' : '5 direct flights from $60k'
+      }));
+    },
+    // Add error handling
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-    fetchDestinations();
-  }, [toast]);
+  // Show toast if error occurs
+  useEffect(() => {
+    if (error) {
+      console.error('Error in useQuery:', error);
+      toast({
+        title: "Error loading destinations",
+        description: error instanceof Error ? error.message : "Failed to load destinations",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   return (
     <section className="py-16 bg-white">
@@ -86,7 +88,10 @@ const PopularDestinations = () => {
           </div>
         ) : destinations.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-500">No destinations available yet.</p>
+            <p className="text-gray-500 mb-4">No destinations available yet.</p>
+            <p className="text-sm text-gray-400">
+              Check the Supabase database to ensure countries are added in the 'countries' table.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

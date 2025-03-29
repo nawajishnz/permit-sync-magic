@@ -5,58 +5,65 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, Filter, MapPin, Globe, Flag, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 const CountriesPage = () => {
-  const [countries, setCountries] = useState([]);
   const [continent, setContinent] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [filteredCountries, setFilteredCountries] = useState([]);
   const { toast } = useToast();
-
+  const location = useLocation();
+  
+  // Extract search term from URL if present
   useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        setIsLoading(true);
-        console.log('Fetching countries from the database...');
-        const { data, error } = await supabase
-          .from('countries')
-          .select('*')
-          .order('name');
-          
-        if (error) {
-          console.error('Error fetching countries:', error);
-          toast({
-            title: "Error loading countries",
-            description: error.message || "Failed to load countries data",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        console.log('Countries fetched:', data?.length);
-        setCountries(data || []);
-        setFilteredCountries(data || []);
-      } catch (err) {
-        console.error('Exception when fetching countries:', err);
-        toast({
-          title: "Error loading countries",
-          description: "Something went wrong while loading countries",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      setSearchTerm(searchParam);
+    }
+  }, [location.search]);
 
-    fetchCountries();
-  }, [toast]);
+  // Use react-query to fetch countries
+  const { 
+    data: countries = [], 
+    isLoading, 
+    isError,
+    error
+  } = useQuery({
+    queryKey: ['countries'],
+    queryFn: async () => {
+      console.log('Fetching countries from the database...');
+      const { data, error } = await supabase
+        .from('countries')
+        .select('*')
+        .order('name');
+          
+      if (error) {
+        console.error('Error fetching countries:', error);
+        throw error;
+      }
+        
+      console.log('Countries fetched:', data?.length);
+      return data || [];
+    }
+  });
+
+  // Show error toast if query fails
+  useEffect(() => {
+    if (isError && error instanceof Error) {
+      toast({
+        title: "Error loading countries",
+        description: error.message || "Failed to load countries data",
+        variant: "destructive",
+      });
+    }
+  }, [isError, error, toast]);
 
   // Filter countries based on search term and continent
   useEffect(() => {
@@ -66,8 +73,8 @@ const CountriesPage = () => {
     if (searchTerm) {
       const lowerCaseSearch = searchTerm.toLowerCase();
       result = result.filter(country => 
-        country.name.toLowerCase().includes(lowerCaseSearch) ||
-        country.entry_type.toLowerCase().includes(lowerCaseSearch)
+        country.name?.toLowerCase().includes(lowerCaseSearch) ||
+        country.entry_type?.toLowerCase().includes(lowerCaseSearch)
       );
     }
     
@@ -119,13 +126,17 @@ const CountriesPage = () => {
                 Find the perfect destination for your next trip or relocation and get all the visa information you need.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-                <Button variant="gradient" size="lg" className="rounded-full">
-                  <Globe className="mr-2 h-5 w-5" />
-                  View Popular Destinations
-                </Button>
-                <Button variant="outline" size="lg" className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-full">
-                  Find Your Ideal Visa
-                </Button>
+                <Link to="/visa-finder">
+                  <Button variant="gradient" size="lg" className="rounded-full w-full sm:w-auto">
+                    <Globe className="mr-2 h-5 w-5" />
+                    View Popular Destinations
+                  </Button>
+                </Link>
+                <Link to="/visa-finder">
+                  <Button variant="outline" size="lg" className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-full w-full sm:w-auto">
+                    Find Your Ideal Visa
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -194,9 +205,21 @@ const CountriesPage = () => {
             <div className="text-center py-20">
               <Globe className="h-16 w-16 mx-auto text-gray-300 mb-4" />
               <h3 className="text-xl font-semibold text-gray-800 mb-2">No countries found</h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 mb-6">
                 {searchTerm ? `No countries match "${searchTerm}"` : 'No countries available yet'}
               </p>
+              {countries.length === 0 && (
+                <div className="max-w-md mx-auto">
+                  <p className="text-sm text-gray-500 mb-4">
+                    If you're an administrator, you need to add countries in the admin dashboard.
+                  </p>
+                  <Link to="/admin/countries">
+                    <Button variant="outline" className="mr-4">
+                      Go to Admin Dashboard
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
