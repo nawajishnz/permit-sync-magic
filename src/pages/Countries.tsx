@@ -4,15 +4,17 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Filter, MapPin, Globe, Flag, Loader2 } from 'lucide-react';
+import { Search, Filter, MapPin, Globe, Flag, Loader2, Calendar, Plane, BadgeCheck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 
 const CountriesPage = () => {
   const [continent, setContinent] = useState('');
@@ -142,6 +144,65 @@ const CountriesPage = () => {
     return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
   };
 
+  // Generate faux prices and visa numbers for display
+  const getCountryDetails = (country: any) => {
+    // Create realistic looking but fictional price based on country
+    let price = '';
+    let visaCount = '';
+    let entryDate = '';
+    let flightInfo = '';
+    
+    switch(country.name) {
+      case 'United States':
+        price = '₹11,950';
+        visaCount = '25K+';
+        entryDate = 'Get on 29 Jun, 11:48 PM';
+        flightInfo = '2 direct flights from ₹90k';
+        break;
+      case 'Japan':
+        price = '₹2,340';
+        visaCount = '21K+';
+        entryDate = 'Get on 08 May, 09:52 PM';
+        flightInfo = '2 direct flights from ₹56k';
+        break;
+      case 'Singapore':
+        price = '₹3,200';
+        visaCount = '11K+';
+        entryDate = 'Get on 14 Apr, 10:08 PM';
+        flightInfo = '10 direct flights from ₹44k';
+        break;
+      case 'Australia':
+        price = '₹10,500';
+        visaCount = '7K+';
+        entryDate = 'Get on 28 Apr, 11:14 PM';
+        flightInfo = '1 direct flight from ₹99k';
+        break;
+      default:
+        // Generate some plausible values for other countries
+        const priceBase = Math.floor(Math.random() * 5 + 1) * 1000;
+        price = `₹${priceBase.toLocaleString('en-IN')}`;
+        const visaBase = Math.floor(Math.random() * 20 + 5);
+        visaCount = `${visaBase}K+`;
+        
+        // Random date within next 3 months
+        const date = new Date();
+        date.setDate(date.getDate() + Math.floor(Math.random() * 90));
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const day = date.getDate();
+        const hours = Math.floor(Math.random() * 12 + 1);
+        const minutes = Math.floor(Math.random() * 60);
+        const ampm = Math.random() > 0.5 ? 'AM' : 'PM';
+        entryDate = `Get on ${day} ${month}, ${hours}:${minutes < 10 ? '0' + minutes : minutes} ${ampm}`;
+        
+        // Random flight info
+        const flightCount = Math.floor(Math.random() * 8 + 1);
+        const flightPrice = Math.floor(Math.random() * 50 + 20);
+        flightInfo = `${flightCount} direct flight${flightCount > 1 ? 's' : ''} from ₹${flightPrice}k`;
+    }
+    
+    return { price, visaCount, entryDate, flightInfo };
+  };
+
   // Force refetch if countries array is empty
   useEffect(() => {
     if (!isLoading && countries.length === 0) {
@@ -257,67 +318,108 @@ const CountriesPage = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-              {filteredCountries.map((country) => (
-                <Link to={`/country/${country.id}`} key={country.id}>
-                  <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 rounded-xl md:rounded-2xl border-none group">
-                    <div className="relative">
-                      <AspectRatio ratio={16/9} className="bg-gray-100 overflow-hidden">
-                        <img 
-                          src={country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000'} 
-                          alt={`${country.name} landscape`} 
-                          className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 z-10"></div>
-                      </AspectRatio>
-                      
-                      {/* Country name and continent */}
-                      <div className="absolute bottom-3 md:bottom-4 left-3 md:left-4 z-20">
-                        <h3 className="font-semibold text-base md:text-xl text-white mb-1">{country.name}</h3>
-                        <div className="flex items-center text-xs md:text-sm text-white/90 bg-black/30 backdrop-blur-sm px-2 md:px-3 py-0.5 md:py-1 rounded-full">
-                          <MapPin size={12} className="mr-1" /> 
-                          <span>{getContinent(country.name)}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredCountries.map((country, index) => {
+                const { price, visaCount, entryDate, flightInfo } = getCountryDetails(country);
+                
+                return (
+                  <motion.div
+                    key={country.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.05 }}
+                  >
+                    <Link to={`/country/${country.id}`}>
+                      <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer rounded-xl border-none shadow-md group">
+                        <div className="relative">
+                          <AspectRatio ratio={16/9} className="bg-gray-100">
+                            <img 
+                              src={country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000'} 
+                              alt={country.name}
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+                          </AspectRatio>
+                          
+                          {/* Visa count badge */}
+                          <Badge className="absolute top-3 left-3 bg-blue-600/90 text-white border-0 py-1.5 px-3 rounded-full backdrop-blur-sm">
+                            {visaCount} Visas on Time
+                          </Badge>
+                          
+                          {/* Special label for certain countries */}
+                          {country.name === 'Japan' && (
+                            <div className="absolute top-3 right-3">
+                              <div className="bg-yellow-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-navy-900 flex items-center">
+                                <BadgeCheck className="w-3.5 h-3.5 mr-1" /> 
+                                Sticker Visa
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Country name and continent */}
+                          <div className="absolute bottom-3 left-3 z-20">
+                            <h3 className="font-semibold text-xl text-white mb-1">{country.name}</h3>
+                            <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+                              <MapPin size={12} className="mr-1" /> 
+                              <span>{getContinent(country.name)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Flag at top right */}
+                          <div className="absolute bottom-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
+                            <div className="w-8 h-8 rounded-full overflow-hidden">
+                              <img 
+                                src={getCountryFlagUrl(country)}
+                                alt={`${country.name} flag`} 
+                                className="object-cover w-full h-full"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = 'https://via.placeholder.com/320x160?text=Flag';
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* Flag at top right */}
-                      <div className="absolute top-2 md:top-3 right-2 md:right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
-                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full overflow-hidden">
-                          <img 
-                            src={getCountryFlagUrl(country)}
-                            alt={`${country.name} flag`} 
-                            className="object-cover w-full h-full"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = 'https://via.placeholder.com/320x160?text=Flag';
-                            }}
-                          />
+                        
+                        <div className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center text-xs text-gray-500 mb-2">
+                              <Calendar className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                              <span className="truncate">{entryDate}</span>
+                            </div>
+                            <span className="font-bold text-blue-600">{price}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-xs text-gray-500 mb-3">
+                            <Plane className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                            <span className="truncate">{flightInfo}</span>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1">
+                            {getVisaTypes(country).map((type, i) => (
+                              <span key={i} className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                                {type}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <CardContent className="p-3 md:p-5">
-                      <div className="flex flex-wrap gap-1.5 md:gap-2">
-                        {getVisaTypes(country).map((type, i) => (
-                          <span key={i} className="text-xs bg-navy-50 text-navy-700 px-2 md:px-3 py-0.5 md:py-1 rounded-full">
-                            {type}
-                          </span>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                      </Card>
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
           
           {/* Pagination or load more */}
           {filteredCountries.length > 0 && (
-            <div className="mt-8 md:mt-12 text-center">
-              <Button variant="outline" className="rounded-full border-gray-200 px-6 md:px-8">
+            <div className="mt-12 text-center">
+              <Button variant="outline" className="rounded-full border-gray-200 px-8">
                 Load More Countries
               </Button>
             </div>

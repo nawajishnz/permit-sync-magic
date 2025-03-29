@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Zap, FileText, Globe, Check, ArrowRight } from 'lucide-react';
+import { Zap, FileText, Globe, Check, ArrowRight, Calendar, Clipboard, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -12,54 +12,51 @@ const ApplicationSteps = () => {
       title: "Fill Out Your Details",
       description: "Complete your application with our simple, guided form",
       icon: FileText,
-      color: "bg-blue-100 text-blue-600"
+      color: "bg-indigo-100 text-indigo-600",
+      iconBg: "bg-indigo-500"
     },
     {
       id: 2,
       title: "AI-Powered Processing",
       description: "Our technology reviews and prepares your application",
       icon: Zap,
-      color: "bg-purple-100 text-purple-600"
+      color: "bg-purple-100 text-purple-600",
+      iconBg: "bg-purple-500"
     },
     {
       id: 3,
       title: "Expert Human Review",
       description: "Visa specialists ensure everything is perfect",
       icon: Globe,
-      color: "bg-indigo-100 text-indigo-600"
+      color: "bg-blue-100 text-blue-600",
+      iconBg: "bg-blue-500"
     },
     {
       id: 4,
       title: "Visa Delivery",
       description: "Receive your approved visa electronically or by mail",
       icon: Check,
-      color: "bg-green-100 text-green-600"
+      color: "bg-green-100 text-green-600",
+      iconBg: "bg-green-500"
     }
   ];
 
   return (
     <section className="py-20 bg-gradient-to-b from-white to-blue-50/30">
       <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <motion.h2 
-            className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            Four Simple Steps to Your Visa
-          </motion.h2>
-          <motion.p 
-            className="text-lg text-gray-600"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
+        <motion.div 
+          className="max-w-3xl mx-auto text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <span className="inline-block text-indigo-600 font-semibold mb-2 bg-indigo-50 px-4 py-1 rounded-full text-sm">Our Process</span>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Four Simple Steps to Your Visa</h2>
+          <p className="text-lg text-gray-600">
             Our streamlined process takes the stress out of visa applications
-          </motion.p>
-        </div>
+          </p>
+        </motion.div>
 
         <div className="relative">
           {/* Connecting line */}
@@ -77,7 +74,7 @@ const ApplicationSteps = () => {
                 whileHover={{ y: -8 }}
               >
                 <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 h-full flex flex-col items-center text-center relative z-10">
-                  <div className={`${step.color} w-16 h-16 rounded-full flex items-center justify-center mb-6`}>
+                  <div className={`${step.color} w-16 h-16 rounded-full flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110`}>
                     <step.icon className="h-8 w-8" />
                   </div>
                   <div className="absolute -top-4 -left-4 w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md">
@@ -96,6 +93,52 @@ const ApplicationSteps = () => {
             ))}
           </div>
         </div>
+        
+        {/* Card with stats */}
+        <motion.div 
+          className="mt-16 bg-gradient-to-r from-indigo-600 to-blue-700 rounded-2xl shadow-xl overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3">
+            {[
+              { 
+                icon: Calendar, 
+                value: "24-48 hrs", 
+                label: "Average Processing Time" 
+              },
+              { 
+                icon: Clipboard, 
+                value: "98%", 
+                label: "Application Success Rate" 
+              },
+              { 
+                icon: Award, 
+                value: "50,000+", 
+                label: "Satisfied Customers" 
+              }
+            ].map((stat, index) => (
+              <motion.div 
+                key={index}
+                className="p-8 text-center border-b md:border-b-0 md:border-r border-white/10 last:border-0"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: 0.1 * index + 0.5 }}
+              >
+                <div className="flex justify-center mb-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white">
+                    <stat.icon className="h-6 w-6" />
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
+                <div className="text-sm text-blue-100">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
         
         <motion.div 
           className="flex justify-center mt-12"
