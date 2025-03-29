@@ -485,7 +485,7 @@ const CountryDetails = () => {
             </section>
           </div>
           
-          {/* Right column - sticky booking form */}
+          {/* Right column - sticky booking form - improve stickiness */}
           <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
             <div className="lg:sticky lg:top-24">
               <div className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">

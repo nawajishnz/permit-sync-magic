@@ -13,6 +13,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DocumentChecklistManager from './DocumentChecklistManager';
 import PricingTierManager from './PricingTierManager';
 
+// Define the CountryFormData interface to match the expected type in CountryDialog
+interface CountryFormData {
+  name: string;
+  flag: string;
+  banner: string;
+  description: string;
+  entry_type: string;
+  validity: string;
+  processing_time: string;
+  length_of_stay: string;
+  requirements_description?: string;
+  visa_includes: string[];
+  visa_assistance: string[];
+  processing_steps: any[];
+  faq: any[];
+  embassy_details: {
+    address: string;
+    phone: string;
+    email: string;
+    hours: string;
+  };
+}
+
 const CountriesManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -23,7 +46,7 @@ const CountriesManager = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CountryFormData>({
     name: '',
     flag: '',
     banner: '',
@@ -279,6 +302,11 @@ const CountriesManager = () => {
     setSelectedCountryId(countryId);
   };
 
+  // Create a typed handler for CountryDialog's onInputChange prop
+  const handleFormChange = (newFormData: CountryFormData) => {
+    setFormData(newFormData);
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -346,7 +374,7 @@ const CountriesManager = () => {
         formData={formData}
         onInputChange={handleInputChange}
         onSubmit={handleSubmit}
-        setFormData={setFormData}
+        setFormData={handleFormChange}
       />
     </div>
   );

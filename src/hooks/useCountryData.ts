@@ -93,16 +93,16 @@ export const useCountryData = (countryId: string | undefined) => {
         if (pricingError) throw pricingError;
 
         // Parse JSON fields with proper type casting
-        const processingSteps: ProcessStep[] = Array.isArray(country.processing_steps) 
-          ? country.processing_steps 
+        const processingSteps = Array.isArray(country.processing_steps) 
+          ? country.processing_steps as ProcessStep[]
           : [];
           
-        const faq: FAQItem[] = Array.isArray(country.faq) 
-          ? country.faq 
+        const faq = Array.isArray(country.faq) 
+          ? country.faq as FAQItem[]
           : [];
           
         const embassyDetails: EmbassyDetails = typeof country.embassy_details === 'object' && country.embassy_details !== null
-          ? country.embassy_details
+          ? country.embassy_details as EmbassyDetails
           : {
               address: '',
               phone: '',
