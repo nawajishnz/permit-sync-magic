@@ -15,6 +15,9 @@ import WhyChooseUs from '@/components/WhyChooseUs';
 import TrustedPartners from '@/components/TrustedPartners';
 import ApplicationSteps from '@/components/ApplicationSteps';
 import { useIsMobile } from '@/hooks/use-mobile';
+import VisaComparisonSection from '@/components/VisaComparisonSection';
+import TravelTipsSection from '@/components/TravelTipsSection';
+import VisaDocumentChecklist from '@/components/VisaDocumentChecklist';
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -51,14 +54,14 @@ const Index = () => {
                   count: '98%', 
                   label: 'Success Rate', 
                   description: 'Applications approved on first submission',
-                  color: 'bg-indigo-100 text-indigo-600' 
+                  color: 'bg-blue-100 text-blue-600' 
                 },
                 { 
                   icon: Users, 
                   count: '50k+', 
                   label: 'Happy Travelers', 
                   description: 'Satisfied customers worldwide',
-                  color: 'bg-blue-100 text-blue-600' 
+                  color: 'bg-indigo-100 text-indigo-600' 
                 },
                 { 
                   icon: Clock, 
@@ -90,13 +93,22 @@ const Index = () => {
 
         <ApplicationSteps />
         
+        {/* Document Checklist - New Section */}
+        <VisaDocumentChecklist />
+        
         <div className="py-12 md:py-20 bg-white px-4">
           <PopularDestinations />
         </div>
         
         <HowItWorks />
         
+        {/* Visa Comparison - New Section */}
+        <VisaComparisonSection />
+        
         <WhyChooseUs />
+        
+        {/* Travel Tips Section - New Section */}
+        <TravelTipsSection />
         
         <div className="py-12 md:py-20 bg-gradient-to-b from-blue-50/60 to-white px-4">
           <Testimonials />
