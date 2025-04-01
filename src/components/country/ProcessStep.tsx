@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { FileText } from 'lucide-react'; // Adding a default icon
 
 interface ProcessStepProps {
   step: number;
   title: string;
   description: string;
   isLast?: boolean;
-  icon: React.ReactNode;
+  icon?: React.ReactNode; // Making icon optional
 }
 
 const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, description, icon, isLast = false }) => {
@@ -15,6 +16,9 @@ const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, description, ico
   if (!title.trim()) {
     return null;
   }
+  
+  // Default icon if none provided
+  const displayIcon = icon || <FileText className="h-6 w-6" />;
   
   return (
     <motion.div 
@@ -35,7 +39,7 @@ const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, description, ico
               {step}
             </span>
             <div className="text-white">
-              {icon}
+              {displayIcon}
             </div>
           </motion.div>
           

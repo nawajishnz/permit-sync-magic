@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { FileText, Shield, Clock, Check, ArrowRight, Plane, Globe, FileCheck, Passport } from 'lucide-react';
+import { FileText, Shield, Clock, Check, ArrowRight, Plane, Globe, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import ProcessStep from './country/ProcessStep';
@@ -68,7 +67,7 @@ const ApplicationSteps = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
               >
-                <Passport className="h-8 w-8 text-teal-500" />
+                <FileText className="h-8 w-8 text-teal-500" />
               </motion.div>
               
               <motion.div 
@@ -168,7 +167,7 @@ const ApplicationSteps = () => {
                 transition={{ duration: 1 }}
               >
                 <div className="p-1 bg-teal-500 rounded-md text-white">
-                  <Passport className="h-6 w-6" />
+                  <FileText className="h-6 w-6" />
                 </div>
                 <motion.div 
                   className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"
