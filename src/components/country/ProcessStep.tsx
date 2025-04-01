@@ -1,34 +1,55 @@
 
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface ProcessStepProps {
   step: number;
   title: string;
   description: string;
   isLast?: boolean;
+  icon: React.ReactNode;
 }
 
-const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, description, isLast = false }) => {
+const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, description, icon, isLast = false }) => {
   // Don't render if title is empty (handles empty process steps)
   if (!title.trim()) {
     return null;
   }
   
   return (
-    <div className="relative pb-8">
-      {!isLast && (
-        <div className="absolute top-0 left-5 ml-px border-l-2 border-blue-300 h-full z-0"></div>
-      )}
-      <div className="flex items-start relative z-10">
-        <div className="flex-shrink-0 bg-gradient-to-r from-teal-500 to-teal-600 text-white w-10 h-10 rounded-md flex items-center justify-center font-semibold text-sm shadow-md">
-          {step}
+    <motion.div 
+      className="relative"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay: 0.1 * step }}
+    >
+      <div className="flex items-start gap-4 relative z-10">
+        <div className="flex flex-col items-center">
+          <motion.div
+            className="w-16 h-16 rounded-full bg-teal-500 flex items-center justify-center shadow-md relative"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          >
+            <span className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-teal-600 text-sm font-bold shadow-sm">
+              {step}
+            </span>
+            <div className="text-white">
+              {icon}
+            </div>
+          </motion.div>
+          
+          {!isLast && (
+            <div className="w-0.5 h-16 bg-gradient-to-b from-teal-500 to-transparent mt-3"></div>
+          )}
         </div>
-        <div className="ml-4">
-          <h3 className="font-medium text-gray-900 text-base sm:text-lg">{title}</h3>
-          <p className="text-gray-600 text-sm sm:text-base mt-1">{description}</p>
+        
+        <div className="pt-2">
+          <h3 className="font-medium text-gray-900 text-lg sm:text-xl mb-2">{title}</h3>
+          <p className="text-gray-600">{description}</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
