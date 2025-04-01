@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Clock, Shield, Check, ArrowRight, Calendar, Clipboard, Award } from 'lucide-react';
+import { FileText, Shield, Clock, Check, ArrowRight, Calendar, Clipboard, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -14,28 +14,28 @@ const ApplicationSteps = () => {
       title: "Fill Out Your Details",
       description: "Complete your application with our simple, guided form",
       icon: FileText,
-      color: "from-blue-400 to-blue-500"
+      color: "from-teal-400 to-teal-500"
     },
     {
       id: 2,
       title: "Document Verification",
       description: "Our experts verify your documents for accuracy and completeness",
       icon: Shield,
-      color: "from-purple-400 to-purple-500"
+      color: "from-teal-400 to-teal-500"
     },
     {
       id: 3,
       title: "Expert Human Review",
       description: "Visa specialists ensure everything is perfect",
       icon: Clock,
-      color: "from-blue-400 to-blue-500"
+      color: "from-teal-400 to-teal-500"
     },
     {
       id: 4,
       title: "Visa Delivery",
       description: "Receive your approved visa electronically or by mail",
       icon: Check,
-      color: "from-green-400 to-green-500"
+      color: "from-teal-400 to-teal-500"
     }
   ];
 
@@ -49,7 +49,7 @@ const ApplicationSteps = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <span className="inline-block text-blue-600 font-medium mb-3 bg-blue-50 px-4 py-1 rounded-full text-sm tracking-wide">Our Process</span>
+          <span className="inline-block text-teal-600 font-medium mb-3 bg-teal-50 px-4 py-1 rounded-full text-sm tracking-wide">Our Process</span>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">Four Simple Steps to Your Visa</h2>
           <p className="text-lg text-gray-600 leading-relaxed">
             Our streamlined process takes the stress out of visa applications
@@ -58,13 +58,14 @@ const ApplicationSteps = () => {
 
         {/* Main steps - desktop version */}
         <div className="hidden md:block relative">
-          {/* Progress line */}
-          <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-200" style={{ transform: 'translateY(-50%)' }}></div>
-          <div className="absolute left-0 top-1/2 h-0.5 bg-blue-500 transition-all duration-500" 
-               style={{ 
-                 width: activeStep ? `${(activeStep / steps.length) * 100}%` : '0%',
-                 transform: 'translateY(-50%)'
-               }}></div>
+          {/* Progress line - with better animation */}
+          <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-200 transform -translate-y-1/2"></div>
+          <motion.div 
+            className="absolute left-0 top-1/2 h-0.5 bg-teal-500 transform -translate-y-1/2"
+            initial={{ width: "0%" }}
+            animate={{ width: activeStep ? `${(activeStep / steps.length) * 100}%` : '25%' }}
+            transition={{ duration: 0.5 }}
+          ></motion.div>
           
           <div className="grid grid-cols-4 gap-4 max-w-5xl mx-auto relative">
             {steps.map((step, index) => (
@@ -78,18 +79,42 @@ const ApplicationSteps = () => {
                 onMouseEnter={() => setActiveStep(step.id)}
                 onMouseLeave={() => setActiveStep(null)}
               >
-                <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 
+                <div className={`bg-white rounded-lg shadow-sm border border-gray-100 p-6 
                   transition-all duration-300 h-full flex flex-col
                   ${activeStep === step.id ? 'shadow-md scale-105' : 'hover:shadow-md hover:scale-102'}`}>
                   
-                  {/* Step number indicator */}
-                  <div className="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-blue-600 text-white 
-                    flex items-center justify-center text-sm font-medium z-10">{step.id}</div>
+                  {/* Improved step number indicator */}
+                  <div className={`absolute -top-5 left-1/2 transform -translate-x-1/2 w-10 h-10 rounded-lg 
+                    flex items-center justify-center z-10 shadow-md
+                    ${activeStep === step.id ? "bg-teal-500 text-white" : "bg-white text-teal-500 border border-teal-200"}`}>
+                    <span className="font-bold">{step.id}</span>
+                  </div>
                   
-                  {/* Icon */}
+                  {/* Professional border animation for active step */}
+                  {activeStep === step.id && (
+                    <motion.div 
+                      className="absolute inset-0 rounded-lg pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="absolute inset-0 border-2 border-teal-400 rounded-lg"></div>
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 to-teal-500 rounded-t-lg"></div>
+                    </motion.div>
+                  )}
+                  
+                  {/* Icon with travel theme animation */}
                   <div className={`w-16 h-16 mb-5 rounded-full bg-gradient-to-r ${step.color} flex items-center 
-                    justify-center text-white shadow-md mx-auto`}>
-                    <step.icon className="h-7 w-7" />
+                    justify-center text-white shadow-md mx-auto mt-4`}>
+                    <motion.div
+                      animate={activeStep === step.id ? 
+                        { scale: [1, 1.1, 1], rotate: [0, 5, 0] } : 
+                        { scale: 1, rotate: 0 }
+                      }
+                      transition={{ duration: 0.5, repeat: activeStep === step.id ? Infinity : 0, repeatType: "reverse" }}
+                    >
+                      <step.icon className="h-7 w-7" />
+                    </motion.div>
                   </div>
                   
                   {/* Content */}
@@ -98,9 +123,16 @@ const ApplicationSteps = () => {
                   
                   {/* Arrow indicator for next step - don't show on last step */}
                   {index < steps.length - 1 && (
-                    <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-blue-400 z-10">
-                      <ArrowRight className="h-5 w-5" />
-                    </div>
+                    <motion.div 
+                      className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-teal-500 z-10"
+                      animate={activeStep === step.id ? 
+                        { x: [0, 5, 0] } : 
+                        { x: 0 }
+                      }
+                      transition={{ duration: 0.8, repeat: activeStep === step.id ? Infinity : 0 }}
+                    >
+                      <ArrowRight className="h-6 w-6" />
+                    </motion.div>
                   )}
                 </div>
               </motion.div>
@@ -108,11 +140,18 @@ const ApplicationSteps = () => {
           </div>
         </div>
         
-        {/* Mobile version - vertical steps */}
+        {/* Mobile version - vertical steps with improved alignment */}
         <div className="md:hidden">
           <div className="relative max-w-sm mx-auto px-4">
             {/* Vertical line */}
             <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200 ml-px"></div>
+            <motion.div 
+              className="absolute left-8 top-0 w-0.5 bg-teal-500 ml-px"
+              initial={{ height: "25%" }}
+              whileInView={{ height: "100%" }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+            ></motion.div>
             
             {steps.map((step, index) => (
               <motion.div
@@ -124,15 +163,24 @@ const ApplicationSteps = () => {
                 transition={{ duration: 0.4, delay: index * 0.1 }}
               >
                 <div className="flex">
-                  {/* Step circle */}
-                  <div className={`flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-r ${step.color} 
+                  {/* Step circle - improved design */}
+                  <div className={`flex-shrink-0 w-16 h-16 rounded-lg bg-gradient-to-r ${step.color} 
                     flex items-center justify-center text-white shadow-md z-10`}>
-                    <step.icon className="h-7 w-7" />
+                    <motion.div
+                      whileInView={{ 
+                        scale: [1, 1.1, 1],
+                        transition: { duration: 1, repeat: 1 }
+                      }}
+                      viewport={{ once: true }}
+                    >
+                      <step.icon className="h-7 w-7" />
+                    </motion.div>
                   </div>
                   
-                  {/* Content */}
-                  <div className="ml-4 bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex-grow">
-                    <span className="inline-block px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full mb-2">Step {step.id}</span>
+                  {/* Content with improved design */}
+                  <div className="ml-4 bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex-grow">
+                    <div className="absolute -left-1 top-6 w-5 h-0.5 bg-teal-500"></div>
+                    <span className="inline-block px-2 py-1 bg-teal-50 text-teal-600 text-xs rounded-full mb-2">Step {step.id}</span>
                     <h3 className="text-lg font-semibold text-gray-800 mb-1">{step.title}</h3>
                     <p className="text-gray-600 text-sm">{step.description}</p>
                   </div>
@@ -142,7 +190,7 @@ const ApplicationSteps = () => {
           </div>
         </div>
         
-        {/* Statistics Cards */}
+        {/* Statistics Cards - updated for consistency */}
         <motion.div 
           className="mt-20"
           initial={{ opacity: 0, y: 30 }}
@@ -156,24 +204,24 @@ const ApplicationSteps = () => {
                 icon: Calendar, 
                 value: "24-48 hrs", 
                 label: "Average Processing Time",
-                color: "bg-blue-50 text-blue-600"
+                color: "bg-teal-50 text-teal-600"
               },
               { 
                 icon: Clipboard, 
                 value: "98%", 
                 label: "Application Success Rate",
-                color: "bg-green-50 text-green-600"
+                color: "bg-teal-50 text-teal-600"
               },
               { 
                 icon: Award, 
                 value: "50,000+", 
                 label: "Satisfied Customers",
-                color: "bg-purple-50 text-purple-600"
+                color: "bg-teal-50 text-teal-600"
               }
             ].map((stat, index) => (
               <motion.div 
                 key={index}
-                className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center"
+                className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -192,7 +240,7 @@ const ApplicationSteps = () => {
           </div>
         </motion.div>
         
-        {/* CTA button */}
+        {/* CTA button - updated for consistency */}
         <motion.div 
           className="flex justify-center mt-16"
           initial={{ opacity: 0, y: 20 }}
@@ -201,7 +249,7 @@ const ApplicationSteps = () => {
           transition={{ duration: 0.5, delay: 0.5 }}
         >
           <Link to="/visa-finder">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 shadow-md group">
+            <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white rounded-lg px-8 shadow-md group">
               Start Your Application 
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>

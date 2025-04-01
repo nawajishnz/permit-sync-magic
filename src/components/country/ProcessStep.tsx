@@ -20,7 +20,7 @@ const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, description, isL
         <div className="absolute top-0 left-5 ml-px border-l-2 border-blue-300 h-full z-0"></div>
       )}
       <div className="flex items-start relative z-10">
-        <div className="flex-shrink-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm shadow-sm">
+        <div className="flex-shrink-0 bg-gradient-to-r from-teal-500 to-teal-600 text-white w-10 h-10 rounded-md flex items-center justify-center font-semibold text-sm shadow-md">
           {step}
         </div>
         <div className="ml-4">
