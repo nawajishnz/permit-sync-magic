@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
@@ -19,46 +19,7 @@ import VisaComparisonSection from '@/components/VisaComparisonSection';
 import TravelTipsSection from '@/components/TravelTipsSection';
 import VisaDocumentChecklist from '@/components/VisaDocumentChecklist';
 import AddonServicesSection from '@/components/countries/AddonServicesSection';
-
-// Sample add-on services data
-const sampleAddonServices = [
-  {
-    id: '1',
-    name: 'Rental Agreement',
-    description: 'Legal documentation for property rental with verified attestation',
-    price: '1200',
-    deliveryDays: 3,
-    discountPercentage: 20,
-    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-  },
-  {
-    id: '2',
-    name: 'Hotel Booking',
-    description: 'Premium hotel reservation service with guaranteed confirmation',
-    price: '800',
-    deliveryDays: 10,
-    discountPercentage: 20,
-    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-  },
-  {
-    id: '3',
-    name: 'Flight Tickets',
-    description: 'Discounted international flight booking with flexible changes',
-    price: '800',
-    deliveryDays: 5,
-    discountPercentage: 20,
-    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-  },
-  {
-    id: '4',
-    name: 'Police Clearance Certificate',
-    description: 'Official criminal record verification from authorities',
-    price: '2500',
-    deliveryDays: 7,
-    discountPercentage: 20,
-    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-  }
-];
+import { getAddonServices, AddonService } from '@/models/addon_services';
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -67,6 +28,68 @@ const Index = () => {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 }
   };
+  
+  const [addonServices, setAddonServices] = useState<AddonService[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const services = await getAddonServices();
+        setAddonServices(services.slice(0, 4)); // Get first 4 services for the homepage
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching addon services:", error);
+        // Fallback to sample data if there's an error or no services found
+        if (addonServices.length === 0) {
+          setAddonServices(sampleAddonServices);
+        }
+        setIsLoading(false);
+      }
+    };
+    
+    fetchServices();
+  }, []);
+
+  // Sample add-on services data as fallback
+  const sampleAddonServices: AddonService[] = [
+    {
+      id: '1',
+      name: 'Rental Agreement',
+      description: 'Legal documentation for property rental with verified attestation',
+      price: '1200',
+      delivery_days: 3,
+      discount_percentage: 20,
+      image_url: '/placeholder.svg'
+    },
+    {
+      id: '2',
+      name: 'Hotel Booking',
+      description: 'Premium hotel reservation service with guaranteed confirmation',
+      price: '800',
+      delivery_days: 10,
+      discount_percentage: 20,
+      image_url: '/placeholder.svg'
+    },
+    {
+      id: '3',
+      name: 'Flight Tickets',
+      description: 'Discounted international flight booking with flexible changes',
+      price: '800',
+      delivery_days: 5,
+      discount_percentage: 20,
+      image_url: '/placeholder.svg'
+    },
+    {
+      id: '4',
+      name: 'Police Clearance Certificate',
+      description: 'Official criminal record verification from authorities',
+      price: '2500',
+      delivery_days: 7,
+      discount_percentage: 20,
+      image_url: '/placeholder.svg'
+    }
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50/30 overflow-x-hidden">
@@ -149,7 +172,7 @@ const Index = () => {
         <WhyChooseUs />
         
         {/* Add-on Services Section - New Section */}
-        <AddonServicesSection services={sampleAddonServices} />
+        <AddonServicesSection services={addonServices} />
         
         {/* Travel Tips Section - New Section */}
         <TravelTipsSection />

@@ -46,9 +46,13 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
                     </div>
                   )}
                   <img 
-                    src={service.image_url} 
+                    src={service.image_url || '/placeholder.svg'} 
                     alt={service.name} 
                     className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder.svg'; // Fallback image
+                    }}
                   />
                   <div className="absolute bottom-0 w-full bg-indigo-900 py-3 px-4 text-white font-semibold text-center">
                     {service.name}
