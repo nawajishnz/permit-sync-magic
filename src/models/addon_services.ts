@@ -25,7 +25,7 @@ export const getAddonServices = async () => {
       .order('name');
       
     if (error) throw error;
-    return data;
+    return data as AddonService[];
   } catch (error) {
     console.error("Error fetching addon services:", error);
     throw error;

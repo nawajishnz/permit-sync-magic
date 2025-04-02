@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -19,19 +18,14 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
-
-type AddonService = {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  deliveryDays: number;
-  discountPercentage?: number;
-  imageUrl: string;
-  created_at?: string;
-};
+import { 
+  getAddonServices, 
+  createAddonService, 
+  updateAddonService, 
+  deleteAddonService,
+  AddonService 
+} from '@/models/addon_services';
 
 const AddonServicesManager = () => {
   const { toast } = useToast();
@@ -45,102 +39,24 @@ const AddonServicesManager = () => {
     name: '',
     description: '',
     price: '',
-    deliveryDays: 7,
-    discountPercentage: 0,
-    imageUrl: ''
+    delivery_days: 7,
+    discount_percentage: 0,
+    image_url: ''
   });
   const [sortConfig, setSortConfig] = useState({
     key: 'name',
     direction: 'asc'
   });
 
-  // Sample services data - would be replaced with actual Supabase query
-  const mockServices: AddonService[] = [
-    {
-      id: '1',
-      name: 'Rental Agreement',
-      description: 'Legal documentation for property rental',
-      price: '1200',
-      deliveryDays: 3,
-      discountPercentage: 20,
-      imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-    },
-    {
-      id: '2',
-      name: 'Hotel Booking',
-      description: 'Premium hotel reservation service',
-      price: '800',
-      deliveryDays: 10,
-      discountPercentage: 20,
-      imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-    },
-    {
-      id: '3',
-      name: 'Flight Tickets',
-      description: 'Discounted international flight booking',
-      price: '800',
-      deliveryDays: 5,
-      discountPercentage: 20,
-      imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-    },
-    {
-      id: '4',
-      name: 'Police Clearance Certificate',
-      description: 'Official criminal record verification',
-      price: '2500',
-      deliveryDays: 7,
-      discountPercentage: 20,
-      imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-    },
-    {
-      id: '5',
-      name: 'Document Attestation',
-      description: 'Official document verification service',
-      price: '3000',
-      deliveryDays: 10,
-      discountPercentage: 20,
-      imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
-    }
-  ];
-
   // Fetch add-on services
-  const { data: services = mockServices, isLoading, error } = useQuery({
+  const { data: services = [], isLoading, error } = useQuery({
     queryKey: ['addon-services'],
-    queryFn: async () => {
-      // This would be replaced with a real Supabase query
-      // const { data, error } = await supabase
-      //   .from('addon_services')
-      //   .select('*')
-      //   .order('name');
-      
-      // if (error) throw error;
-      // return data;
-      
-      // Using mock data for now
-      return mockServices;
-    },
+    queryFn: getAddonServices,
   });
 
   // Create add-on service mutation
   const createMutation = useMutation({
-    mutationFn: async (newService: Partial<AddonService>) => {
-      // This would be replaced with a real Supabase mutation
-      // const { data, error } = await supabase
-      //   .from('addon_services')
-      //   .insert(newService)
-      //   .select('*')
-      //   .single();
-      
-      // if (error) throw error;
-      // return data;
-      
-      // Mock implementation
-      return {
-        ...newService,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString()
-      } as AddonService;
-    },
+    mutationFn: createAddonService,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['addon-services'] });
       toast({
@@ -150,7 +66,7 @@ const AddonServicesManager = () => {
       setIsAddDialogOpen(false);
       resetForm();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: `Failed to create service: ${error.message}`,
@@ -161,21 +77,8 @@ const AddonServicesManager = () => {
 
   // Update add-on service mutation
   const updateMutation = useMutation({
-    mutationFn: async (service: Partial<AddonService>) => {
-      // This would be replaced with a real Supabase mutation
-      // const { data, error } = await supabase
-      //   .from('addon_services')
-      //   .update(service)
-      //   .eq('id', service.id)
-      //   .select('*')
-      //   .single();
-      
-      // if (error) throw error;
-      // return data;
-      
-      // Mock implementation
-      return service as AddonService;
-    },
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<AddonService> }) => 
+      updateAddonService(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['addon-services'] });
       toast({
@@ -185,7 +88,7 @@ const AddonServicesManager = () => {
       setIsEditDialogOpen(false);
       resetForm();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: `Failed to update service: ${error.message}`,
@@ -196,19 +99,7 @@ const AddonServicesManager = () => {
 
   // Delete add-on service mutation
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      // This would be replaced with a real Supabase mutation
-      // const { error } = await supabase
-      //   .from('addon_services')
-      //   .delete()
-      //   .eq('id', id);
-      
-      // if (error) throw error;
-      // return id;
-      
-      // Mock implementation
-      return id;
-    },
+    mutationFn: deleteAddonService,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['addon-services'] });
       toast({
@@ -217,7 +108,7 @@ const AddonServicesManager = () => {
       });
       setIsDeleteDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: `Failed to delete service: ${error.message}`,
@@ -241,22 +132,25 @@ const AddonServicesManager = () => {
       name: '',
       description: '',
       price: '',
-      deliveryDays: 7,
-      discountPercentage: 0,
-      imageUrl: ''
+      delivery_days: 7,
+      discount_percentage: 0,
+      image_url: ''
     });
     setCurrentService(null);
   };
 
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(formData);
+    createMutation.mutate(formData as Omit<AddonService, 'id' | 'created_at' | 'updated_at'>);
   };
 
   const handleUpdateService = (e: React.FormEvent) => {
     e.preventDefault();
     if (currentService?.id) {
-      updateMutation.mutate({ ...formData, id: currentService.id });
+      updateMutation.mutate({ 
+        id: currentService.id, 
+        updates: formData 
+      });
     }
   };
 
@@ -271,10 +165,14 @@ const AddonServicesManager = () => {
     setFormData({
       name: service.name,
       description: service.description,
+      long_description: service.long_description,
       price: service.price,
-      deliveryDays: service.deliveryDays,
-      discountPercentage: service.discountPercentage || 0,
-      imageUrl: service.imageUrl
+      delivery_days: service.delivery_days,
+      discount_percentage: service.discount_percentage || 0,
+      image_url: service.image_url,
+      requirements: service.requirements,
+      process: service.process,
+      faqs: service.faqs
     });
     setIsEditDialogOpen(true);
   };
@@ -284,7 +182,7 @@ const AddonServicesManager = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSort = (key: string) => {
+  const handleSort = (key: keyof AddonService) => {
     setSortConfig({
       key,
       direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
@@ -299,10 +197,14 @@ const AddonServicesManager = () => {
     // Type guard for the sortConfig.key
     const key = sortConfig.key as keyof AddonService;
     
-    if (a[key] < b[key]) {
+    // Handle null/undefined values
+    const valA = a[key] || '';
+    const valB = b[key] || '';
+    
+    if (valA < valB) {
       return sortConfig.direction === 'asc' ? -1 : 1;
     }
-    if (a[key] > b[key]) {
+    if (valA > valB) {
       return sortConfig.direction === 'asc' ? 1 : -1;
     }
     return 0;
@@ -390,7 +292,7 @@ const AddonServicesManager = () => {
                     <Button 
                       variant="ghost" 
                       className="flex items-center font-semibold p-0"
-                      onClick={() => handleSort('deliveryDays')}
+                      onClick={() => handleSort('delivery_days')}
                     >
                       Delivery
                       <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -430,9 +332,9 @@ const AddonServicesManager = () => {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="w-10 h-10 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                            {service.imageUrl && (
+                            {service.image_url && (
                               <img 
-                                src={service.imageUrl} 
+                                src={service.image_url} 
                                 alt={service.name} 
                                 className="w-full h-full object-cover"
                               />
@@ -446,13 +348,13 @@ const AddonServicesManager = () => {
                       <TableCell className="whitespace-nowrap">
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1 text-gray-500" />
-                          {service.deliveryDays} days
+                          {service.delivery_days} days
                         </div>
                       </TableCell>
                       <TableCell>
-                        {service.discountPercentage ? (
+                        {service.discount_percentage ? (
                           <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                            {service.discountPercentage}% off
+                            {service.discount_percentage}% off
                           </span>
                         ) : (
                           <span className="text-gray-500">-</span>
@@ -550,11 +452,11 @@ const AddonServicesManager = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="deliveryDays">Delivery Days</Label>
+                  <Label htmlFor="delivery_days">Delivery Days</Label>
                   <Input
-                    id="deliveryDays"
-                    name="deliveryDays"
-                    value={formData.deliveryDays}
+                    id="delivery_days"
+                    name="delivery_days"
+                    value={formData.delivery_days}
                     onChange={handleNumberChange}
                     required
                     type="number"
@@ -565,11 +467,11 @@ const AddonServicesManager = () => {
               </div>
               
               <div>
-                <Label htmlFor="discountPercentage">Discount Percentage (%)</Label>
+                <Label htmlFor="discount_percentage">Discount Percentage (%)</Label>
                 <Input
-                  id="discountPercentage"
-                  name="discountPercentage"
-                  value={formData.discountPercentage}
+                  id="discount_percentage"
+                  name="discount_percentage"
+                  value={formData.discount_percentage}
                   onChange={handleNumberChange}
                   type="number"
                   min="0"
@@ -579,12 +481,12 @@ const AddonServicesManager = () => {
               </div>
               
               <div>
-                <Label htmlFor="imageUrl">Image URL</Label>
+                <Label htmlFor="image_url">Image URL</Label>
                 <div className="flex gap-2 mt-1">
                   <Input
-                    id="imageUrl"
-                    name="imageUrl"
-                    value={formData.imageUrl}
+                    id="image_url"
+                    name="image_url"
+                    value={formData.image_url}
                     onChange={handleInputChange}
                     required
                     placeholder="URL or path to image"
@@ -677,11 +579,11 @@ const AddonServicesManager = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="edit-deliveryDays">Delivery Days</Label>
+                  <Label htmlFor="edit-delivery_days">Delivery Days</Label>
                   <Input
-                    id="edit-deliveryDays"
-                    name="deliveryDays"
-                    value={formData.deliveryDays}
+                    id="edit-delivery_days"
+                    name="delivery_days"
+                    value={formData.delivery_days}
                     onChange={handleNumberChange}
                     required
                     type="number"
@@ -692,11 +594,11 @@ const AddonServicesManager = () => {
               </div>
               
               <div>
-                <Label htmlFor="edit-discountPercentage">Discount Percentage (%)</Label>
+                <Label htmlFor="edit-discount_percentage">Discount Percentage (%)</Label>
                 <Input
-                  id="edit-discountPercentage"
-                  name="discountPercentage"
-                  value={formData.discountPercentage}
+                  id="edit-discount_percentage"
+                  name="discount_percentage"
+                  value={formData.discount_percentage}
                   onChange={handleNumberChange}
                   type="number"
                   min="0"
@@ -706,12 +608,12 @@ const AddonServicesManager = () => {
               </div>
               
               <div>
-                <Label htmlFor="edit-imageUrl">Image URL</Label>
+                <Label htmlFor="edit-image_url">Image URL</Label>
                 <div className="flex gap-2 mt-1">
                   <Input
-                    id="edit-imageUrl"
-                    name="imageUrl"
-                    value={formData.imageUrl}
+                    id="edit-image_url"
+                    name="image_url"
+                    value={formData.image_url}
                     onChange={handleInputChange}
                     required
                     placeholder="URL or path to image"
@@ -767,7 +669,7 @@ const AddonServicesManager = () => {
                 {currentService?.name}
               </p>
               <p className="text-red-600 text-sm mt-1">
-                Price: ₹{currentService?.price} • Delivery: {currentService?.deliveryDays} days
+                Price: ₹{currentService?.price} • Delivery: {currentService?.delivery_days} days
               </p>
             </div>
           </div>

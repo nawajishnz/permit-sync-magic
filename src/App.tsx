@@ -29,9 +29,9 @@ const App: React.FC = () => {
           <Route path="/countries" element={<Countries />} />
           <Route path="/visa-finder" element={<VisaFinder />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/admin" element={<ProtectedRoute adminOnly>{<AdminDashboard />}</ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
           <Route path="/addon-services/:id" element={<AddonServiceDetail />} />
-          <Route path="/admin/addon-services" element={<ProtectedRoute adminOnly>{<AdminDashboard />}</ProtectedRoute>} />
+          <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
         </Routes>
       </Router>
     </QueryClientProvider>

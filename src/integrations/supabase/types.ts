@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      addon_services: {
+        Row: {
+          created_at: string
+          delivery_days: number
+          description: string
+          discount_percentage: number | null
+          faqs: Json | null
+          id: string
+          image_url: string
+          long_description: string | null
+          name: string
+          price: string
+          process: string[] | null
+          requirements: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_days: number
+          description: string
+          discount_percentage?: number | null
+          faqs?: Json | null
+          id?: string
+          image_url: string
+          long_description?: string | null
+          name: string
+          price: string
+          process?: string[] | null
+          requirements?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_days?: number
+          description?: string
+          discount_percentage?: number | null
+          faqs?: Json | null
+          id?: string
+          image_url?: string
+          long_description?: string | null
+          name?: string
+          price?: string
+          process?: string[] | null
+          requirements?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           application_id: string | null

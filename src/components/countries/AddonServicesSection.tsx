@@ -5,16 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Check, Clock, User, Info, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-
-export type AddonService = {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  deliveryDays: number;
-  discountPercentage?: number;
-  imageUrl: string;
-};
+import { AddonService } from '@/models/addon_services';
 
 type AddonServicesSectionProps = {
   services: AddonService[];
@@ -49,13 +40,13 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
             >
               <Card className="overflow-hidden h-full flex flex-col border border-gray-200 hover:shadow-lg transition-shadow duration-300">
                 <div className="relative">
-                  {service.discountPercentage && service.discountPercentage > 0 && (
+                  {service.discount_percentage && service.discount_percentage > 0 && (
                     <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium z-10">
-                      {service.discountPercentage}% off
+                      {service.discount_percentage}% off
                     </div>
                   )}
                   <img 
-                    src={service.imageUrl} 
+                    src={service.image_url} 
                     alt={service.name} 
                     className="w-full h-48 object-cover"
                   />
@@ -72,7 +63,7 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
                     </div>
                     <div className="flex items-center text-gray-700">
                       <Clock className="w-4 h-4 mr-1" />
-                      <span>{service.deliveryDays} Days</span>
+                      <span>{service.delivery_days} Days</span>
                       <span className="text-xs text-gray-500 ml-1">Delivery</span>
                     </div>
                   </div>
