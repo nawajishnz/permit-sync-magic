@@ -9,9 +9,11 @@ type CountryFiltersProps = {
   searchTerm: string;
   continent: string;
   visaType: string;
+  showAddons: boolean;
   onSearchChange: (value: string) => void;
   onContinentChange: (value: string) => void;
   onVisaTypeChange: (value: string) => void;
+  onShowAddonsChange: (value: boolean) => void;
   onClearFilters: () => void;
   className?: string;
 };
@@ -20,13 +22,15 @@ const CountryFilters = ({
   searchTerm,
   continent,
   visaType,
+  showAddons,
   onSearchChange,
   onContinentChange,
   onVisaTypeChange,
+  onShowAddonsChange,
   onClearFilters,
   className = ''
 }: CountryFiltersProps) => {
-  const hasFilters = searchTerm || continent || visaType;
+  const hasFilters = searchTerm || continent || visaType || showAddons;
 
   return (
     <div className={`bg-white p-4 rounded-lg border border-gray-200 ${className}`}>
@@ -72,6 +76,22 @@ const CountryFilters = ({
               <SelectItem value="Student">Student</SelectItem>
               <SelectItem value="Work">Work</SelectItem>
               <SelectItem value="Transit">Transit</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="w-full md:w-auto flex-grow">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Add-on Services</label>
+          <Select 
+            value={showAddons ? "show" : "hide"} 
+            onValueChange={(value) => onShowAddonsChange(value === "show")}
+          >
+            <SelectTrigger className="rounded-md">
+              <SelectValue placeholder="Show Add-ons" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hide">Hide Add-ons</SelectItem>
+              <SelectItem value="show">Show Add-ons</SelectItem>
             </SelectContent>
           </Select>
         </div>

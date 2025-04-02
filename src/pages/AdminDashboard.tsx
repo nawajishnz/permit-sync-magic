@@ -12,6 +12,7 @@ import ApplicationsManager from '@/components/admin/ApplicationsManager';
 import UsersManager from '@/components/admin/UsersManager';
 import FAQsManager from '@/components/admin/FAQsManager';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
+import AddonServicesManager from '@/components/admin/AddonServicesManager';
 import { useToast } from '@/hooks/use-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -85,6 +86,7 @@ const AdminDashboard = () => {
               <Route path="/countries" element={<CountriesManager />} />
               <Route path="/visa-types" element={<VisaTypesManager />} />
               <Route path="/packages" element={<PackagesManager />} />
+              <Route path="/addon-services" element={<AddonServicesManager />} />
               <Route path="/applications" element={<ApplicationsManager />} />
               <Route path="/users" element={<UsersManager />} />
               <Route path="/faqs" element={<FAQsManager />} />

@@ -12,7 +12,8 @@ import {
   BarChart3, 
   MessageSquare, 
   Settings, 
-  HelpCircle 
+  HelpCircle,
+  Briefcase
 } from 'lucide-react';
 
 const AdminNav = () => {
@@ -84,6 +85,16 @@ const AdminNav = () => {
               >
                 <Package className="mr-2 h-5 w-5" />
                 Packages
+              </Button>
+            </Link>
+            
+            <Link to="/admin/addon-services">
+              <Button 
+                variant={isActive('/admin/addon-services') ? 'secondary' : 'ghost'} 
+                className={`w-full justify-start ${isActive('/admin/addon-services') ? 'bg-teal text-white' : 'text-white hover:text-white hover:bg-navy-700'}`}
+              >
+                <Briefcase className="mr-2 h-5 w-5" />
+                Add-on Services
               </Button>
             </Link>
             

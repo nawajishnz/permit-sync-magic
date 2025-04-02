@@ -18,6 +18,47 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import VisaComparisonSection from '@/components/VisaComparisonSection';
 import TravelTipsSection from '@/components/TravelTipsSection';
 import VisaDocumentChecklist from '@/components/VisaDocumentChecklist';
+import AddonServicesSection from '@/components/countries/AddonServicesSection';
+
+// Sample add-on services data
+const sampleAddonServices = [
+  {
+    id: '1',
+    name: 'Rental Agreement',
+    description: 'Legal documentation for property rental with verified attestation',
+    price: '1200',
+    deliveryDays: 3,
+    discountPercentage: 20,
+    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
+  },
+  {
+    id: '2',
+    name: 'Hotel Booking',
+    description: 'Premium hotel reservation service with guaranteed confirmation',
+    price: '800',
+    deliveryDays: 10,
+    discountPercentage: 20,
+    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
+  },
+  {
+    id: '3',
+    name: 'Flight Tickets',
+    description: 'Discounted international flight booking with flexible changes',
+    price: '800',
+    deliveryDays: 5,
+    discountPercentage: 20,
+    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
+  },
+  {
+    id: '4',
+    name: 'Police Clearance Certificate',
+    description: 'Official criminal record verification from authorities',
+    price: '2500',
+    deliveryDays: 7,
+    discountPercentage: 20,
+    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png'
+  }
+];
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -106,6 +147,9 @@ const Index = () => {
         <VisaComparisonSection />
         
         <WhyChooseUs />
+        
+        {/* Add-on Services Section - New Section */}
+        <AddonServicesSection services={sampleAddonServices} />
         
         {/* Travel Tips Section - New Section */}
         <TravelTipsSection />
