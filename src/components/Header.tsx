@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, User, ChevronDown, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -50,18 +51,19 @@ const Header = () => {
     path: '/testimonials'
   }];
 
-  const headerClasses = `fixed top-0 w-full z-50 transition-all duration-200 ${isScrolled || isMobileMenuOpen ? 'bg-white shadow-md py-2' : 'bg-white py-4'}`;
+  const headerClasses = `fixed top-0 w-full z-50 transition-all duration-200 ${isScrolled || isMobileMenuOpen ? 'bg-white shadow-md py-2' : 'bg-white py-3'}`;
 
   return (
     <header className={headerClasses}>
       <div className="container mx-auto px-4 flex justify-between items-center">
+        {/* Logo and success rate indicator */}
         <Link to="/" className="flex items-center">
           <img 
-            src="/lovable-uploads/2d0e96bc-0c01-43e4-b6b9-030d901d84b4.png" 
-            alt="Permitsy" 
-            className="h-16" 
+            src="/lovable-uploads/1c870715-09d1-4e81-b217-5a58a6015173.png" 
+            alt="Permitsy - Your Trusted Visa Partner" 
+            className="h-14 md:h-16" 
           />
-          <div className="hidden md:flex items-center ml-2 bg-blue-50 text-indigo-700 rounded-full px-4 py-1">
+          <div className="hidden md:flex items-center ml-3 bg-blue-50 text-indigo-700 rounded-full px-3 py-1 text-sm">
             <span className="font-semibold">98% Success Rate</span>
             <span className="mx-2">•</span>
             <span className="flex items-center">
@@ -72,14 +74,14 @@ const Header = () => {
         </Link>
         
         {/* Desktop Menu */}
-        <nav className="hidden md:flex items-center space-x-1">
+        <nav className="hidden lg:flex items-center space-x-2">
           <ul className="flex items-center space-x-1">
             {navLinks.map(link => (
               <li key={link.name}>
                 <Link 
                   to={link.path} 
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(link.path) ? 'text-teal' : 'text-gray-700 hover:text-teal hover:bg-gray-100'
+                    isActive(link.path) ? 'text-navy-800 font-semibold' : 'text-gray-700 hover:text-navy-600 hover:bg-gray-50'
                   }`}
                 >
                   {link.name}
@@ -113,7 +115,7 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button asChild className="bg-teal hover:bg-teal/90">
+              <Button asChild className="bg-navy-800 hover:bg-navy-900 text-white">
                 <Link to="/auth">Login / Register</Link>
               </Button>
             )}
@@ -121,34 +123,37 @@ const Header = () => {
         </nav>
         
         {/* Mobile Menu Button */}
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-          className="md:hidden rounded-md p-2 text-gray-700 hover:bg-gray-100" 
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="lg:hidden flex items-center">
+          {!isMobileMenuOpen && (
+            <div className="mr-4">
+              <Badge variant="outline" className="bg-blue-50 text-indigo-700 border-none">
+                <span className="flex items-center text-xs">
+                  <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 mr-1" /> 
+                  4.9
+                </span>
+              </Badge>
+            </div>
+          )}
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+            className="rounded-md p-2 text-gray-700 hover:bg-gray-100" 
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
       
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div 
-            initial={{
-              opacity: 0,
-              height: 0
-            }} 
-            animate={{
-              opacity: 1,
-              height: 'auto'
-            }} 
-            exit={{
-              opacity: 0,
-              height: 0
-            }} 
-            className="md:hidden bg-white border-t"
+            initial={{ opacity: 0, height: 0 }} 
+            animate={{ opacity: 1, height: 'auto' }} 
+            exit={{ opacity: 0, height: 0 }} 
+            className="lg:hidden bg-white border-t"
           >
-            <div className="container mx-auto px-4 py-2">
+            <div className="container mx-auto px-4 py-4">
               {/* Mobile success rate display */}
               <div className="mb-4 bg-blue-50 text-indigo-700 rounded-lg px-3 py-2">
                 <div className="font-semibold">98% Success Rate</div>
@@ -165,8 +170,8 @@ const Header = () => {
                       to={link.path} 
                       className={`block px-3 py-2 rounded-md text-base font-medium ${
                         isActive(link.path) 
-                          ? 'bg-gray-100 text-teal' 
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-teal'
+                          ? 'bg-gray-50 text-navy-800' 
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-navy-600'
                       }`}
                     >
                       {link.name}
@@ -182,19 +187,19 @@ const Header = () => {
                       Signed in as <span className="font-medium">{user.email}</span>
                     </div>
                     {user.role === 'admin' && (
-                      <Link to="/admin" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-teal">
+                      <Link to="/admin" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-navy-600">
                         Admin Dashboard
                       </Link>
                     )}
-                    <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-teal">
+                    <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-navy-600">
                       Dashboard
                     </Link>
-                    <button onClick={signOut} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-gray-100">
+                    <button onClick={signOut} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-gray-50">
                       Logout
                     </button>
                   </div>
                 ) : (
-                  <Button asChild className="w-full bg-teal hover:bg-teal/90">
+                  <Button asChild className="w-full bg-navy-800 hover:bg-navy-900 text-white">
                     <Link to="/auth">Login / Register</Link>
                   </Button>
                 )}
