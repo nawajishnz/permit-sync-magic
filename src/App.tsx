@@ -31,9 +31,8 @@ const App: React.FC = () => {
           <Route path="/visa-finder" element={<VisaFinder />} />
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/admin" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
-          <Route path="/addon-services/:id" element={<AddonServiceDetail />} />
           <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
+          <Route path="/addon-services/:id" element={<AddonServiceDetail />} />
         </Routes>
       </Router>
     </QueryClientProvider>

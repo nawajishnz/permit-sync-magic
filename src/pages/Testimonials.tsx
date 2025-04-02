@@ -1,252 +1,192 @@
 
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { useQuery } from '@tanstack/react-query';
+import { getTestimonials, getApprovedVisas, type Testimonial, type ApprovedVisa } from '@/models/testimonials';
+import { Star, MapPin, Award, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, FileCheck, ArrowRight, User, Flag } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { getTestimonials, getApprovedVisas } from '@/models/testimonials';
 
 const TestimonialsPage = () => {
-  const { data: testimonials = [], isLoading: testimonialsLoading } = useQuery({
+  const [activeTab, setActiveTab] = useState<string>('testimonials');
+  
+  const { data: testimonials, isLoading: isLoadingTestimonials } = useQuery({
     queryKey: ['testimonials'],
-    queryFn: () => getTestimonials()
+    queryFn: () => getTestimonials(true)
   });
-
-  const { data: approvedVisas = [], isLoading: visasLoading } = useQuery({
-    queryKey: ['approved-visas'],
+  
+  const { data: approvedVisas, isLoading: isLoadingVisas } = useQuery({
+    queryKey: ['approvedVisas'],
     queryFn: getApprovedVisas
   });
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow">
-        {/* Hero section */}
-        <div className="bg-gradient-to-r from-indigo-900 to-blue-800 text-white py-16">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">Client Success Stories</h1>
-              <p className="text-xl text-blue-100">
-                See what our clients are saying and explore our track record of successful visa approvals
+      <main className="flex-grow bg-gray-50">
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Success Stories</h1>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Discover how we've helped travelers around the world achieve their visa and travel documentation goals.
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Tabs section */}
-        <div className="container mx-auto px-4 py-12">
-          <Tabs defaultValue="testimonials" className="w-full">
-            <div className="flex justify-center mb-8">
-              <TabsList className="bg-gray-100 p-1">
-                <TabsTrigger value="testimonials" className="px-6 py-2 data-[state=active]:bg-white data-[state=active]:text-indigo-600">
-                  Client Testimonials
-                </TabsTrigger>
-                <TabsTrigger value="success-stories" className="px-6 py-2 data-[state=active]:bg-white data-[state=active]:text-indigo-600">
-                  Approved Visas
-                </TabsTrigger>
-              </TabsList>
-            </div>
             
-            <TabsContent value="testimonials">
-              <div className="mb-8 text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">What Our Clients Say</h2>
-                <p className="text-gray-600 max-w-2xl mx-auto">
-                  Authentic feedback from travelers who have used our visa services
-                </p>
+            <Tabs defaultValue="testimonials" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+              <div className="flex justify-center mb-8">
+                <TabsList className="grid grid-cols-2 w-full max-w-md">
+                  <TabsTrigger value="testimonials">Client Testimonials</TabsTrigger>
+                  <TabsTrigger value="visas">Approved Visas</TabsTrigger>
+                </TabsList>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {testimonialsLoading ? (
-                  Array(6).fill(0).map((_, i) => (
-                    <Card key={i} className="border border-gray-200">
-                      <CardContent className="p-6">
-                        <div className="animate-pulse">
-                          <div className="flex items-center mb-4">
-                            <div className="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
-                            <div className="space-y-2">
-                              <div className="h-4 bg-gray-200 rounded w-32"></div>
-                              <div className="h-3 bg-gray-200 rounded w-24"></div>
-                            </div>
-                          </div>
-                          <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                          <div className="mt-4 flex">
-                            <div className="h-4 bg-gray-200 rounded w-24"></div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : testimonials.length === 0 ? (
-                  <div className="col-span-full py-12 text-center">
-                    <p className="text-gray-500 mb-4">No testimonials available yet.</p>
-                    <p className="text-sm text-gray-400">Check back soon for client feedback!</p>
+              <TabsContent value="testimonials">
+                {isLoadingTestimonials ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-12 w-12 border-4 border-teal border-t-transparent rounded-full"></div>
+                  </div>
+                ) : testimonials && testimonials.length > 0 ? (
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {testimonials.map((testimonial) => (
+                      <TestimonialCard key={testimonial.id} testimonial={testimonial} />
+                    ))}
                   </div>
                 ) : (
-                  testimonials.map((testimonial, index) => (
-                    <motion.div
-                      key={testimonial.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.1 }}
-                    >
-                      <Card className="border border-gray-200 h-full hover:shadow-md transition-shadow">
-                        <CardContent className="p-6 flex flex-col h-full">
-                          <div className="flex items-center mb-4">
-                            <div className="h-12 w-12 rounded-full bg-gray-200 overflow-hidden mr-4">
-                              {testimonial.avatar_url ? (
-                                <img 
-                                  src={testimonial.avatar_url} 
-                                  alt={testimonial.client_name} 
-                                  className="h-full w-full object-cover"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = '/placeholder.svg';
-                                  }}
-                                />
-                              ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-indigo-100 text-indigo-600">
-                                  <User className="h-6 w-6" />
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-gray-900">{testimonial.client_name}</h3>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <Flag className="h-3 w-3 mr-1" />
-                                {testimonial.country} • {testimonial.visa_type}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex mb-3">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i} 
-                                className={`h-4 w-4 ${i < testimonial.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                              />
-                            ))}
-                          </div>
-                          
-                          <p className="text-gray-600 italic flex-grow">"{testimonial.comment}"</p>
-                          
-                          <div className="mt-4 text-sm text-gray-500">
-                            <Calendar className="inline h-3 w-3 mr-1" />
-                            {new Date(testimonial.created_at).toLocaleDateString()}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">No testimonials available at the moment.</p>
+                  </div>
                 )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="success-stories">
-              <div className="mb-8 text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Approved Visa Gallery</h2>
-                <p className="text-gray-600 max-w-2xl mx-auto">
-                  A showcase of successful visa approvals we've helped our clients achieve
-                </p>
-              </div>
+              </TabsContent>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {visasLoading ? (
-                  Array(6).fill(0).map((_, i) => (
-                    <Card key={i} className="border border-gray-200">
-                      <CardContent className="p-0">
-                        <div className="animate-pulse">
-                          <div className="h-48 bg-gray-200 rounded-t"></div>
-                          <div className="p-4 space-y-3">
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                            <div className="flex space-x-2">
-                              <div className="h-6 bg-gray-200 rounded w-16"></div>
-                              <div className="h-6 bg-gray-200 rounded w-16"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : approvedVisas.length === 0 ? (
-                  <div className="col-span-full py-12 text-center">
-                    <p className="text-gray-500 mb-4">No approved visa records available yet.</p>
-                    <p className="text-sm text-gray-400">Check back soon for success stories!</p>
+              <TabsContent value="visas">
+                {isLoadingVisas ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-12 w-12 border-4 border-teal border-t-transparent rounded-full"></div>
+                  </div>
+                ) : approvedVisas && approvedVisas.length > 0 ? (
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {approvedVisas.map((visa) => (
+                      <ApprovedVisaCard key={visa.id} visa={visa} />
+                    ))}
                   </div>
                 ) : (
-                  approvedVisas.map((visa, index) => (
-                    <motion.div
-                      key={visa.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.1 }}
-                    >
-                      <Card className="border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                        <CardContent className="p-0">
-                          <div className="relative">
-                            <img 
-                              src={visa.image_url} 
-                              alt={`${visa.country} Visa`} 
-                              className="w-full h-48 object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = '/placeholder.svg';
-                              }}
-                            />
-                            <Badge className="absolute top-3 right-3 bg-green-500 hover:bg-green-600">
-                              Approved
-                            </Badge>
-                          </div>
-                          
-                          <div className="p-4">
-                            <h3 className="font-bold text-gray-900 mb-1">{visa.country} {visa.visa_type}</h3>
-                            <div className="flex items-center text-sm text-gray-500 mb-3">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              {visa.destination}
-                              <span className="mx-2">•</span>
-                              <Calendar className="h-3 w-3 mr-1" />
-                              {new Date(visa.approval_date).toLocaleDateString()}
-                            </div>
-                            
-                            <div className="flex items-center">
-                              <Badge variant="outline" className="mr-2 bg-blue-50 text-blue-700 border-blue-200">
-                                {visa.visa_category}
-                              </Badge>
-                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                                {visa.duration}
-                              </Badge>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">No approved visas available at the moment.</p>
+                  </div>
                 )}
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          {/* CTA Section */}
-          <div className="mt-16 bg-blue-50 rounded-xl p-6 md:p-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Ready to Get Your Visa?</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-              Join thousands of satisfied travelers who've successfully obtained their visas through our expert assistance.
-            </p>
-            <Button className="bg-teal hover:bg-teal/90">
-              Start Your Application <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </main>
       <Footer />
     </div>
+  );
+};
+
+const TestimonialCard = ({ testimonial }: { testimonial: Testimonial }) => {
+  return (
+    <Card className="h-full hover:shadow-lg transition-shadow duration-300">
+      <CardContent className="p-6">
+        <div className="flex items-center mb-4">
+          <div className="h-12 w-12 rounded-full overflow-hidden mr-4 bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
+            {testimonial.avatar_url ? (
+              <img 
+                src={testimonial.avatar_url} 
+                alt={testimonial.client_name} 
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder.svg';
+                }}
+              />
+            ) : (
+              testimonial.client_name.charAt(0).toUpperCase()
+            )}
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900">{testimonial.client_name}</h3>
+            <p className="text-sm text-gray-500">{testimonial.country}</p>
+          </div>
+        </div>
+        
+        <div className="flex mb-3">
+          {[...Array(5)].map((_, i) => (
+            <Star 
+              key={i} 
+              className={`h-4 w-4 ${i < testimonial.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+            />
+          ))}
+        </div>
+        
+        <p className="text-gray-600 italic mb-4">"{testimonial.comment}"</p>
+        
+        <div className="mt-auto">
+          <Badge variant="outline" className="text-teal">
+            {testimonial.visa_type}
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ApprovedVisaCard = ({ visa }: { visa: ApprovedVisa }) => {
+  // Format date from ISO string
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  return (
+    <Card className="h-full hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+      <div className="h-48 w-full overflow-hidden bg-gray-100">
+        <img 
+          src={visa.image_url || '/placeholder.svg'} 
+          alt={`${visa.country} to ${visa.destination} visa`}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/placeholder.svg';
+          }}
+        />
+      </div>
+      <CardContent className="p-6">
+        <Badge className="mb-2 bg-green-100 text-green-800 hover:bg-green-200">
+          Approved
+        </Badge>
+        
+        <h3 className="font-bold text-lg text-gray-900 mb-2">
+          {visa.visa_type}
+        </h3>
+        
+        <div className="space-y-2 text-sm text-gray-600">
+          <div className="flex items-center">
+            <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+            <span>{visa.country} to {visa.destination}</span>
+          </div>
+          
+          <div className="flex items-center">
+            <Award className="h-4 w-4 mr-2 text-gray-400" />
+            <span>{visa.visa_category}</span>
+          </div>
+          
+          <div className="flex items-center">
+            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+            <span>{formatDate(visa.approval_date)}</span>
+          </div>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <Badge variant="outline" className="text-blue-600">
+            {visa.duration}
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

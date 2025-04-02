@@ -23,12 +23,12 @@ export type ApprovedVisa = {
   duration: string;
   image_url: string;
   approval_date: string;
-  client_id?: string; // Optional reference to a client
+  client_id?: string;
   created_at: string;
   updated_at?: string;
 };
 
-export const getTestimonials = async (onlyApproved: boolean = true) => {
+export const getTestimonials = async (onlyApproved: boolean = true): Promise<Testimonial[]> => {
   try {
     let query = supabase
       .from('testimonials')
@@ -49,7 +49,7 @@ export const getTestimonials = async (onlyApproved: boolean = true) => {
   }
 };
 
-export const getApprovedVisas = async () => {
+export const getApprovedVisas = async (): Promise<ApprovedVisa[]> => {
   try {
     const { data, error } = await supabase
       .from('approved_visas')
@@ -64,12 +64,12 @@ export const getApprovedVisas = async () => {
   }
 };
 
-export const addTestimonial = async (testimonial: Omit<Testimonial, 'id' | 'created_at' | 'updated_at'>) => {
+export const addTestimonial = async (testimonial: Omit<Testimonial, 'id' | 'created_at' | 'updated_at'>): Promise<Testimonial> => {
   try {
     const { data, error } = await supabase
       .from('testimonials')
-      .insert(testimonial)
-      .select('*')
+      .insert([testimonial])
+      .select()
       .single();
       
     if (error) throw error;
@@ -80,13 +80,13 @@ export const addTestimonial = async (testimonial: Omit<Testimonial, 'id' | 'crea
   }
 };
 
-export const updateTestimonialStatus = async (id: string, approved: boolean) => {
+export const updateTestimonialStatus = async (id: string, approved: boolean): Promise<Testimonial> => {
   try {
     const { data, error } = await supabase
       .from('testimonials')
       .update({ approved })
       .eq('id', id)
-      .select('*')
+      .select()
       .single();
       
     if (error) throw error;
@@ -97,12 +97,12 @@ export const updateTestimonialStatus = async (id: string, approved: boolean) => 
   }
 };
 
-export const addApprovedVisa = async (visa: Omit<ApprovedVisa, 'id' | 'created_at' | 'updated_at'>) => {
+export const addApprovedVisa = async (visa: Omit<ApprovedVisa, 'id' | 'created_at' | 'updated_at'>): Promise<ApprovedVisa> => {
   try {
     const { data, error } = await supabase
       .from('approved_visas')
-      .insert(visa)
-      .select('*')
+      .insert([visa])
+      .select()
       .single();
       
     if (error) throw error;
@@ -113,7 +113,7 @@ export const addApprovedVisa = async (visa: Omit<ApprovedVisa, 'id' | 'created_a
   }
 };
 
-export const deleteApprovedVisa = async (id: string) => {
+export const deleteApprovedVisa = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('approved_visas')

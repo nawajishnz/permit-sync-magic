@@ -14,36 +14,36 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, Clock, FileCheck, Award, ArrowRight, CheckCircle, HelpCircle 
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { AddonService } from '@/models/addon_services';
+import { getAddonServiceById, AddonService } from '@/models/addon_services';
+import { useToast } from '@/hooks/use-toast';
 
 const AddonServiceDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [service, setService] = useState<AddonService | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchService = async () => {
       try {
         setIsLoading(true);
         
-        const { data, error } = await supabase
-          .from('addon_services')
-          .select('*')
-          .eq('id', id)
-          .single();
-        
-        if (error) throw error;
-        
-        if (data) {
-          setService(data as AddonService);
-        } else {
-          setError("Service not found");
+        if (!id) {
+          setError("Service ID is missing");
+          return;
         }
+        
+        const data = await getAddonServiceById(id);
+        setService(data);
       } catch (err) {
         console.error("Error fetching addon service:", err);
         setError("Error loading service details");
+        toast({
+          title: "Error",
+          description: "Could not load service details. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -52,7 +52,7 @@ const AddonServiceDetail = () => {
     if (id) {
       fetchService();
     }
-  }, [id]);
+  }, [id, toast]);
 
   if (isLoading) {
     return (

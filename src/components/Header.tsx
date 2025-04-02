@@ -64,8 +64,8 @@ const Header: React.FC = () => {
             <Link to="/visa-finder" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
               Visa Finder
             </Link>
-            <Link to="/faqs" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
-              FAQs
+            <Link to="/testimonials" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
+              Testimonials
             </Link>
             <Link to="/contact" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
               Contact Us
@@ -162,11 +162,11 @@ const Header: React.FC = () => {
               Visa Finder
             </Link>
             <Link 
-              to="/faqs" 
+              to="/testimonials" 
               className="text-gray-800 hover:bg-gray-50 px-4 py-3 rounded-xl"
               onClick={() => setIsOpen(false)}
             >
-              FAQs
+              Testimonials
             </Link>
             <Link 
               to="/contact" 
