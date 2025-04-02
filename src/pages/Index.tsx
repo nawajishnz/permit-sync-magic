@@ -20,9 +20,11 @@ import TravelTipsSection from '@/components/TravelTipsSection';
 import VisaDocumentChecklist from '@/components/VisaDocumentChecklist';
 import AddonServicesSection from '@/components/countries/AddonServicesSection';
 import { getAddonServices, AddonService } from '@/models/addon_services';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -36,14 +38,17 @@ const Index = () => {
     const fetchServices = async () => {
       try {
         const services = await getAddonServices();
-        setAddonServices(services.slice(0, 4)); // Get first 4 services for the homepage
+        if (services && services.length > 0) {
+          setAddonServices(services.slice(0, 4)); // Get first 4 services for the homepage
+        } else {
+          // If no services are found, use sample data
+          setAddonServices(sampleAddonServices);
+        }
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching addon services:", error);
-        // Fallback to sample data if there's an error or no services found
-        if (addonServices.length === 0) {
-          setAddonServices(sampleAddonServices);
-        }
+        // Fallback to sample data if there's an error
+        setAddonServices(sampleAddonServices);
         setIsLoading(false);
       }
     };
@@ -171,8 +176,10 @@ const Index = () => {
         
         <WhyChooseUs />
         
-        {/* Add-on Services Section - New Section */}
-        <AddonServicesSection services={addonServices} />
+        {/* Add-on Services Section - Make sure it's visible */}
+        <div className="py-12 md:py-16 bg-gray-50">
+          <AddonServicesSection services={addonServices} />
+        </div>
         
         {/* Travel Tips Section - New Section */}
         <TravelTipsSection />

@@ -54,6 +54,11 @@ const Header = () => {
     <header className={headerClasses}>
       <div className="container mx-auto px-4 flex justify-between items-center">
         <Link to="/" className="flex items-center">
+          <img 
+            src="/lovable-uploads/c6f0f3d8-3504-4698-82f8-c54a489198c6.png" 
+            alt="Permitsy" 
+            className="h-10 mr-2" 
+          />
           <span className="text-xl font-bold text-navy">Permitsy</span>
         </Link>
         
