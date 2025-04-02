@@ -3,7 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { getTestimonials, getApprovedVisas } from '@/models/testimonials';
 const TestimonialsPage = () => {
   const { data: testimonials = [], isLoading: testimonialsLoading } = useQuery({
     queryKey: ['testimonials'],
-    queryFn: getTestimonials
+    queryFn: () => getTestimonials()
   });
 
   const { data: approvedVisas = [], isLoading: visasLoading } = useQuery({

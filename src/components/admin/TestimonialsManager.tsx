@@ -164,9 +164,14 @@ const TestimonialsManager = () => {
       // Upload the image
       const imageUrl = await uploadVisaImage(visaImageFile);
       
-      // Add the approved visa record
+      // Add the approved visa record with all required fields
       await addApprovedVisa({
-        ...values,
+        country: values.country,
+        destination: values.destination,
+        visa_type: values.visa_type,
+        visa_category: values.visa_category,
+        duration: values.duration,
+        approval_date: values.approval_date,
         image_url: imageUrl,
       });
       

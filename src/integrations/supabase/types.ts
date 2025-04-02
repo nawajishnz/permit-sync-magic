@@ -101,6 +101,48 @@ export type Database = {
           },
         ]
       }
+      approved_visas: {
+        Row: {
+          approval_date: string
+          client_id: string | null
+          country: string
+          created_at: string
+          destination: string
+          duration: string
+          id: string
+          image_url: string
+          updated_at: string | null
+          visa_category: string
+          visa_type: string
+        }
+        Insert: {
+          approval_date?: string
+          client_id?: string | null
+          country: string
+          created_at?: string
+          destination: string
+          duration: string
+          id?: string
+          image_url: string
+          updated_at?: string | null
+          visa_category: string
+          visa_type: string
+        }
+        Update: {
+          approval_date?: string
+          client_id?: string | null
+          country?: string
+          created_at?: string
+          destination?: string
+          duration?: string
+          id?: string
+          image_url?: string
+          updated_at?: string | null
+          visa_category?: string
+          visa_type?: string
+        }
+        Relationships: []
+      }
       countries: {
         Row: {
           banner: string
@@ -277,6 +319,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      testimonials: {
+        Row: {
+          approved: boolean
+          avatar_url: string | null
+          client_name: string
+          comment: string
+          country: string
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string | null
+          visa_type: string
+        }
+        Insert: {
+          approved?: boolean
+          avatar_url?: string | null
+          client_name: string
+          comment: string
+          country: string
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string | null
+          visa_type: string
+        }
+        Update: {
+          approved?: boolean
+          avatar_url?: string | null
+          client_name?: string
+          comment?: string
+          country?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string | null
+          visa_type?: string
+        }
+        Relationships: []
       }
       visa_applications: {
         Row: {

@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Package, Globe, FileText, Users, MessageSquare, BarChart, Puzzle, Briefcase } from 'lucide-react';
+import { Home, Package, Globe, FileText, Users, MessageSquare, BarChart, Puzzle, Briefcase, Award } from 'lucide-react';
 
 const AdminNav = () => {
   const navItems = [
@@ -46,7 +47,7 @@ const AdminNav = () => {
     },
     {
       to: '/admin/testimonials',
-      icon: <MessageSquare className="h-5 w-5" />,
+      icon: <Award className="h-5 w-5" />,
       label: 'Testimonials',
     },
     {
