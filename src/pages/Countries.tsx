@@ -4,11 +4,9 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Filter, MapPin, Globe, Flag, Loader2, Calendar, Plane, BadgeCheck, Sparkles, Bookmark, Heart, X, Check } from 'lucide-react';
+import { Search, Filter, Loader2, Sparkles, Globe, X, Bookmark } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -24,7 +22,7 @@ const CountriesPage = () => {
   const [continent, setContinent] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [visaType, setVisaType] = useState('');
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [savedCountries, setSavedCountries] = useState<string[]>([]);
   const [filteredCountries, setFilteredCountries] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -347,57 +345,16 @@ const CountriesPage = () => {
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden mb-4"
                     >
-                      <div className="bg-gray-50 p-4 rounded-xl">
-                        <div className="flex flex-wrap gap-4">
-                          <div className="w-full md:w-auto flex-grow">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Continent</label>
-                            <Select value={continent} onValueChange={setContinent}>
-                              <SelectTrigger className="rounded-md">
-                                <SelectValue placeholder="All Continents" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">All Continents</SelectItem>
-                                <SelectItem value="Asia">Asia</SelectItem>
-                                <SelectItem value="Europe">Europe</SelectItem>
-                                <SelectItem value="North America">North America</SelectItem>
-                                <SelectItem value="South America">South America</SelectItem>
-                                <SelectItem value="Africa">Africa</SelectItem>
-                                <SelectItem value="Oceania">Oceania</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="w-full md:w-auto flex-grow">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Visa Type</label>
-                            <Select value={visaType} onValueChange={setVisaType}>
-                              <SelectTrigger className="rounded-md">
-                                <SelectValue placeholder="All Visa Types" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">All Visa Types</SelectItem>
-                                <SelectItem value="Tourist">Tourist</SelectItem>
-                                <SelectItem value="Business">Business</SelectItem>
-                                <SelectItem value="Student">Student</SelectItem>
-                                <SelectItem value="Work">Work</SelectItem>
-                                <SelectItem value="Transit">Transit</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          {(searchTerm || continent || visaType) && (
-                            <div className="w-full md:w-auto flex items-end">
-                              <Button 
-                                variant="outline" 
-                                className="rounded-md h-10"
-                                onClick={clearFilters}
-                              >
-                                <X size={16} className="mr-1" />
-                                Clear Filters
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <CountryFilters
+                        searchTerm={searchTerm}
+                        continent={continent}
+                        visaType={visaType}
+                        onSearchChange={setSearchTerm}
+                        onContinentChange={setContinent}
+                        onVisaTypeChange={setVisaType}
+                        onClearFilters={clearFilters}
+                        className="bg-gray-50"
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -470,7 +427,12 @@ const CountriesPage = () => {
                       </p>
                       <Button 
                         variant="outline" 
-                        onClick={() => document.querySelector('[data-state="inactive"][value="all"]')?.click()}
+                        onClick={() => {
+                          const allTab = document.querySelector('[data-state="inactive"][value="all"]');
+                          if (allTab instanceof HTMLElement) {
+                            allTab.click();
+                          }
+                        }}
                       >
                         Browse Countries
                       </Button>

@@ -48,7 +48,7 @@ const CountryFilters = ({
               <SelectValue placeholder="All Continents" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Continents</SelectItem>
+              <SelectItem value="all">All Continents</SelectItem>
               <SelectItem value="Asia">Asia</SelectItem>
               <SelectItem value="Europe">Europe</SelectItem>
               <SelectItem value="North America">North America</SelectItem>
@@ -66,7 +66,7 @@ const CountryFilters = ({
               <SelectValue placeholder="All Visa Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Visa Types</SelectItem>
+              <SelectItem value="all">All Visa Types</SelectItem>
               <SelectItem value="Tourist">Tourist</SelectItem>
               <SelectItem value="Business">Business</SelectItem>
               <SelectItem value="Student">Student</SelectItem>
