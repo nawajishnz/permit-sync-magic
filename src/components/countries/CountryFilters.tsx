@@ -1,58 +1,68 @@
 
 import React from 'react';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { X, Filter, Search, Globe, Ticket } from 'lucide-react';
 
-type CountryFiltersProps = {
+export interface CountryFiltersProps {
   searchTerm: string;
   continent: string;
   visaType: string;
-  showAddons: boolean;
-  onSearchChange: (value: string) => void;
-  onContinentChange: (value: string) => void;
-  onVisaTypeChange: (value: string) => void;
-  onShowAddonsChange: (value: boolean) => void;
+  showAddons?: boolean;
+  onSearchChange: React.Dispatch<React.SetStateAction<string>>;
+  onContinentChange: React.Dispatch<React.SetStateAction<string>>;
+  onVisaTypeChange: React.Dispatch<React.SetStateAction<string>>;
+  onShowAddonsChange?: React.Dispatch<React.SetStateAction<boolean>>;
   onClearFilters: () => void;
   className?: string;
-};
+}
 
-const CountryFilters = ({
+const CountryFilters: React.FC<CountryFiltersProps> = ({
   searchTerm,
   continent,
   visaType,
-  showAddons,
+  showAddons = false,
   onSearchChange,
   onContinentChange,
   onVisaTypeChange,
   onShowAddonsChange,
   onClearFilters,
-  className = ''
-}: CountryFiltersProps) => {
-  const hasFilters = searchTerm || continent || visaType || showAddons;
-
+  className = '',
+}) => {
   return (
-    <div className={`bg-white p-4 rounded-lg border border-gray-200 ${className}`}>
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-auto flex-grow">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+    <div className={`p-5 rounded-lg space-y-5 ${className}`}>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search countries or visa types..."
+            placeholder="Search countries..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="rounded-md"
+            className="pl-9"
           />
+          {searchTerm && (
+            <button
+              onClick={() => onSearchChange('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        
-        <div className="w-full md:w-auto flex-grow">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Continent</label>
+
+        {/* Continent Filter */}
+        <div>
           <Select value={continent} onValueChange={onContinentChange}>
-            <SelectTrigger className="rounded-md">
-              <SelectValue placeholder="All Continents" />
+            <SelectTrigger className="w-full">
+              <div className="flex items-center">
+                <Globe className="h-4 w-4 mr-2 text-gray-500" />
+                <SelectValue placeholder="All Continents" />
+              </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Continents</SelectItem>
+              <SelectItem value="">All Continents</SelectItem>
               <SelectItem value="Asia">Asia</SelectItem>
               <SelectItem value="Europe">Europe</SelectItem>
               <SelectItem value="North America">North America</SelectItem>
@@ -62,52 +72,40 @@ const CountryFilters = ({
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="w-full md:w-auto flex-grow">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Visa Type</label>
+
+        {/* Visa Type Filter */}
+        <div>
           <Select value={visaType} onValueChange={onVisaTypeChange}>
-            <SelectTrigger className="rounded-md">
-              <SelectValue placeholder="All Visa Types" />
+            <SelectTrigger className="w-full">
+              <div className="flex items-center">
+                <Ticket className="h-4 w-4 mr-2 text-gray-500" />
+                <SelectValue placeholder="All Visa Types" />
+              </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Visa Types</SelectItem>
-              <SelectItem value="Tourist">Tourist</SelectItem>
-              <SelectItem value="Business">Business</SelectItem>
-              <SelectItem value="Student">Student</SelectItem>
-              <SelectItem value="Work">Work</SelectItem>
-              <SelectItem value="Transit">Transit</SelectItem>
+              <SelectItem value="">All Visa Types</SelectItem>
+              <SelectItem value="Tourist">Tourist Visa</SelectItem>
+              <SelectItem value="Business">Business Visa</SelectItem>
+              <SelectItem value="Student">Student Visa</SelectItem>
+              <SelectItem value="Work">Work Visa</SelectItem>
+              <SelectItem value="Transit">Transit Visa</SelectItem>
+              <SelectItem value="eVisa">e-Visa</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="w-full md:w-auto flex-grow">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Add-on Services</label>
-          <Select 
-            value={showAddons ? "show" : "hide"} 
-            onValueChange={(value) => onShowAddonsChange(value === "show")}
+
+        {/* Clear Filters Button */}
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={onClearFilters} 
+            className="w-full"
+            disabled={!searchTerm && !continent && !visaType}
           >
-            <SelectTrigger className="rounded-md">
-              <SelectValue placeholder="Show Add-ons" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hide">Hide Add-ons</SelectItem>
-              <SelectItem value="show">Show Add-ons</SelectItem>
-            </SelectContent>
-          </Select>
+            <X className="h-4 w-4 mr-2" />
+            Clear Filters
+          </Button>
         </div>
-        
-        {hasFilters && (
-          <div className="w-full md:w-auto flex items-end">
-            <Button 
-              variant="outline" 
-              className="w-full md:w-auto rounded-md h-10"
-              onClick={onClearFilters}
-            >
-              <X size={16} className="mr-1" />
-              Clear Filters
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

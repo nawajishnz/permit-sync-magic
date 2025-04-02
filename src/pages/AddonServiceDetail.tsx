@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +12,7 @@ import {
   CreditCard, HelpCircle, ArrowLeft, Calendar, Shield
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { getAddonServiceById, AddonService } from '@/models/addon_services';
 
 const AddonServiceDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,28 +24,27 @@ const AddonServiceDetail = () => {
   const { data: service, isLoading, error } = useQuery({
     queryKey: ['addon-service', id],
     queryFn: async () => {
-      // This would be replaced with a real API call
-      const { data, error } = await supabase
-        .from('addon_services')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-      if (error) throw error;
-      return data;
+      if (!id) return null;
+      try {
+        return await getAddonServiceById(id);
+      } catch (error) {
+        console.error("Error fetching addon service:", error);
+        throw error;
+      }
     },
+    enabled: !!id,
   });
 
   // For demo purposes, let's create a mock service if the real one is not available yet
-  const mockService = {
+  const mockService: AddonService = {
     id: id || '1',
     name: 'Police Clearance Certificate',
     description: 'Official certification from police authorities confirming you have no criminal record.',
-    longDescription: 'A Police Clearance Certificate (PCC) is an official document issued by law enforcement authorities that verifies whether an individual has any criminal record. Many countries require this document as part of visa applications to ensure that visitors do not have a history of criminal activity. Our service handles the entire application process on your behalf, saving you time and ensuring all requirements are properly met.',
+    long_description: 'A Police Clearance Certificate (PCC) is an official document issued by law enforcement authorities that verifies whether an individual has any criminal record. Many countries require this document as part of visa applications to ensure that visitors do not have a history of criminal activity. Our service handles the entire application process on your behalf, saving you time and ensuring all requirements are properly met.',
     price: '2500',
-    deliveryDays: 7,
-    discountPercentage: 20,
-    imageUrl: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png',
+    delivery_days: 7,
+    discount_percentage: 20,
+    image_url: 'public/lovable-uploads/bedbfdd9-1801-4000-886a-71097d9c5a26.png',
     requirements: [
       'Valid passport with at least 6 months validity',
       'Proof of address (utility bill, bank statement)',
@@ -158,14 +156,14 @@ const AddonServiceDetail = () => {
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3">
                     <div className="flex items-center text-2xl font-bold">
                       <Clock className="mr-2 h-5 w-5 text-blue-300" />
-                      {serviceData.deliveryDays} Days
+                      {serviceData.delivery_days} Days
                     </div>
                     <div className="text-sm text-blue-200">Processing time</div>
                   </div>
                   
-                  {serviceData.discountPercentage && (
+                  {serviceData.discount_percentage && (
                     <div className="bg-green-500/20 backdrop-blur-sm rounded-lg px-4 py-3">
-                      <div className="text-2xl font-bold">{serviceData.discountPercentage}% Off</div>
+                      <div className="text-2xl font-bold">{serviceData.discount_percentage}% Off</div>
                       <div className="text-sm text-blue-200">Limited time</div>
                     </div>
                   )}
@@ -198,7 +196,7 @@ const AddonServiceDetail = () => {
                 className="hidden lg:block"
               >
                 <img 
-                  src={serviceData.imageUrl} 
+                  src={serviceData.image_url} 
                   alt={serviceData.name}
                   className="w-full h-80 object-cover rounded-lg shadow-xl"
                 />
@@ -242,7 +240,7 @@ const AddonServiceDetail = () => {
                   <div className="lg:col-span-2">
                     <h2 className="text-2xl font-bold mb-4">Service Overview</h2>
                     <p className="text-gray-600 mb-6">
-                      {serviceData.longDescription}
+                      {serviceData.long_description}
                     </p>
                     
                     <h3 className="text-xl font-semibold mb-3">Key Benefits</h3>
@@ -281,7 +279,7 @@ const AddonServiceDetail = () => {
                           
                           <div className="flex justify-between pb-2 border-b border-gray-200">
                             <span className="text-gray-600">Processing Time</span>
-                            <span className="font-semibold">{serviceData.deliveryDays} Days</span>
+                            <span className="font-semibold">{serviceData.delivery_days} Days</span>
                           </div>
                           
                           <div className="flex justify-between pb-2 border-b border-gray-200">
@@ -312,7 +310,7 @@ const AddonServiceDetail = () => {
                 <div className="bg-gray-50 rounded-lg p-6 border border-gray-200 mb-8">
                   <h3 className="text-lg font-semibold mb-4">Required Documents</h3>
                   <ul className="space-y-3">
-                    {serviceData.requirements.map((requirement, index) => (
+                    {serviceData.requirements?.map((requirement, index) => (
                       <li key={index} className="flex items-start">
                         <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
                         <span>{requirement}</span>
@@ -343,7 +341,7 @@ const AddonServiceDetail = () => {
               <TabsContent value="process" className="mt-0">
                 <h2 className="text-2xl font-bold mb-6">Application Process</h2>
                 <div className="space-y-6">
-                  {serviceData.process.map((step, index) => (
+                  {serviceData.process?.map((step, index) => (
                     <div key={index} className="flex">
                       <div className="flex-shrink-0 mr-4">
                         <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold">
@@ -390,7 +388,7 @@ const AddonServiceDetail = () => {
               <TabsContent value="faqs" className="mt-0">
                 <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
                 <div className="space-y-4">
-                  {serviceData.faqs.map((faq, index) => (
+                  {serviceData.faqs?.map((faq, index) => (
                     <div key={index} className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
                       <h3 className="text-lg font-semibold mb-2">{faq.question}</h3>
                       <p className="text-gray-600">{faq.answer}</p>
