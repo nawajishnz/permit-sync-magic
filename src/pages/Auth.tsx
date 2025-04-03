@@ -4,17 +4,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, LoaderIcon } from 'lucide-react';
+import { AlertCircle, LoaderIcon, Facebook, Apple, EyeOff, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 // Admin test account credentials
 const ADMIN_TEST_EMAIL = "admin@permitsy.com";
@@ -33,6 +31,9 @@ const Auth = () => {
   const [showLoginHelp, setShowLoginHelp] = useState(false);
   const [setupAdmin, setSetupAdmin] = useState(false);
   const [adminSetupSuccess, setAdminSetupSuccess] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Check if the user is accessing admin login from URL param
   useEffect(() => {
@@ -106,6 +107,7 @@ const Auth = () => {
       }
       
       await signUp(email, password, fullName);
+      setIsSignUp(false); // Switch back to login view after signup
     } finally {
       setIsLoading(false);
     }
@@ -226,206 +228,315 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow bg-gray-50 py-12">
-        <div className="container mx-auto px-4 max-w-md">
-          <Card>
-            <CardHeader className="space-y-1">
-              {isAdminMode ? (
-                <>
-                  <div className="flex items-center justify-center mb-2">
-                    <Badge variant="outline" className="bg-navy text-white">Admin Access</Badge>
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-center text-navy">Administrator Login</CardTitle>
-                  <CardDescription className="text-center">
-                    Sign in to access the admin dashboard
-                  </CardDescription>
-                </>
-              ) : (
-                <>
-                  <CardTitle className="text-2xl font-bold text-center text-navy">Welcome to Permitsy</CardTitle>
-                  <CardDescription className="text-center">
-                    Sign in or create an account to manage your visa applications
-                  </CardDescription>
-                </>
-              )}
-            </CardHeader>
-            <CardContent>
-              {showSampleCreds && (
-                <Alert className="mb-4 bg-blue-50 border-blue-200">
-                  <AlertCircle className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-blue-700">
-                    <p className="mb-2">Demo admin credentials:</p>
-                    <p className="font-mono text-xs bg-blue-100 p-1 rounded mb-1">Email: {ADMIN_TEST_EMAIL}</p>
-                    <p className="font-mono text-xs bg-blue-100 p-1 rounded mb-2">Password: {ADMIN_TEST_PASSWORD}</p>
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                      <Button 
-                        onClick={setAdminCredentials} 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
-                      >
-                        Use admin credentials
-                      </Button>
-                      <Button 
-                        onClick={createAdminAccount} 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                        disabled={isLoading || setupAdmin}
-                      >
-                        {setupAdmin ? (
-                          <>
-                            <LoaderIcon className="mr-2 h-3 w-3 animate-spin" />
-                            Setting up...
-                          </>
-                        ) : adminSetupSuccess ? "Admin setup complete" : "Setup admin account"}
-                      </Button>
+        <div className="container mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 px-4">
+            {/* Left Side - Testimonial */}
+            <div className="w-full md:w-1/2 max-w-md relative">
+              <div className="rounded-3xl overflow-hidden">
+                <img 
+                  src="/lovable-uploads/0c0a21e2-68bd-4e1f-87ea-e6a5ec527917.png" 
+                  alt="User with VR headset" 
+                  className="w-full"
+                />
+                <div className="absolute inset-0 bg-black/25 rounded-3xl flex flex-col justify-end p-8">
+                  <div className="bg-black/40 p-6 backdrop-blur-md rounded-3xl text-white">
+                    <h3 className="text-2xl font-bold mb-1">Maria Chen</h3>
+                    <p className="text-sm text-gray-200 mb-4">Digital Nomad & Travel Blogger</p>
+                    <p className="text-white leading-relaxed">
+                      "Permitsy has revolutionized how I manage visas when traveling. The interface is intuitive, and their support team is always quick to respond. I can't imagine planning my travels without it."
+                    </p>
+                    
+                    <div className="flex space-x-2 mt-4">
+                      <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
                     </div>
-                  </AlertDescription>
-                </Alert>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right Side - Authentication Form */}
+            <div className="w-full md:w-1/2 max-w-md bg-white rounded-3xl p-8 shadow-sm">
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  {isSignUp ? "Create an account" : "Sign in to your account"}
+                </h2>
+                <p className="text-gray-500">
+                  {isSignUp 
+                    ? "Join Permitsy to manage your visa applications with ease" 
+                    : "Greetings on your return! We kindly request you to enter your details."}
+                </p>
+              </div>
+              
+              {isAdminMode && showSampleCreds && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                    <div>
+                      <p className="text-blue-700 font-medium mb-1">Admin Demo Credentials</p>
+                      <p className="text-sm text-blue-600 mb-1.5">Use these credentials to access the admin dashboard:</p>
+                      <div className="bg-white/50 rounded p-2 text-sm mb-3 font-mono">
+                        <p>Email: {ADMIN_TEST_EMAIL}</p>
+                        <p>Password: {ADMIN_TEST_PASSWORD}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button 
+                          onClick={setAdminCredentials} 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
+                        >
+                          Use admin credentials
+                        </Button>
+                        <Button 
+                          onClick={createAdminAccount} 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                          disabled={isLoading || setupAdmin}
+                        >
+                          {setupAdmin ? (
+                            <>
+                              <LoaderIcon className="mr-2 h-3 w-3 animate-spin" />
+                              Setting up...
+                            </>
+                          ) : adminSetupSuccess ? "Admin setup complete" : "Setup admin account"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
               
-              <Tabs defaultValue={isAdminMode ? "signin" : "signin"}>
-                <TabsList className="grid w-full grid-cols-2 mb-8">
-                  <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  {!isAdminMode && <TabsTrigger value="signup">Sign Up</TabsTrigger>}
-                  {isAdminMode && <TabsTrigger value="signup" disabled>Sign Up</TabsTrigger>}
-                </TabsList>
+              {/* Social Sign In */}
+              <div className="mb-6">
+                <div className="flex gap-3 justify-center">
+                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
+                    <Facebook className="h-5 w-5" />
+                  </Button>
+                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
+                    <Apple className="h-5 w-5" />
+                  </Button>
+                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM9.5 8.5L7.5 8.5L12 13L16.5 8.5L14.5 8.5L12 11L9.5 8.5Z" />
+                    </svg>
+                  </Button>
+                </div>
                 
-                <TabsContent value="signin">
-                  <form onSubmit={handleSignIn} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email</Label>
+                <div className="flex items-center gap-3 mt-6">
+                  <Separator className="flex-grow" />
+                  <span className="text-gray-500 text-sm">or</span>
+                  <Separator className="flex-grow" />
+                </div>
+              </div>
+              
+              {isSignUp ? (
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="fullname" className="block text-sm font-medium text-gray-700">
+                      Full Name
+                    </label>
+                    <Input
+                      id="fullname"
+                      type="text"
+                      placeholder="John Doe"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="h-12 rounded-xl"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-12 rounded-xl"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                      Password
+                    </label>
+                    <div className="relative">
                       <Input
-                        id="signin-email"
-                        type="email"
-                        placeholder="your@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-password">Password</Label>
-                      <Input
-                        id="signin-password"
-                        type="password"
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        className="h-12 rounded-xl pr-10"
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
                     </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className={`w-full ${isAdminMode ? 'bg-navy hover:bg-navy-600' : 'bg-teal hover:bg-teal-600'}`}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                          Signing in...
-                        </>
-                      ) : 'Sign In'}
-                    </Button>
-                    
-                    <div className="text-center">
+                    <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : 'Sign Up'}
+                  </Button>
+                  
+                  <div className="text-center mt-4">
+                    <p className="text-gray-600 text-sm">
+                      Already have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setIsSignUp(false)}
+                        className="text-orange-500 hover:text-orange-600 font-medium"
+                      >
+                        Sign In
+                      </button>
+                    </p>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-12 rounded-xl"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={openLoginHelp}
+                        className="text-sm text-orange-500 hover:text-orange-600"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-12 rounded-xl pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="remember" 
+                        checked={rememberMe} 
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      />
+                      <label
+                        htmlFor="remember"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700"
+                      >
+                        Remember for 30 days
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : 'Login'}
+                  </Button>
+                  
+                  <div className="text-center mt-4">
+                    <p className="text-gray-600 text-sm">
+                      Don't have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setIsSignUp(true)}
+                        className="text-orange-500 hover:text-orange-600 font-medium"
+                      >
+                        Sign up
+                      </button>
+                    </p>
+                  </div>
+                  
+                  {isAdminMode && (
+                    <div className="text-center mt-4">
                       <Button 
                         type="button" 
-                        variant="link" 
-                        className="text-sm text-gray-500" 
-                        onClick={openLoginHelp}
+                        variant="ghost" 
+                        onClick={() => setIsAdminMode(false)}
+                        className="text-sm"
                       >
-                        Having trouble signing in?
+                        Switch to User Login
                       </Button>
                     </div>
-                    
-                    {isAdminMode && (
-                      <div className="text-center mt-4">
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          onClick={() => setIsAdminMode(false)}
-                          className="text-sm"
-                        >
-                          Switch to User Login
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {!isAdminMode && (
-                      <div className="text-center mt-4">
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          onClick={() => setIsAdminMode(true)}
-                          className="text-sm"
-                        >
-                          Admin Login
-                        </Button>
-                      </div>
-                    )}
-                  </form>
-                </TabsContent>
-                
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">Full Name</Label>
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="John Doe"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                      />
+                  )}
+                  
+                  {!isAdminMode && (
+                    <div className="text-center mt-4">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        onClick={() => setIsAdminMode(true)}
+                        className="text-sm"
+                      >
+                        Admin Login
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="your@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                      />
-                      <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-teal hover:bg-teal-600"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                          Creating Account...
-                        </>
-                      ) : 'Create Account'}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <div className="text-center text-sm text-gray-500">
+                  )}
+                </form>
+              )}
+              
+              <div className="mt-6 text-center text-xs text-gray-500">
                 By continuing, you agree to our Terms of Service and Privacy Policy.
               </div>
-            </CardFooter>
-          </Card>
+            </div>
+          </div>
         </div>
       </main>
       <Footer />

@@ -115,17 +115,11 @@ const Header: React.FC = () => {
               </DropdownMenu>
             ) : (
               <Link to="/auth">
-                <Button variant="ghost" size="sm" className="text-sm rounded-full px-4 py-2 h-9 hover:bg-gray-50">
+                <Button size="sm" className="text-sm rounded-full px-4 py-2 h-9 bg-black hover:bg-gray-800 text-white">
                   Sign In
                 </Button>
               </Link>
             )}
-            
-            <Link to="/visa-finder">
-              <Button size="sm" className="text-sm h-9 bg-black hover:bg-gray-800 text-white rounded-full">
-                Apply Now
-              </Button>
-            </Link>
           </div>
           
           {/* Mobile Menu Button */}
@@ -227,20 +221,12 @@ const Header: React.FC = () => {
             ) : (
               <Link 
                 to="/auth" 
-                className="text-gray-800 hover:bg-gray-50 px-4 py-3 rounded-xl flex items-center"
+                className="text-white bg-black hover:bg-gray-900 px-4 py-3 rounded-xl flex items-center justify-center"
                 onClick={() => setIsOpen(false)}
               >
                 <UserCircle className="mr-3 h-4 w-4" /> Sign In
               </Link>
             )}
-            
-            <Link 
-              to="/visa-finder" 
-              className="bg-black text-white hover:bg-gray-800 px-4 py-3 rounded-xl mt-2 text-center"
-              onClick={() => setIsOpen(false)}
-            >
-              Apply Now
-            </Link>
           </nav>
         </div>
       )}
