@@ -91,7 +91,7 @@ const AddonServiceDetail = () => {
       },
       {
         question: 'Will I get a physical copy of the agreement?',
-        answer: 'Yes, you'll receive both a digital copy via email and a physical copy delivered to your preferred address.'
+        answer: "Yes, you'll receive both a digital copy via email and a physical copy delivered to your preferred address."
       }
     ]
   };
