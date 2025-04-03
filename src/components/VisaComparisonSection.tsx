@@ -62,7 +62,7 @@ const VisaComparisonSection = () => {
 
         <div className="max-w-5xl mx-auto">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse shadow-lg rounded-xl overflow-hidden">
               <thead>
                 <tr className="bg-gray-50">
                   <th className="p-5 text-left text-gray-500 font-medium border-b-2 border-gray-100 w-1/3 rounded-tl-xl">Comparison</th>

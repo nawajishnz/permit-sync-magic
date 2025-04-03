@@ -35,6 +35,7 @@ const Index = () => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
+        setIsLoading(true);
         const services = await getAddonServices();
         setAddonServices(services.slice(0, 4)); // Get first 4 services for the homepage
         setIsLoading(false);
@@ -172,7 +173,18 @@ const Index = () => {
         <WhyChooseUs />
         
         {/* Add-on Services Section - New Section */}
-        <AddonServicesSection services={addonServices} />
+        <AddonServicesSection 
+          services={addonServices} 
+          className="border-y border-gray-200"
+        />
+
+        <div className="container mx-auto py-8 text-center">
+          <Link to="/addon-services">
+            <Button variant="outline" size="lg" className="group">
+              View All Services <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
+        </div>
         
         {/* Travel Tips Section - New Section */}
         <TravelTipsSection />

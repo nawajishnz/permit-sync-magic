@@ -8,6 +8,7 @@ import Auth from '@/pages/Auth';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AddonServiceDetail from '@/pages/AddonServiceDetail';
+import AddonServices from '@/pages/AddonServices';
 import Testimonials from '@/pages/Testimonials';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -30,9 +31,10 @@ const App: React.FC = () => {
           <Route path="/countries" element={<Countries />} />
           <Route path="/visa-finder" element={<VisaFinder />} />
           <Route path="/testimonials" element={<Testimonials />} />
+          <Route path="/addon-services" element={<AddonServices />} />
+          <Route path="/addon-services/:id" element={<AddonServiceDetail />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
-          <Route path="/addon-services/:id" element={<AddonServiceDetail />} />
         </Routes>
       </Router>
     </QueryClientProvider>
