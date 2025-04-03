@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -60,7 +61,7 @@ const Index = () => {
       price: '1200',
       delivery_days: 3,
       discount_percentage: 20,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png'
     },
     {
       id: '2',
@@ -68,8 +69,8 @@ const Index = () => {
       description: 'Premium hotel reservation service with guaranteed confirmation',
       price: '800',
       delivery_days: 10,
-      discount_percentage: 20,
-      image_url: '/placeholder.svg'
+      discount_percentage: 15,
+      image_url: '/lovable-uploads/hotel-booking.jpg'
     },
     {
       id: '3',
@@ -77,8 +78,8 @@ const Index = () => {
       description: 'Discounted international flight booking with flexible changes',
       price: '800',
       delivery_days: 5,
-      discount_percentage: 20,
-      image_url: '/placeholder.svg'
+      discount_percentage: 10,
+      image_url: '/lovable-uploads/flight-tickets.jpg'
     },
     {
       id: '4',
@@ -86,8 +87,8 @@ const Index = () => {
       description: 'Official criminal record verification from authorities',
       price: '2500',
       delivery_days: 7,
-      discount_percentage: 20,
-      image_url: '/placeholder.svg'
+      discount_percentage: 5,
+      image_url: '/lovable-uploads/police-clearance.jpg'
     }
   ];
 
@@ -171,7 +172,7 @@ const Index = () => {
         
         <WhyChooseUs />
         
-        {/* Add-on Services Section - New Section */}
+        {/* Add-on Services Section */}
         <section id="addon-services" className="py-16 bg-gradient-to-b from-indigo-50 to-white">
           <div className="container mx-auto px-4 mb-8">
             <div className="text-center mb-12">

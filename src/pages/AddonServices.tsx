@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -83,6 +84,22 @@ const AddonServices = () => {
     setFilteredServices(filtered);
   }, [searchTerm, activeCategory, services]);
 
+  // Map service names to appropriate images 
+  const getServiceImage = (serviceName: string): string => {
+    const serviceImages: Record<string, string> = {
+      'Rental Agreement': '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png',
+      'Hotel Booking': '/lovable-uploads/hotel-booking.jpg',
+      'Flight Tickets': '/lovable-uploads/flight-tickets.jpg',
+      'Police Clearance Certificate': '/lovable-uploads/police-clearance.jpg',
+      'Document Attestation': '/lovable-uploads/document-attestation.jpg',
+      'Transcript': '/lovable-uploads/transcript.jpg',
+      'Travel Insurance': '/lovable-uploads/travel-insurance.jpg',
+      'Passport Registration/Renew': '/lovable-uploads/passport.jpg'
+    };
+
+    return serviceImages[serviceName] || '/placeholder.svg';
+  };
+
   // In case there's an error loading or no services found, we provide sample data
   const sampleServices: AddonService[] = [
     {
@@ -92,7 +109,7 @@ const AddonServices = () => {
       price: '1200',
       delivery_days: 3,
       discount_percentage: 20,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png'
     },
     {
       id: '2',
@@ -101,7 +118,7 @@ const AddonServices = () => {
       price: '800',
       delivery_days: 2,
       discount_percentage: 15,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/hotel-booking.jpg'
     },
     {
       id: '3',
@@ -110,7 +127,7 @@ const AddonServices = () => {
       price: '800',
       delivery_days: 1,
       discount_percentage: 10,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/flight-tickets.jpg'
     },
     {
       id: '4',
@@ -119,7 +136,7 @@ const AddonServices = () => {
       price: '2500',
       delivery_days: 7,
       discount_percentage: 0,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/police-clearance.jpg'
     },
     {
       id: '5',
@@ -128,7 +145,7 @@ const AddonServices = () => {
       price: '1500',
       delivery_days: 5,
       discount_percentage: 10,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/document-attestation.jpg'
     },
     {
       id: '6',
@@ -137,7 +154,7 @@ const AddonServices = () => {
       price: '1800',
       delivery_days: 10,
       discount_percentage: 0,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/transcript.jpg'
     },
     {
       id: '7',
@@ -146,7 +163,7 @@ const AddonServices = () => {
       price: '600',
       delivery_days: 1,
       discount_percentage: 5,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/travel-insurance.jpg'
     },
     {
       id: '8',
@@ -155,7 +172,7 @@ const AddonServices = () => {
       price: '3500',
       delivery_days: 14,
       discount_percentage: 0,
-      image_url: '/placeholder.svg'
+      image_url: '/lovable-uploads/passport.jpg'
     },
   ];
 
@@ -250,51 +267,61 @@ const AddonServices = () => {
                           whileHover={{ y: -5 }}
                           className="h-full"
                         >
-                          <Card className="overflow-hidden h-full flex flex-col border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                          <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 h-full flex flex-col border border-gray-100">
+                            {/* Top section with image and discount badge */}
                             <div className="relative">
                               {service.discount_percentage && service.discount_percentage > 0 && (
-                                <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium z-10">
-                                  {service.discount_percentage}% off
+                                <div className="absolute top-4 left-4 bg-green-500 text-white px-4 py-1.5 rounded-full text-sm font-bold z-10">
+                                  {service.discount_percentage}% OFF
                                 </div>
                               )}
-                              <img 
-                                src={service.image_url || '/placeholder.svg'} 
-                                alt={service.name} 
-                                className="w-full h-48 object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = '/placeholder.svg'; // Fallback image
-                                }}
-                              />
-                              <div className="absolute bottom-0 w-full bg-indigo-900 py-3 px-4 text-white font-semibold text-center">
-                                {service.name}
+                              <div className="h-48 overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
+                                <img 
+                                  src={getServiceImage(service.name)}
+                                  alt={service.name} 
+                                  className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = '/placeholder.svg';
+                                  }}
+                                />
+                              </div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent opacity-60"></div>
+                              <div className="absolute bottom-0 left-0 right-0 p-4">
+                                <h3 className="text-white text-xl font-bold drop-shadow-md">{service.name}</h3>
                               </div>
                             </div>
                             
-                            <CardContent className="p-4 flex-grow flex flex-col">
-                              <div className="flex justify-between items-center mb-4 mt-2">
-                                <div className="flex items-center text-gray-900 font-bold text-xl">
+                            {/* Content section */}
+                            <div className="p-5 flex-grow flex flex-col">
+                              <div className="flex justify-between items-center mb-3">
+                                <div className="font-bold text-2xl text-gray-900">
                                   ₹{service.price}
                                   <span className="text-sm font-normal text-gray-500 ml-1">Per person</span>
                                 </div>
-                                <div className="flex items-center text-gray-700">
-                                  <Clock className="w-4 h-4 mr-1" />
-                                  <span>{service.delivery_days} Days</span>
-                                  <span className="text-xs text-gray-500 ml-1">Delivery</span>
+                                <div className="flex items-center text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                                  <Clock className="w-4 h-4 mr-1 text-indigo-600" />
+                                  <span className="font-medium">{service.delivery_days} Days</span>
                                 </div>
                               </div>
                               
-                              <p className="text-gray-600 mb-6 flex-grow">{service.description}</p>
+                              <p className="text-gray-600 mb-4 flex-grow">{service.description}</p>
                               
                               <div className="mt-auto">
-                                <Link to={`/addon-services/${service.id}`}>
-                                  <Button className="w-full bg-teal hover:bg-teal/90 group">
-                                    View Details <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                <div className="flex items-center text-sm text-gray-500 mb-4">
+                                  <Check className="h-4 w-4 text-green-500 mr-1.5" />
+                                  <span>Embassy approved documentation</span>
+                                </div>
+                                
+                                <Link to={`/addon-services/${service.id}`} className="block">
+                                  <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white group flex items-center justify-center">
+                                    View Details 
+                                    <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                                   </Button>
                                 </Link>
                               </div>
-                            </CardContent>
-                          </Card>
+                            </div>
+                          </div>
                         </motion.div>
                       ))
                     )}
@@ -321,11 +348,7 @@ const AddonServices = () => {
                 {/* Other category tabs will share the same content and filter by category */}
                 {categories.slice(1).map(category => (
                   <TabsContent key={category.id} value={category.id} className="mt-0">
-                    {/* The filtering logic is handled in the useEffect */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {/* Content will be the same as "all" tab but filtered */}
-                      {/* This is intentionally repeated for clarity, though it could be refactored to a component */}
-                    </div>
+                    {/* The content will be rendered by the filter logic in the useEffect */}
                   </TabsContent>
                 ))}
               </Tabs>

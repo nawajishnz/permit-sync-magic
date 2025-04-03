@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Check, Clock, User, Info, ArrowRight } from 'lucide-react';
+import { Clock, ArrowRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddonService } from '@/models/addon_services';
@@ -17,16 +16,25 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
     return null;
   }
 
-  return (
-    <div className={`py-12 bg-gray-50 ${className}`}>
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Additional Services</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Enhance your visa application with our premium add-on services designed to make your travel preparations smoother and hassle-free.
-          </p>
-        </div>
+  // Map service names to appropriate images 
+  const getServiceImage = (serviceName: string): string => {
+    const serviceImages: Record<string, string> = {
+      'Rental Agreement': '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png',
+      'Hotel Booking': '/lovable-uploads/hotel-booking.jpg',
+      'Flight Tickets': '/lovable-uploads/flight-tickets.jpg',
+      'Police Clearance Certificate': '/lovable-uploads/police-clearance.jpg',
+      'Document Attestation': '/lovable-uploads/document-attestation.jpg',
+      'Transcript': '/lovable-uploads/transcript.jpg',
+      'Travel Insurance': '/lovable-uploads/travel-insurance.jpg',
+      'Passport Registration/Renew': '/lovable-uploads/passport.jpg'
+    };
 
+    return serviceImages[serviceName] || '/placeholder.svg';
+  };
+
+  return (
+    <div className={`py-12 ${className}`}>
+      <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {services.map((service, index) => (
             <motion.div
@@ -38,49 +46,61 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
               whileHover={{ y: -5 }}
               className="h-full"
             >
-              <Card className="overflow-hidden h-full flex flex-col border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+              <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 h-full flex flex-col border border-gray-100">
+                {/* Top section with image and discount badge */}
                 <div className="relative">
                   {service.discount_percentage && service.discount_percentage > 0 && (
-                    <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium z-10">
-                      {service.discount_percentage}% off
+                    <div className="absolute top-4 left-4 bg-green-500 text-white px-4 py-1.5 rounded-full text-sm font-bold z-10">
+                      {service.discount_percentage}% OFF
                     </div>
                   )}
-                  <img 
-                    src={service.image_url || '/placeholder.svg'} 
-                    alt={service.name} 
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/placeholder.svg'; // Fallback image
-                    }}
-                  />
-                  <div className="absolute bottom-0 w-full bg-indigo-900 py-3 px-4 text-white font-semibold text-center">
-                    {service.name}
+                  <div className="h-48 overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
+                    <img 
+                      src={getServiceImage(service.name)}
+                      alt={service.name} 
+                      className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder.svg';
+                      }}
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent opacity-60"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="text-white text-xl font-bold drop-shadow-md">{service.name}</h3>
                   </div>
                 </div>
                 
-                <CardContent className="p-4 flex-grow flex flex-col">
-                  <div className="flex justify-between items-center mb-4 mt-2">
-                    <div className="flex items-center text-gray-900 font-bold text-xl">
+                {/* Content section */}
+                <div className="p-5 flex-grow flex flex-col">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="font-bold text-2xl text-gray-900">
                       ₹{service.price}
                       <span className="text-sm font-normal text-gray-500 ml-1">Per person</span>
                     </div>
-                    <div className="flex items-center text-gray-700">
-                      <Clock className="w-4 h-4 mr-1" />
-                      <span>{service.delivery_days} Days</span>
-                      <span className="text-xs text-gray-500 ml-1">Delivery</span>
+                    <div className="flex items-center text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                      <Clock className="w-4 h-4 mr-1 text-indigo-600" />
+                      <span className="font-medium">{service.delivery_days} Days</span>
                     </div>
                   </div>
                   
                   <p className="text-gray-600 mb-4 flex-grow">{service.description}</p>
                   
-                  <Link to={`/addon-services/${service.id}`}>
-                    <Button className="w-full bg-teal hover:bg-teal/90 group">
-                      View Details <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+                  <div className="mt-auto">
+                    <div className="flex items-center text-sm text-gray-500 mb-4">
+                      <Check className="h-4 w-4 text-green-500 mr-1.5" />
+                      <span>Embassy approved documentation</span>
+                    </div>
+                    
+                    <Link to={`/addon-services/${service.id}`} className="block">
+                      <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white group flex items-center justify-center">
+                        View Details 
+                        <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
