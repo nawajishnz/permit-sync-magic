@@ -8,7 +8,8 @@ import {
   UserCircle,
   LogOut,
   Settings,
-  User
+  User,
+  Package
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -63,6 +64,9 @@ const Header: React.FC = () => {
             </Link>
             <Link to="/visa-finder" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
               Visa Finder
+            </Link>
+            <Link to="/addon-services" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
+              Add-on Services
             </Link>
             <Link to="/testimonials" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
               Testimonials
@@ -160,6 +164,13 @@ const Header: React.FC = () => {
               onClick={() => setIsOpen(false)}
             >
               Visa Finder
+            </Link>
+            <Link 
+              to="/addon-services" 
+              className="text-gray-800 hover:bg-gray-50 px-4 py-3 rounded-xl flex items-center"
+              onClick={() => setIsOpen(false)}
+            >
+              <Package className="mr-3 h-4 w-4" /> Add-on Services
             </Link>
             <Link 
               to="/testimonials" 

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -173,20 +172,35 @@ const Index = () => {
         <WhyChooseUs />
         
         {/* Add-on Services Section - New Section */}
-        <AddonServicesSection 
-          services={addonServices} 
-          className="border-y border-gray-200"
-        />
+        <section id="addon-services" className="py-16 bg-gradient-to-b from-indigo-50 to-white">
+          <div className="container mx-auto px-4 mb-8">
+            <div className="text-center mb-12">
+              <span className="px-4 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                Premium Services
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-4 mb-4">
+                Enhance Your Visa Application
+              </h2>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Make your travel preparations seamless with our premium add-on services designed to complement your visa application process.
+              </p>
+            </div>
+          </div>
+          
+          <AddonServicesSection 
+            services={addonServices} 
+            className=""
+          />
 
-        <div className="container mx-auto py-8 text-center">
-          <Link to="/addon-services">
-            <Button variant="outline" size="lg" className="group">
-              View All Services <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </Link>
-        </div>
+          <div className="container mx-auto py-8 text-center">
+            <Link to="/addon-services">
+              <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white group">
+                View All Services <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          </div>
+        </section>
         
-        {/* Travel Tips Section - New Section */}
         <TravelTipsSection />
         
         <div className="py-12 md:py-20 bg-gradient-to-b from-blue-50/60 to-white px-4">
