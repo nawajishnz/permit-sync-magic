@@ -12,6 +12,7 @@ import AddonServices from '@/pages/AddonServices';
 import Testimonials from '@/pages/Testimonials';
 import CountryDetails from '@/pages/CountryDetails';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
 
 // Create a QueryClient instance
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ const App: React.FC = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
         </Routes>
+        <Toaster />
       </Router>
     </QueryClientProvider>
   );

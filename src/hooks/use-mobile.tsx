@@ -1,12 +1,12 @@
 
-import React from "react";
+import { useState, useEffect } from "react";
 
 const MOBILE_BREAKPOINT = 768;
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Check if window is defined (to avoid SSR issues)
     if (typeof window === 'undefined') return;
     
