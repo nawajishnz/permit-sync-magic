@@ -187,7 +187,7 @@ export const getSampleAddonServices = (): AddonService[] => {
         'Passport copy',
         'Proof of address',
         'Passport-sized photographs',
-        'Application form (we'll help you complete this)'
+        'Application form (we will help you complete this)'
       ],
       process: [
         'Submit your documents through our platform',
@@ -202,7 +202,7 @@ export const getSampleAddonServices = (): AddonService[] => {
         },
         {
           question: 'Do I need to appear in person at any point?',
-          answer: 'For some countries, biometric verification may be required. We'll inform you if your physical presence is necessary.'
+          answer: 'For some countries, biometric verification may be required. We will inform you if your physical presence is necessary.'
         },
         {
           question: 'Can you expedite the processing time?',
@@ -238,7 +238,7 @@ export const getSampleAddonServices = (): AddonService[] => {
         },
         {
           question: 'Do I need to submit original documents?',
-          answer: 'For most attestations, yes. However, some authorities accept notarized copies. We'll advise based on your specific requirements.'
+          answer: 'For most attestations, yes. However, some authorities accept notarized copies. We will advise based on your specific requirements.'
         },
         {
           question: 'Is apostille service also available?',
@@ -310,7 +310,7 @@ export const getSampleAddonServices = (): AddonService[] => {
         },
         {
           question: 'Can I extend my insurance if I decide to stay longer?',
-          answer: 'Yes, most policies can be extended while you're abroad, subject to approval and additional premium.'
+          answer: 'Yes, most policies can be extended while you are abroad, subject to approval and additional premium.'
         },
         {
           question: 'Is the policy certificate sufficient for visa application?',
@@ -350,7 +350,7 @@ export const getSampleAddonServices = (): AddonService[] => {
         },
         {
           question: 'What if additional documents are requested during processing?',
-          answer: 'We'll immediately notify you and provide guidance on obtaining and submitting any additional required documents.'
+          answer: 'We will immediately notify you and provide guidance on obtaining and submitting any additional required documents.'
         }
       ]
     }
