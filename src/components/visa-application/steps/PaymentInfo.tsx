@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Form, 
@@ -16,6 +15,7 @@ import * as z from 'zod';
 import { CreditCard, Check, Lock, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   cardholderName: z.string().min(1, { message: "Cardholder name is required" }),
@@ -32,6 +32,7 @@ const formSchema = z.object({
 const PaymentInfo: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const { toast } = useToast();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,6 +54,12 @@ const PaymentInfo: React.FC = () => {
     setTimeout(() => {
       setIsProcessing(false);
       setPaymentSuccess(true);
+      
+      toast({
+        title: "Payment Successful",
+        description: "Your payment has been processed successfully.",
+      });
+      
       console.log('Payment processed:', values);
     }, 2000);
   }
@@ -90,7 +97,7 @@ const PaymentInfo: React.FC = () => {
             Your visa application has been submitted successfully and is now being processed.
           </p>
           <div className="bg-white rounded-lg p-4 max-w-md mx-auto text-left">
-            <p className="text-gray-700 text-sm mb-1">Application Reference: <span className="font-semibold">VISA-23456789</span></p>
+            <p className="text-gray-700 text-sm mb-1">Application Reference: <span className="font-semibold">VISA-{Math.floor(Math.random() * 90000000) + 10000000}</span></p>
             <p className="text-gray-700 text-sm">You will receive a confirmation email shortly with all the details.</p>
           </div>
         </div>

@@ -11,6 +11,7 @@ import AddonServiceDetail from '@/pages/AddonServiceDetail';
 import AddonServices from '@/pages/AddonServices';
 import Testimonials from '@/pages/Testimonials';
 import CountryDetails from '@/pages/CountryDetails';
+import VisaApplication from '@/pages/VisaApplication';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -36,6 +37,7 @@ const App: React.FC = () => {
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/addon-services" element={<AddonServices />} />
           <Route path="/addon-services/:id" element={<AddonServiceDetail />} />
+          <Route path="/visa-application/:countryId/:packageId" element={<VisaApplication />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
         </Routes>

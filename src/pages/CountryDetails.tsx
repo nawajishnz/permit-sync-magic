@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -40,7 +39,7 @@ import VisaIncludesCard from '@/components/country/VisaIncludesCard';
 import EmbassyCard from '@/components/country/EmbassyCard';
 
 const CountryDetails = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: countryId } = useParams<{ id: string }>();
   const [travellers, setTravellers] = useState(1);
   const [selectedPackageIndex, setSelectedPackageIndex] = useState(0);
   const { toast } = useToast();
@@ -53,7 +52,7 @@ const CountryDetails = () => {
     isLoading, 
     isError,
     error
-  } = useCountryData(id);
+  } = useCountryData(countryId);
 
   // Handle loading and error states
   if (isLoading) {
@@ -194,6 +193,19 @@ const CountryDetails = () => {
         'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1',
         'https://images.unsplash.com/photo-1504150558240-0b4fd8946624',
       ];
+    }
+  };
+
+  // Handle applying for a visa
+  const handleApplyNow = () => {
+    if (countryId) {
+      navigate(`/visa-application/${countryId}/${selectedPackageIndex}`);
+    } else {
+      toast({
+        title: "Error",
+        description: "Could not find country information. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   
@@ -568,7 +580,10 @@ const CountryDetails = () => {
                 </div>
                 
                 {/* Apply now button */}
-                <Button className="w-full mb-3 bg-teal-600 hover:bg-teal-700">
+                <Button 
+                  className="w-full mb-3 bg-teal-600 hover:bg-teal-700"
+                  onClick={handleApplyNow}
+                >
                   Apply Now
                 </Button>
                 

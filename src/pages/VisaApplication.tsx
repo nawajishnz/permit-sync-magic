@@ -1,12 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ApplicationForm from '@/components/visa-application/ApplicationForm';
 import { ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 // Using the same country data from CountryDetails for consistency
 const countryData = {
@@ -151,12 +150,18 @@ const countryData = {
 const VisaApplication = () => {
   const { countryId, packageId } = useParams<{ countryId: string; packageId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     // Validate parameters
     if (!countryId || !packageId || !countryData[countryId as keyof typeof countryData]) {
-      navigate('/not-found');
+      toast({
+        title: "Invalid Parameters",
+        description: "Could not find the requested visa information.",
+        variant: "destructive"
+      });
+      navigate('/countries');
       return;
     }
     
@@ -164,12 +169,17 @@ const VisaApplication = () => {
     const country = countryData[countryId as keyof typeof countryData];
     
     if (isNaN(packageIdNum) || packageIdNum < 0 || packageIdNum >= country.visaPackages.length) {
-      navigate('/not-found');
+      toast({
+        title: "Invalid Package",
+        description: "The selected visa package does not exist.",
+        variant: "destructive"
+      });
+      navigate('/countries');
       return;
     }
     
     setLoading(false);
-  }, [countryId, packageId, navigate]);
+  }, [countryId, packageId, navigate, toast]);
   
   if (loading) {
     return (

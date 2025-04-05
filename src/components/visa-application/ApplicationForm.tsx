@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import DocumentUpload from './steps/DocumentUpload';
 import ApplicationReview from './steps/ApplicationReview';
 import PaymentInfo from './steps/PaymentInfo';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 type Step = {
   id: string;
@@ -31,6 +31,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
   processingTime
 }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     personalInfo: {
@@ -141,22 +142,52 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
   };
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
+    // Validate current step
+    let isValid = true;
+    
+    if (currentStep === 0) {
+      // Basic validation for personal info
+      const { firstName, lastName, email } = formData.personalInfo;
+      if (!firstName || !lastName || !email) {
+        isValid = false;
+        toast({
+          title: "Missing Information",
+          description: "Please fill in all required fields.",
+          variant: "destructive"
+        });
+      }
+    }
+    
+    if (isValid && currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
+      // Scroll to top when moving to next step
+      window.scrollTo(0, 0);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      // Scroll to top when moving to previous step
+      window.scrollTo(0, 0);
     }
   };
 
   const handleSubmit = () => {
-    // In a real app, you would submit the form data to your backend
+    // Submit form data
     console.log('Form submitted:', formData);
+    
+    // Show success message
+    toast({
+      title: "Application Submitted",
+      description: "Your visa application has been successfully submitted.",
+    });
+    
+    // In a real app, you would submit the form data to your backend
     // Redirect to confirmation page or dashboard
-    navigate('/dashboard');
+    setTimeout(() => {
+      navigate('/');
+    }, 2000);
   };
 
   return (
