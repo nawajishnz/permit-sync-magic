@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Clock, ArrowRight, Search, FileText, Check, X } from 'lucide-react';
+import { Clock, ArrowRight, Search, FileText, Check, X, Hotel, Plane, Shield, Passport } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,12 +11,10 @@ import Footer from '@/components/Footer';
 import { AddonService, getAddonServices } from '@/models/addon_services';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
 
 const AddonServices = () => {
-  const [services, setServices] = useState<AddonService[]>([]);
-  const [filteredServices, setFilteredServices] = useState<AddonService[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   
   // Define categories based on service names
@@ -28,155 +25,63 @@ const AddonServices = () => {
     { id: 'legal', name: 'Legal Services' },
   ];
 
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getAddonServices();
-        setServices(data);
-        setFilteredServices(data);
-      } catch (error) {
-        console.error("Error fetching services:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchServices();
-  }, []);
+  // Fetch addon services using React Query
+  const { data: services = [], isLoading } = useQuery({
+    queryKey: ['addon-services'],
+    queryFn: getAddonServices,
+  });
   
-  useEffect(() => {
-    // Filter services based on search term and active category
-    let filtered = services;
+  // Filter services based on search term and active category
+  const filteredServices = services.filter(service => {
+    // Search filter
+    const matchesSearch = !searchTerm || 
+      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    if (searchTerm) {
-      filtered = filtered.filter(service => 
-        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
+    // Category filter
+    let matchesCategory = true;
     if (activeCategory !== 'all') {
-      // Simple category mapping - can be improved with proper category data from backend
       if (activeCategory === 'document') {
-        filtered = filtered.filter(service => 
+        matchesCategory = 
           service.name.toLowerCase().includes('document') || 
           service.name.toLowerCase().includes('certificate') ||
-          service.name.toLowerCase().includes('attestation')
-        );
+          service.name.toLowerCase().includes('attestation') ||
+          service.name.toLowerCase().includes('transcript');
       } else if (activeCategory === 'travel') {
-        filtered = filtered.filter(service => 
+        matchesCategory = 
           service.name.toLowerCase().includes('hotel') || 
           service.name.toLowerCase().includes('flight') ||
           service.name.toLowerCase().includes('travel') ||
-          service.name.toLowerCase().includes('insurance')
-        );
+          service.name.toLowerCase().includes('insurance');
       } else if (activeCategory === 'legal') {
-        filtered = filtered.filter(service => 
+        matchesCategory = 
           service.name.toLowerCase().includes('agreement') || 
           service.name.toLowerCase().includes('legal') ||
           service.name.toLowerCase().includes('police') ||
-          service.name.toLowerCase().includes('registration')
-        );
+          service.name.toLowerCase().includes('passport') ||
+          service.name.toLowerCase().includes('registration');
       }
     }
     
-    setFilteredServices(filtered);
-  }, [searchTerm, activeCategory, services]);
+    return matchesSearch && matchesCategory;
+  });
 
-  // Map service names to appropriate images 
-  const getServiceImage = (serviceName: string): string => {
-    const serviceImages: Record<string, string> = {
-      'Rental Agreement': '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png',
-      'Hotel Booking': '/lovable-uploads/hotel-booking.jpg',
-      'Flight Tickets': '/lovable-uploads/flight-tickets.jpg',
-      'Police Clearance Certificate': '/lovable-uploads/police-clearance.jpg',
-      'Document Attestation': '/lovable-uploads/document-attestation.jpg',
-      'Transcript': '/lovable-uploads/transcript.jpg',
-      'Travel Insurance': '/lovable-uploads/travel-insurance.jpg',
-      'Passport Registration/Renew': '/lovable-uploads/passport.jpg'
+  // Get service icon based on service type
+  const getServiceIcon = (serviceName: string) => {
+    const icons: Record<string, React.ElementType> = {
+      'Rental Agreement': FileText,
+      'Hotel Booking': Hotel,
+      'Flight Tickets': Plane,
+      'Police Clearance Certificate': Shield,
+      'Document Attestation': FileText,
+      'Transcript': FileText,
+      'Travel Insurance': Shield,
+      'Passport Registration/Renew': Passport
     };
-
-    return serviceImages[serviceName] || '/placeholder.svg';
+    
+    const IconComponent = icons[serviceName] || FileText;
+    return <IconComponent className="h-4 w-4 mr-1.5 text-green-500" />;
   };
-
-  // In case there's an error loading or no services found, we provide sample data
-  const sampleServices: AddonService[] = [
-    {
-      id: '1',
-      name: 'Rental Agreement',
-      description: 'Legal documentation for property rental with verified attestation',
-      price: '1200',
-      delivery_days: 3,
-      discount_percentage: 20,
-      image_url: '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png'
-    },
-    {
-      id: '2',
-      name: 'Hotel Booking',
-      description: 'Premium hotel reservation service with guaranteed confirmation',
-      price: '800',
-      delivery_days: 2,
-      discount_percentage: 15,
-      image_url: '/lovable-uploads/hotel-booking.jpg'
-    },
-    {
-      id: '3',
-      name: 'Flight Tickets',
-      description: 'Discounted international flight booking with flexible changes',
-      price: '800',
-      delivery_days: 1,
-      discount_percentage: 10,
-      image_url: '/lovable-uploads/flight-tickets.jpg'
-    },
-    {
-      id: '4',
-      name: 'Police Clearance Certificate',
-      description: 'Official criminal record verification from authorities',
-      price: '2500',
-      delivery_days: 7,
-      discount_percentage: 0,
-      image_url: '/lovable-uploads/police-clearance.jpg'
-    },
-    {
-      id: '5',
-      name: 'Document Attestation',
-      description: 'Professional attestation service for all document types',
-      price: '1500',
-      delivery_days: 5,
-      discount_percentage: 10,
-      image_url: '/lovable-uploads/document-attestation.jpg'
-    },
-    {
-      id: '6',
-      name: 'Transcript',
-      description: 'Official academic transcript processing service',
-      price: '1800',
-      delivery_days: 10,
-      discount_percentage: 0,
-      image_url: '/lovable-uploads/transcript.jpg'
-    },
-    {
-      id: '7',
-      name: 'Travel Insurance',
-      description: 'Comprehensive travel insurance with worldwide coverage',
-      price: '600',
-      delivery_days: 1,
-      discount_percentage: 5,
-      image_url: '/lovable-uploads/travel-insurance.jpg'
-    },
-    {
-      id: '8',
-      name: 'Passport Registration/Renew',
-      description: 'Fast-track passport registration and renewal service',
-      price: '3500',
-      delivery_days: 14,
-      discount_percentage: 0,
-      image_url: '/lovable-uploads/passport.jpg'
-    },
-  ];
-
-  const displayedServices = filteredServices.length > 0 ? filteredServices : (isLoading ? [] : sampleServices);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -257,7 +162,7 @@ const AddonServices = () => {
                         </Card>
                       ))
                     ) : (
-                      displayedServices.map((service) => (
+                      filteredServices.map((service) => (
                         <motion.div
                           key={service.id}
                           initial={{ opacity: 0, y: 20 }}
@@ -277,7 +182,7 @@ const AddonServices = () => {
                               )}
                               <div className="h-48 overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
                                 <img 
-                                  src={getServiceImage(service.name)}
+                                  src={service.image_url}
                                   alt={service.name} 
                                   className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
                                   onError={(e) => {
@@ -309,7 +214,7 @@ const AddonServices = () => {
                               
                               <div className="mt-auto">
                                 <div className="flex items-center text-sm text-gray-500 mb-4">
-                                  <Check className="h-4 w-4 text-green-500 mr-1.5" />
+                                  {getServiceIcon(service.name)}
                                   <span>Embassy approved documentation</span>
                                 </div>
                                 

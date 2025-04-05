@@ -4,7 +4,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Clock, Check, ArrowLeft, Calendar, File, Shield, 
-  RefreshCw, HelpCircle, Download, ChevronDown, ChevronUp
+  RefreshCw, HelpCircle, Download, ChevronDown, ChevronUp,
+  Hotel, Plane, FileText, Passport
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -16,284 +17,57 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AddonService, getAddonServiceById } from '@/models/addon_services';
+import { AddonService, getAddonServiceById, getAddonServices } from '@/models/addon_services';
 import { useToast } from '@/hooks/use-toast';
-
-// Mock service data for fallback and testing
-const mockServices = [
-  {
-    id: 'rental-agreement',
-    name: 'Rental Agreement',
-    description: 'Legal documentation for property rental with verified attestation',
-    long_description: 'Our Rental Agreement service provides legally binding documentation for your property rental needs. Each agreement is prepared by legal experts and includes all necessary clauses to protect both parties. The document is officially notarized and includes embassy attestation when required for visa applications.',
-    price: '1200',
-    delivery_days: 3,
-    discount_percentage: 20,
-    image_url: '/placeholder.svg',
-    requirements: [
-      'Valid passport copy',
-      'Visa application number',
-      'Property details',
-      'Landlord contact information',
-      'Intended period of stay'
-    ],
-    process: [
-      'Submit your details through our online form',
-      'Our legal team prepares the rental agreement',
-      'Document is sent for official notarization',
-      'Final verification and quality check',
-      'Digital copy delivered to your email',
-      'Original document delivered to your address'
-    ],
-    faqs: [
-      {
-        question: 'Is this rental agreement legally valid for visa applications?',
-        answer: 'Yes, our rental agreements are legally valid and accepted by all embassies and visa authorities. They include all required attestations and notarizations.'
-      },
-      {
-        question: 'How quickly can I get the rental agreement?',
-        answer: 'Standard processing time is 3 business days. For urgent requirements, we offer express service at an additional cost, which delivers within 24 hours.'
-      },
-      {
-        question: 'Can I make changes to the agreement after it\'s prepared?',
-        answer: 'Minor changes can be accommodated before final notarization. Major changes may require a new document and additional fees.'
-      },
-      {
-        question: 'Will I get a physical copy of the agreement?',
-        answer: "Yes, you'll receive both a digital copy via email and a physical copy delivered to your preferred address."
-      }
-    ]
-  },
-  {
-    id: 'hotel-booking',
-    name: 'Hotel Booking',
-    description: 'Premium hotel reservation service with guaranteed confirmation',
-    long_description: 'Our Hotel Booking service offers hassle-free reservations at premium hotels worldwide. We negotiate special rates and ensure your booking is confirmed instantly. Perfect for visa applications requiring hotel reservations.',
-    price: '800',
-    delivery_days: 2,
-    discount_percentage: 10,
-    image_url: '/placeholder.svg',
-    requirements: [
-      'Travel dates',
-      'Destination city',
-      'Preferred hotel category',
-      'Number of guests',
-      'Special requirements if any'
-    ],
-    process: [
-      'Share your travel requirements',
-      'We provide options based on your preferences',
-      'Confirm your selection',
-      'We process the reservation',
-      'Booking confirmation sent to your email',
-      'Visa-compliant hotel voucher provided'
-    ],
-    faqs: [
-      {
-        question: 'Can I cancel my hotel booking?',
-        answer: 'Yes, most bookings can be canceled with a full refund if done 72 hours prior to check-in. Specific cancellation policies vary by hotel.'
-      },
-      {
-        question: 'Do you book all types of hotels?',
-        answer: 'We specialize in 3-star to 5-star hotels that meet international standards and are approved for visa applications.'
-      },
-      {
-        question: 'How do I get my hotel voucher?',
-        answer: 'Your hotel voucher is sent via email within 24 hours of booking confirmation. A physical copy can be mailed upon request.'
-      },
-      {
-        question: 'Can I modify my booking dates?',
-        answer: 'Yes, date modifications are possible subject to availability and hotel policies. Please request changes at least 48 hours before check-in.'
-      }
-    ]
-  },
-  {
-    id: 'flight-tickets',
-    name: 'Flight Tickets',
-    description: 'Discounted international flight booking with flexible changes',
-    long_description: 'Our Flight Ticket service provides competitive rates on international flights with flexible change options. We partner with major airlines to offer you the best deals while ensuring your bookings meet visa application requirements.',
-    price: '800',
-    delivery_days: 1,
-    discount_percentage: 5,
-    image_url: '/placeholder.svg',
-    requirements: [
-      'Passport details',
-      'Travel dates',
-      'Departure and arrival cities',
-      'Preferred airlines (if any)',
-      'Seating preferences'
-    ],
-    process: [
-      'Submit your flight requirements',
-      'We search for the best options',
-      'Review and select your preferred flight',
-      'Secure payment processing',
-      'E-tickets delivered to your email',
-      'Additional assistance with any flight changes'
-    ],
-    faqs: [
-      {
-        question: 'What happens if my flight gets canceled?',
-        answer: 'If your flight is canceled by the airline, we assist with rebooking on the next available flight or processing a full refund as per airline policy.'
-      },
-      {
-        question: 'Can I book one-way flights?',
-        answer: 'Yes, we offer one-way, round-trip, and multi-city flight bookings. Note that for visa purposes, round-trip tickets are usually required.'
-      },
-      {
-        question: 'Do you provide flight tickets for all airlines?',
-        answer: 'We work with most major international and regional airlines. If you have a specific airline preference, we can check availability.'
-      },
-      {
-        question: 'How far in advance should I book my flight?',
-        answer: 'For best rates, we recommend booking at least 2-3 months in advance for international travel, though we can accommodate last-minute bookings as well.'
-      }
-    ]
-  },
-  {
-    id: 'document-attestation',
-    name: 'Document Attestation',
-    description: 'Professional attestation service for all document types',
-    long_description: 'Our Document Attestation service handles the complex process of getting your documents legally verified and authenticated for international use. We cover attestation by government departments, foreign affairs ministries, and embassies.',
-    price: '1500',
-    delivery_days: 5,
-    discount_percentage: 0,
-    image_url: '/placeholder.svg',
-    requirements: [
-      'Original documents',
-      'Purpose of attestation',
-      'Target country',
-      'Number of copies needed',
-      'Urgency level'
-    ],
-    process: [
-      'Document verification and preparation',
-      'Notarization process',
-      'Submission to relevant department',
-      'Foreign affairs ministry attestation',
-      'Embassy/consulate authentication if required',
-      'Final quality check and delivery'
-    ],
-    faqs: [
-      {
-        question: 'What types of documents can you attest?',
-        answer: 'We can attest educational certificates, marriage certificates, birth certificates, commercial documents, power of attorney, and most other official documents.'
-      },
-      {
-        question: 'Why do I need document attestation?',
-        answer: 'Attestation proves the authenticity of your documents to foreign authorities. It\'s required for visa applications, foreign employment, education abroad, and business purposes.'
-      },
-      {
-        question: 'How long does the attestation process take?',
-        answer: 'Standard processing takes 5-7 business days. Express service is available for urgent requirements at an additional cost.'
-      },
-      {
-        question: 'Do I need to provide original documents?',
-        answer: 'Yes, most attestations require original documents. In some cases, notarized copies may be acceptable.'
-      }
-    ]
-  },
-  {
-    id: 'travel-insurance',
-    name: 'Travel Insurance',
-    description: 'Comprehensive travel insurance with worldwide coverage',
-    long_description: 'Our Travel Insurance service offers comprehensive coverage for your international trips. The policies include medical emergencies, trip cancellations, lost baggage, and more, meeting all visa application requirements.',
-    price: '600',
-    delivery_days: 1,
-    discount_percentage: 15,
-    image_url: '/placeholder.svg',
-    requirements: [
-      'Travel dates',
-      'Destination countries',
-      'Traveler details and age',
-      'Coverage requirements',
-      'Pre-existing medical conditions (if any)'
-    ],
-    process: [
-      'Select your desired coverage level',
-      'Provide traveler information',
-      'Review policy details',
-      'Secure online payment',
-      'Instant policy document delivery',
-      'Additional visa-specific documentation if needed'
-    ],
-    faqs: [
-      {
-        question: 'What does the travel insurance cover?',
-        answer: 'Our standard policies cover medical emergencies, hospitalization, trip cancellation, lost baggage, flight delays, and personal liability. Premium policies include additional benefits.'
-      },
-      {
-        question: 'Is this insurance accepted for Schengen visa applications?',
-        answer: 'Yes, our policies meet and exceed the Schengen visa requirements of €30,000 medical coverage and repatriation.'
-      },
-      {
-        question: 'Can I extend my insurance if I extend my trip?',
-        answer: 'Yes, policy extensions are possible and can be arranged while you\'re abroad. Contact us at least 48 hours before your policy expires.'
-      },
-      {
-        question: 'How do I make a claim?',
-        answer: 'Claims can be submitted online through our portal. You\'ll need to provide the policy number, incident details, and supporting documentation.'
-      }
-    ]
-  }
-];
+import { useQuery } from '@tanstack/react-query';
 
 const AddonServiceDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [service, setService] = useState<AddonService | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  useEffect(() => {
-    const fetchService = async () => {
-      if (!id) return;
-      
-      try {
-        setIsLoading(true);
-        setIsError(false);
-        
-        // First try to get from API if it has a UUID format
-        if (id.includes('-') && id.length > 30) {
-          try {
-            const data = await getAddonServiceById(id);
-            setService(data);
-            return;
-          } catch (error) {
-            console.error(`Error fetching service with UUID id ${id}:`, error);
-            // Fall through to mocked data
-          }
-        }
-        
-        // If not UUID format or API fetch failed, check mock data
-        const mockService = mockServices.find(s => s.id === id);
-        if (mockService) {
-          setService(mockService as AddonService);
-        } else {
-          // If no match in mock data, use the first mock as fallback
-          setService(mockServices[0] as AddonService);
-          toast({
-            title: "Service not found",
-            description: "Using a demo service for preview purposes.",
-            variant: "default",
-          });
-        }
-      } catch (error) {
-        console.error(`Error fetching service with id ${id}:`, error);
-        setIsError(true);
+  // Fetch the specific addon service
+  const { 
+    data: service,
+    isLoading,
+    isError
+  } = useQuery({
+    queryKey: ['addon-service', id],
+    queryFn: () => id ? getAddonServiceById(id) : Promise.reject('No ID provided'),
+    enabled: !!id,
+    meta: {
+      onError: (error: Error) => {
         toast({
           title: "Error loading service",
           description: "We couldn't load the requested service. Please try again.",
           variant: "destructive",
         });
-      } finally {
-        setIsLoading(false);
       }
+    }
+  });
+
+  // Fetch all addon services for related services section
+  const { data: allServices = [] } = useQuery({
+    queryKey: ['addon-services'],
+    queryFn: getAddonServices,
+  });
+
+  // Get appropriate icon based on service type
+  const getServiceIcon = (serviceName: string) => {
+    const icons: Record<string, React.ElementType> = {
+      'Rental Agreement': FileText,
+      'Hotel Booking': Hotel,
+      'Flight Tickets': Plane,
+      'Police Clearance Certificate': Shield,
+      'Document Attestation': FileText,
+      'Transcript': FileText,
+      'Travel Insurance': Shield,
+      'Passport Registration/Renew': Passport
     };
     
-    fetchService();
-  }, [id, toast]);
+    const IconComponent = icons[serviceName] || FileText;
+    return <IconComponent className="h-5 w-5 mr-2 text-indigo-600" />;
+  };
 
   // Handle order now button click
   const handleOrderNow = () => {
@@ -303,7 +77,6 @@ const AddonServiceDetail = () => {
     });
     
     // Navigate to a dummy checkout page or actual checkout
-    // In the future this could go to a dedicated checkout page
     setTimeout(() => {
       navigate('/visa-application/usa/0', { 
         state: { 
@@ -366,10 +139,10 @@ const AddonServiceDetail = () => {
     );
   }
 
-  // Get related services excluding current one
-  const relatedServices = mockServices
-    .filter(s => s.id !== id)
-    .slice(0, 4);
+  // Get related services excluding current one (up to 3)
+  const relatedServices = allServices
+    .filter(s => s.id !== service.id)
+    .slice(0, 3);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -400,7 +173,7 @@ const AddonServiceDetail = () => {
                       </div>
                     )}
                     <img 
-                      src={service.image_url || '/placeholder.svg'} 
+                      src={service.image_url} 
                       alt={service.name} 
                       className="w-full h-96 object-cover"
                       onError={(e) => {
@@ -571,14 +344,6 @@ const AddonServiceDetail = () => {
                               Minor changes can be accommodated before processing begins. Major changes may require a new application and additional fees.
                             </AccordionContent>
                           </AccordionItem>
-                          <AccordionItem value="faq-4">
-                            <AccordionTrigger className="text-left font-medium text-gray-800">
-                              What happens if my visa application is rejected?
-                            </AccordionTrigger>
-                            <AccordionContent className="text-gray-600">
-                              Our documents meet all visa requirements. If your visa is rejected due to documentation issues related to our service, we offer a full refund.
-                            </AccordionContent>
-                          </AccordionItem>
                         </Accordion>
                       )}
                     </TabsContent>
@@ -624,93 +389,93 @@ const AddonServiceDetail = () => {
                         <span className="font-medium text-gray-900">{service.delivery_days} business days</span>
                       </div>
                       
-                      <div className="space-y-4 mb-6">
+                      <div className="space-y-2 mb-6">
                         <div className="flex items-start">
-                          <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                          <Check className="h-4 w-4 text-green-500 mt-1 mr-2" />
                           <span className="text-gray-700">Embassy approved documentation</span>
                         </div>
                         <div className="flex items-start">
-                          <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-700">Digital & physical copies provided</span>
+                          <Check className="h-4 w-4 text-green-500 mt-1 mr-2" />
+                          <span className="text-gray-700">Express processing available</span>
                         </div>
                         <div className="flex items-start">
-                          <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-700">24/7 support throughout the process</span>
+                          <Check className="h-4 w-4 text-green-500 mt-1 mr-2" />
+                          <span className="text-gray-700">100% satisfaction guarantee</span>
                         </div>
                         <div className="flex items-start">
-                          <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-700">100% money-back guarantee</span>
+                          <Check className="h-4 w-4 text-green-500 mt-1 mr-2" />
+                          <span className="text-gray-700">24/7 customer support</span>
                         </div>
                       </div>
                       
                       <Button 
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-lg py-6 mb-4"
                         onClick={handleOrderNow}
+                        className="w-full bg-teal-600 hover:bg-teal-700 text-white mb-4 py-6 text-lg"
                       >
                         Order Now
                       </Button>
                       
-                      <Button variant="outline" className="w-full flex items-center justify-center">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        <span>Schedule Consultation</span>
-                      </Button>
+                      <p className="text-center text-sm text-gray-500">
+                        No obligations until payment is completed
+                      </p>
                     </CardContent>
                   </Card>
                 </motion.div>
               </div>
             </div>
-          </div>
-        </section>
-        
-        {/* Related Services Section */}
-        <section className="py-16 bg-white">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Other Services You Might Need</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedServices.map((service, index) => (
-                <motion.div
-                  key={service.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  whileHover={{ y: -5 }}
-                  className="h-full"
-                >
-                  <Card className="overflow-hidden h-full flex flex-col border border-gray-200 hover:shadow-lg transition-shadow duration-300">
-                    <div className="relative">
-                      <img 
-                        src={service.image_url || '/placeholder.svg'} 
-                        alt={service.name} 
-                        className="w-full h-40 object-cover"
-                      />
-                      <div className="absolute bottom-0 w-full bg-indigo-900 py-3 px-4 text-white font-semibold text-center">
-                        {service.name}
-                      </div>
-                    </div>
-                    
-                    <CardContent className="p-4 flex-grow flex flex-col">
-                      <div className="flex justify-between items-center mb-2 mt-2">
-                        <span className="font-bold text-lg text-gray-900">₹{service.price}</span>
-                        <div className="flex items-center text-gray-700 text-sm">
-                          <Clock className="w-3 h-3 mr-1" />
-                          <span>{service.delivery_days}d</span>
+            {/* Related Services */}
+            {relatedServices.length > 0 && (
+              <section className="mt-16">
+                <h2 className="text-2xl font-bold text-gray-900 mb-8">Related Services</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {relatedServices.map((relatedService) => (
+                    <motion.div
+                      key={relatedService.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3 }}
+                      whileHover={{ y: -5 }}
+                    >
+                      <Card className="h-full hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col">
+                        <div className="relative h-48">
+                          <img 
+                            src={relatedService.image_url} 
+                            alt={relatedService.name} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/placeholder.svg';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 to-transparent"></div>
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <h3 className="text-white text-lg font-semibold">{relatedService.name}</h3>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <p className="text-gray-600 text-sm mb-4 flex-grow">{service.description}</p>
-                      
-                      <Link to={`/addon-services/${service.id}`}>
-                        <Button variant="outline" className="w-full">
-                          View Details
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                        
+                        <CardContent className="p-4 flex-grow flex flex-col">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-bold text-gray-900">₹{relatedService.price}</span>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Clock className="h-4 w-4 mr-1" />
+                              <span>{relatedService.delivery_days} days</span>
+                            </div>
+                          </div>
+                          
+                          <p className="text-gray-600 text-sm mb-4 flex-grow">{relatedService.description}</p>
+                          
+                          <Link to={`/addon-services/${relatedService.id}`} className="mt-auto">
+                            <Button variant="outline" className="w-full">View Details</Button>
+                          </Link>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         </section>
       </main>

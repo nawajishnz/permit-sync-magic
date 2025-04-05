@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, ArrowRight, Check, ShoppingBag, FileText, Globe, Shield } from 'lucide-react';
+import { Clock, ArrowRight, Check, FileText, Hotel, Plane, Shield, Passport } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddonService } from '@/models/addon_services';
@@ -16,33 +16,17 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
     return null;
   }
 
-  // Map service names to appropriate images 
-  const getServiceImage = (serviceName: string): string => {
-    const serviceImages: Record<string, string> = {
-      'Rental Agreement': '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png',
-      'Hotel Booking': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      'Flight Tickets': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      'Police Clearance Certificate': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      'Document Attestation': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      'Transcript': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      'Travel Insurance': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      'Passport Registration/Renew': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png'
-    };
-
-    return serviceImages[serviceName] || '/placeholder.svg';
-  };
-
   // Get appropriate icon based on service type
   const getServiceIcon = (serviceName: string) => {
     const icons: Record<string, React.ElementType> = {
       'Rental Agreement': FileText,
-      'Hotel Booking': ShoppingBag,
-      'Flight Tickets': Globe,
+      'Hotel Booking': Hotel,
+      'Flight Tickets': Plane,
       'Police Clearance Certificate': Shield,
       'Document Attestation': FileText,
       'Transcript': FileText,
       'Travel Insurance': Shield,
-      'Passport Registration/Renew': FileText
+      'Passport Registration/Renew': Passport
     };
     
     const IconComponent = icons[serviceName] || FileText;
@@ -73,7 +57,7 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
                   )}
                   <div className="h-48 overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
                     <img 
-                      src={getServiceImage(service.name)}
+                      src={service.image_url}
                       alt={service.name} 
                       className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
                       onError={(e) => {
