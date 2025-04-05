@@ -12,6 +12,12 @@ import AddonServices from '@/pages/AddonServices';
 import Testimonials from '@/pages/Testimonials';
 import CountryDetails from '@/pages/CountryDetails';
 import VisaApplication from '@/pages/VisaApplication';
+import Terms from '@/pages/Terms';
+import Privacy from '@/pages/Privacy';
+import Cookies from '@/pages/Cookies';
+import Refunds from '@/pages/Refunds';
+import FAQs from '@/pages/FAQs';
+import NotFound from '@/pages/NotFound';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -47,6 +53,16 @@ const App: React.FC = () => {
           <Route path="/visa-application/:countryId/:packageId" element={<VisaApplication />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
+          
+          {/* Policy Pages */}
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/refunds" element={<Refunds />} />
+          <Route path="/faqs" element={<FAQs />} />
+          
+          {/* 404 Not Found Page */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
       </Router>
