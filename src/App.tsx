@@ -10,6 +10,7 @@ import AdminDashboard from '@/pages/AdminDashboard';
 import AddonServiceDetail from '@/pages/AddonServiceDetail';
 import AddonServices from '@/pages/AddonServices';
 import Testimonials from '@/pages/Testimonials';
+import CountryDetails from '@/pages/CountryDetails';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Create a QueryClient instance
@@ -29,6 +30,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/countries" element={<Countries />} />
+          <Route path="/country/:id" element={<CountryDetails />} />
           <Route path="/visa-finder" element={<VisaFinder />} />
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/addon-services" element={<AddonServices />} />
