@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -428,50 +429,56 @@ const AddonServiceDetail = () => {
               <section className="mt-16">
                 <h2 className="text-2xl font-bold text-gray-900 mb-8">Related Services</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {relatedServices.map((relatedService) => (
-                    <motion.div
-                      key={relatedService.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.3 }}
-                      whileHover={{ y: -5 }}
-                    >
-                      <Card className="h-full hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col">
-                        <div className="relative h-48">
-                          <img 
-                            src={relatedService.image_url || `https://images.unsplash.com/photo-${1618160702438 + relatedService.id * 10000}-9b02ab6515c9?auto=format&fit=crop&w=800&q=80`} 
-                            alt={relatedService.name} 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = `https://images.unsplash.com/photo-${1618160702438 + relatedService.id * 10000}-9b02ab6515c9?auto=format&fit=crop&w=800&q=80`;
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 to-transparent"></div>
-                          <div className="absolute bottom-0 left-0 right-0 p-4">
-                            <h3 className="text-white text-lg font-semibold">{relatedService.name}</h3>
-                          </div>
-                        </div>
-                        
-                        <CardContent className="p-4 flex-grow flex flex-col">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-bold text-gray-900">₹{relatedService.price}</span>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Clock className="h-4 w-4 mr-1" />
-                              <span>{relatedService.delivery_days} days</span>
+                  {relatedServices.map((relatedService) => {
+                    // Convert service ID to a number for arithmetic operations
+                    const serviceIdNumber = typeof relatedService.id === 'number' ? 
+                      relatedService.id : Number(relatedService.id) || 0;
+                      
+                    return (
+                      <motion.div
+                        key={relatedService.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3 }}
+                        whileHover={{ y: -5 }}
+                      >
+                        <Card className="h-full hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col">
+                          <div className="relative h-48">
+                            <img 
+                              src={relatedService.image_url || `https://images.unsplash.com/photo-${1618160702438 + serviceIdNumber * 10000}-9b02ab6515c9?auto=format&fit=crop&w=800&q=80`} 
+                              alt={relatedService.name} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = `https://images.unsplash.com/photo-${1618160702438 + serviceIdNumber * 10000}-9b02ab6515c9?auto=format&fit=crop&w=800&q=80`;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 to-transparent"></div>
+                            <div className="absolute bottom-0 left-0 right-0 p-4">
+                              <h3 className="text-white text-lg font-semibold">{relatedService.name}</h3>
                             </div>
                           </div>
                           
-                          <p className="text-gray-600 text-sm mb-4 flex-grow">{relatedService.description}</p>
-                          
-                          <Link to={`/addon-services/${relatedService.id}`} className="mt-auto">
-                            <Button variant="outline" className="w-full">View Details</Button>
-                          </Link>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
+                          <CardContent className="p-4 flex-grow flex flex-col">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-bold text-gray-900">₹{relatedService.price}</span>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Clock className="h-4 w-4 mr-1" />
+                                <span>{relatedService.delivery_days} days</span>
+                              </div>
+                            </div>
+                            
+                            <p className="text-gray-600 text-sm mb-4 flex-grow">{relatedService.description}</p>
+                            
+                            <Link to={`/addon-services/${relatedService.id}`} className="mt-auto">
+                              <Button variant="outline" className="w-full">View Details</Button>
+                            </Link>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </section>
             )}
