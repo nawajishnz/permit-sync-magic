@@ -22,8 +22,11 @@ const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000, // 5 minute cache
       refetchOnWindowFocus: false, // Prevent unnecessary refetches
       retry: 2, // Retry failed requests twice
-      onError: (error) => {
-        console.error('Query error:', error);
+      // In newer versions of react-query, use onSettled instead of onError
+      meta: {
+        onError: (error: Error) => {
+          console.error('Query error:', error);
+        }
       }
     },
   },
