@@ -17,6 +17,7 @@ import Privacy from '@/pages/Privacy';
 import Cookies from '@/pages/Cookies';
 import Refunds from '@/pages/Refunds';
 import FAQs from '@/pages/FAQs';
+import Contact from '@/pages/Contact';
 import NotFound from '@/pages/NotFound';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -60,6 +61,7 @@ const App: React.FC = () => {
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/faqs" element={<FAQs />} />
+          <Route path="/contact" element={<Contact />} />
           
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />
