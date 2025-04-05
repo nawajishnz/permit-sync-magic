@@ -310,7 +310,7 @@ export const getSampleAddonServices = (): AddonService[] => {
         },
         {
           question: 'Can I extend my insurance if I decide to stay longer?',
-          answer: 'Yes, most policies can be extended while you are abroad, subject to approval and additional premium.'
+          answer: 'Yes, most policies can be extended while you're abroad, subject to approval and additional premium.'
         },
         {
           question: 'Is the policy certificate sufficient for visa application?',

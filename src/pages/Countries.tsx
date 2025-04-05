@@ -51,18 +51,20 @@ const CountriesPage = () => {
     queryKey: ['countries'],
     queryFn: async () => {
       console.log('Fetching countries from the database...');
-      const { data, error } = await supabase
-        .from('countries')
-        .select('*')
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('countries')
+          .select('*')
+          .order('name');
+            
+        if (error) throw error;
           
-      if (error) {
-        console.error('Error fetching countries:', error);
-        throw error;
+        console.log('Countries fetched:', data?.length);
+        return data || [];
+      } catch (err) {
+        console.error('Error in countries query:', err);
+        return [];
       }
-        
-      console.log('Countries fetched:', data?.length);
-      return data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minute cache
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
@@ -82,15 +84,23 @@ const CountriesPage = () => {
 
   // Load saved countries from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('savedCountries');
-    if (saved) {
-      setSavedCountries(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem('savedCountries');
+      if (saved) {
+        setSavedCountries(JSON.parse(saved));
+      }
+    } catch (err) {
+      console.error('Error loading saved countries:', err);
     }
   }, []);
 
   // Save to localStorage when changes occur
   useEffect(() => {
-    localStorage.setItem('savedCountries', JSON.stringify(savedCountries));
+    try {
+      localStorage.setItem('savedCountries', JSON.stringify(savedCountries));
+    } catch (err) {
+      console.error('Error saving countries to localStorage:', err);
+    }
   }, [savedCountries]);
 
   // Toggle saved country
@@ -114,6 +124,8 @@ const CountriesPage = () => {
 
   // Filter countries based on search term, continent, and visa type
   const filteredAndSortedCountries = useMemo(() => {
+    if (!countries || countries.length === 0) return [];
+    
     let result = [...countries];
     
     // Filter by search term
@@ -198,6 +210,21 @@ const CountriesPage = () => {
       navigate('/countries');
     }
   };
+
+  // Added error boundary render
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
+        <Header />
+        <div className="container mx-auto px-4 py-12 text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+          <p className="mb-6">We encountered an error while loading the countries data.</p>
+          <Button onClick={() => refetch()}>Try Again</Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white overflow-x-hidden">

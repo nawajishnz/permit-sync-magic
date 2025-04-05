@@ -15,12 +15,16 @@ import VisaApplication from '@/pages/VisaApplication';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 
-// Create a QueryClient instance
+// Create a QueryClient instance with error handling
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minute cache
       refetchOnWindowFocus: false, // Prevent unnecessary refetches
+      retry: 2, // Retry failed requests twice
+      onError: (error) => {
+        console.error('Query error:', error);
+      }
     },
   },
 });
