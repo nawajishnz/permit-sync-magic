@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddonService } from '@/models/addon_services';
 import { useQuery } from '@tanstack/react-query';
-import { getAllAddonServices } from '@/models/addon_services';
+import { getAddonServices } from '@/models/addon_services';
 
 const AddonServiceCard = ({ service }: { service: AddonService }) => {
   
@@ -95,11 +95,11 @@ const AddonServiceCard = ({ service }: { service: AddonService }) => {
 const AddonServicesSection = () => {
   const { data: addonServices, isLoading } = useQuery({
     queryKey: ['addonServices'],
-    queryFn: getAllAddonServices
+    queryFn: getAddonServices
   });
   
   // Show a limited number of services on the homepage
-  const featuredServices = addonServices?.slice(0, 3) || [];
+  const featuredServices = addonServices ? addonServices.slice(0, 3) : [];
   
   return (
     <section className="py-16 bg-white">

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -188,10 +187,7 @@ const Index = () => {
             </div>
           </div>
           
-          <AddonServicesSection 
-            services={addonServices} 
-            className=""
-          />
+          <AddonServicesSection />
 
           <div className="container mx-auto py-8 text-center">
             <Link to="/addon-services">
