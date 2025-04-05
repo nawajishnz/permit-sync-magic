@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -542,8 +541,8 @@ const TestimonialsManager = () => {
                       <div className="relative h-48">
                         <img 
                           src={visa.image_url} 
-                          alt={`${visa.country} Visa`} 
-                          className="w-full h-full object-cover"
+                          alt={`Approved Visa`} 
+                          className="w-full h-full object-contain"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = '/placeholder.svg';
@@ -554,14 +553,6 @@ const TestimonialsManager = () => {
                         </Badge>
                       </div>
                       <CardContent className="p-4">
-                        <h3 className="font-semibold text-lg">{visa.country} {visa.visa_type}</h3>
-                        <p className="text-sm text-gray-500">
-                          {visa.destination} • {visa.visa_category} • {visa.duration}
-                        </p>
-                        <div className="text-xs text-gray-400 mt-1">
-                          Approved: {new Date(visa.approval_date).toLocaleDateString()}
-                        </div>
-                        
                         <div className="flex justify-end mt-3">
                           <Button
                             variant="outline"

@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useQuery } from '@tanstack/react-query';
 import { getTestimonials, getApprovedVisas, type Testimonial, type ApprovedVisa } from '@/models/testimonials';
-import { Star, MapPin, Award, Calendar } from 'lucide-react';
+import { Star, MapPin, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -135,56 +135,23 @@ const TestimonialCard = ({ testimonial }: { testimonial: Testimonial }) => {
 };
 
 const ApprovedVisaCard = ({ visa }: { visa: ApprovedVisa }) => {
-  // Format date from ISO string
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-
   return (
     <Card className="h-full hover:shadow-lg transition-shadow duration-300 overflow-hidden">
       <div className="h-48 w-full overflow-hidden bg-gray-100">
         <img 
           src={visa.image_url || '/placeholder.svg'} 
-          alt={`${visa.country} to ${visa.destination} visa`}
-          className="w-full h-full object-cover"
+          alt={`Approved visa`}
+          className="w-full h-full object-contain"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.src = '/placeholder.svg';
           }}
         />
       </div>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <Badge className="mb-2 bg-green-100 text-green-800 hover:bg-green-200">
           Approved
         </Badge>
-        
-        <h3 className="font-bold text-lg text-gray-900 mb-2">
-          {visa.visa_type}
-        </h3>
-        
-        <div className="space-y-2 text-sm text-gray-600">
-          <div className="flex items-center">
-            <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-            <span>{visa.country} to {visa.destination}</span>
-          </div>
-          
-          <div className="flex items-center">
-            <Award className="h-4 w-4 mr-2 text-gray-400" />
-            <span>{visa.visa_category}</span>
-          </div>
-          
-          <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-            <span>{formatDate(visa.approval_date)}</span>
-          </div>
-        </div>
-        
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <Badge variant="outline" className="text-blue-600">
-            {visa.duration}
-          </Badge>
-        </div>
       </CardContent>
     </Card>
   );
