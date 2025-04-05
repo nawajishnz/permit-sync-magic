@@ -182,12 +182,12 @@ const AddonServices = () => {
                               )}
                               <div className="h-48 overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
                                 <img 
-                                  src={service.image_url}
+                                  src={service.image_url || `https://images.unsplash.com/photo-${1472396961693 + service.id * 7821}-142e6e269027?auto=format&fit=crop&w=800&q=80`}
                                   alt={service.name} 
                                   className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
                                   onError={(e) => {
                                     const target = e.target as HTMLImageElement;
-                                    target.src = '/placeholder.svg';
+                                    target.src = `https://images.unsplash.com/photo-${1472396961693 + service.id * 7821}-142e6e269027?auto=format&fit=crop&w=800&q=80`;
                                   }}
                                 />
                               </div>

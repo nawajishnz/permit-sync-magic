@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, ArrowRight, Check, FileText, Hotel, Plane, Shield, FileCheck } from 'lucide-react';
@@ -56,12 +55,12 @@ const AddonServiceCard = ({ service }: { service: AddonService }) => {
     >
       <div className="h-48 overflow-hidden">
         <img 
-          src={service.image_url} 
+          src={service.image_url || `https://images.unsplash.com/photo-${1466721591366 + service.id * 5432}-2d5fba72006d?auto=format&fit=crop&w=800&q=80`} 
           alt={service.name} 
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = '/placeholder.svg'; 
+            target.src = `https://images.unsplash.com/photo-${1466721591366 + service.id * 5432}-2d5fba72006d?auto=format&fit=crop&w=800&q=80`; 
           }}
         />
       </div>
