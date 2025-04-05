@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { 
   Clock, Check, ArrowLeft, Calendar, File, Shield, 
   RefreshCw, HelpCircle, Download, ChevronDown, ChevronUp,
-  Hotel, Plane, FileText, Passport
+  Hotel, Plane, FileText, FileCheck
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -62,7 +62,7 @@ const AddonServiceDetail = () => {
       'Document Attestation': FileText,
       'Transcript': FileText,
       'Travel Insurance': Shield,
-      'Passport Registration/Renew': Passport
+      'Passport Registration/Renew': FileCheck
     };
     
     const IconComponent = icons[serviceName] || FileText;

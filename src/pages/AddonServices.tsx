@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Clock, ArrowRight, Search, FileText, Check, X, Hotel, Plane, Shield, Passport } from 'lucide-react';
+import { Clock, ArrowRight, Search, FileText, Check, X, Hotel, Plane, Shield, FileCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,7 +76,7 @@ const AddonServices = () => {
       'Document Attestation': FileText,
       'Transcript': FileText,
       'Travel Insurance': Shield,
-      'Passport Registration/Renew': Passport
+      'Passport Registration/Renew': FileCheck
     };
     
     const IconComponent = icons[serviceName] || FileText;

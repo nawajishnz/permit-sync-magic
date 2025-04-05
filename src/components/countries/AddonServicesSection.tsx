@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, ArrowRight, Check, FileText, Hotel, Plane, Shield, Passport } from 'lucide-react';
+import { Clock, ArrowRight, Check, FileText, Hotel, Plane, Shield, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddonService } from '@/models/addon_services';
@@ -26,7 +26,7 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
       'Document Attestation': FileText,
       'Transcript': FileText,
       'Travel Insurance': Shield,
-      'Passport Registration/Renew': Passport
+      'Passport Registration/Renew': FileCheck
     };
     
     const IconComponent = icons[serviceName] || FileText;
