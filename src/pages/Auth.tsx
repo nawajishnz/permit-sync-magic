@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from '@/hooks/use-toast';
-import { AlertCircle, LoaderIcon, Facebook, Apple, EyeOff, Eye } from 'lucide-react';
+import { AlertCircle, LoaderIcon, Facebook, Apple, EyeOff, Eye, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
@@ -17,6 +17,31 @@ import { cn } from '@/lib/utils';
 // Admin test account credentials
 const ADMIN_TEST_EMAIL = "admin@permitsy.com";
 const ADMIN_TEST_PASSWORD = "admin123";
+
+// Testimonial data
+const testimonials = [
+  {
+    id: 1,
+    name: "Maria Chen",
+    role: "Digital Nomad & Travel Blogger",
+    image: "/lovable-uploads/d41f500d-3ae8-477d-89e8-4b8f6346774b.png",
+    content: "Permitsy has revolutionized how I manage visas when traveling. The interface is intuitive, and their support team is always quick to respond. I can't imagine planning my travels without it."
+  },
+  {
+    id: 2,
+    name: "James Rodriguez",
+    role: "International Business Consultant",
+    image: "/lovable-uploads/c6f0f3d8-3504-4698-82f8-c54a489198c6.png", 
+    content: "As someone who travels frequently for work, Permitsy has been a game-changer. The automated document checklist saves me hours of research for each country I visit."
+  },
+  {
+    id: 3,
+    name: "Sarah Thompson",
+    role: "Study Abroad Program Director",
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+    content: "I manage visa applications for dozens of students each semester. Permitsy's tracking tools and notifications have eliminated the stress of managing multiple applications simultaneously."
+  }
+];
 
 const Auth = () => {
   const { signIn, signUp, user, userRole } = useAuth();
@@ -34,7 +59,16 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
   
+  // Testimonial auto scroll
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Check if the user is accessing admin login from URL param
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -224,40 +258,105 @@ const Auth = () => {
     setShowLoginHelp(true);
   };
 
+  const nextTestimonial = () => {
+    setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+  };
+
+  const prevTestimonial = () => {
+    setActiveTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow bg-gray-50 py-12">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 px-4">
+          <div className="flex flex-col md:flex-row items-stretch justify-center gap-8 md:gap-0 px-4">
             {/* Left Side - Testimonial */}
-            <div className="w-full md:w-1/2 max-w-md relative">
-              <div className="rounded-3xl overflow-hidden">
-                <img 
-                  src="/lovable-uploads/0c0a21e2-68bd-4e1f-87ea-e6a5ec527917.png" 
-                  alt="User with VR headset" 
-                  className="w-full"
-                />
-                <div className="absolute inset-0 bg-black/25 rounded-3xl flex flex-col justify-end p-8">
-                  <div className="bg-black/40 p-6 backdrop-blur-md rounded-3xl text-white">
-                    <h3 className="text-2xl font-bold mb-1">Maria Chen</h3>
-                    <p className="text-sm text-gray-200 mb-4">Digital Nomad & Travel Blogger</p>
-                    <p className="text-white leading-relaxed">
-                      "Permitsy has revolutionized how I manage visas when traveling. The interface is intuitive, and their support team is always quick to respond. I can't imagine planning my travels without it."
-                    </p>
+            <div className="w-full md:w-1/2 max-w-md bg-gradient-to-br from-blue-900 to-navy-800 rounded-l-3xl overflow-hidden relative">
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=2070')] bg-cover bg-center opacity-20"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30"></div>
+              
+              <div className="relative h-full flex flex-col justify-between p-8 text-white">
+                <div className="mb-12">
+                  <h2 className="text-3xl font-bold mb-2">Welcome to Permitsy</h2>
+                  <p className="text-gray-300">Your global visa management solution</p>
+                </div>
+                
+                <div className="space-y-6">
+                  <div className="relative overflow-hidden h-[300px]">
+                    {testimonials.map((testimonial, index) => (
+                      <div
+                        key={testimonial.id}
+                        className={cn(
+                          "absolute w-full transition-all duration-500 ease-in-out",
+                          index === activeTestimonial ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"
+                        )}
+                      >
+                        <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-white/30">
+                              <img 
+                                src={testimonial.image} 
+                                alt={testimonial.name} 
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold">{testimonial.name}</h3>
+                              <p className="text-sm text-gray-300">{testimonial.role}</p>
+                            </div>
+                          </div>
+                          <blockquote className="text-gray-100 italic">
+                            "{testimonial.content}"
+                          </blockquote>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                      {testimonials.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setActiveTestimonial(index)}
+                          className={cn(
+                            "w-2.5 h-2.5 rounded-full",
+                            index === activeTestimonial ? "bg-white" : "bg-white/30"
+                          )}
+                          aria-label={`Go to testimonial ${index + 1}`}
+                        />
+                      ))}
+                    </div>
                     
-                    <div className="flex space-x-2 mt-4">
-                      <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={prevTestimonial}
+                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                        aria-label="Previous testimonial"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={nextTestimonial}
+                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                        aria-label="Next testimonial"
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
+                </div>
+                
+                <div className="mt-8 text-sm text-gray-300">
+                  <p>Trusted by thousands of travelers worldwide</p>
                 </div>
               </div>
             </div>
             
             {/* Right Side - Authentication Form */}
-            <div className="w-full md:w-1/2 max-w-md bg-white rounded-3xl p-8 shadow-sm">
+            <div className="w-full md:w-1/2 max-w-md bg-white rounded-r-3xl p-8 shadow-sm">
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
                   {isSignUp ? "Create an account" : "Sign in to your account"}
