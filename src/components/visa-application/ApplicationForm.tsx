@@ -23,12 +23,16 @@ interface ApplicationFormProps {
   countryName: string;
   visaType: string;
   processingTime: string;
+  isServiceOrder?: boolean;
+  serviceName?: string;
 }
 
 const ApplicationForm: React.FC<ApplicationFormProps> = ({ 
   countryName,
   visaType,
-  processingTime
+  processingTime,
+  isServiceOrder = false,
+  serviceName
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -180,7 +184,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
     // Show success message
     toast({
       title: "Application Submitted",
-      description: "Your visa application has been successfully submitted.",
+      description: `Your ${isServiceOrder ? 'service order' : 'visa application'} has been successfully submitted.`,
     });
     
     // In a real app, you would submit the form data to your backend
@@ -190,16 +194,37 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
     }, 2000);
   };
 
-  return (
-    <div className="w-full max-w-5xl mx-auto">
-      <Card className="p-6 shadow-md">
-        <div className="mb-8">
+  const getTitle = () => {
+    if (isServiceOrder) {
+      return (
+        <>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {serviceName || "Service"} Order
+          </h2>
+          <p className="text-gray-500">
+            Estimated processing time: {processingTime}
+          </p>
+        </>
+      );
+    } else {
+      return (
+        <>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
             {countryName} Visa Application - {visaType}
           </h2>
           <p className="text-gray-500">
             Estimated processing time: {processingTime}
           </p>
+        </>
+      );
+    }
+  };
+
+  return (
+    <div className="w-full max-w-5xl mx-auto">
+      <Card className="p-6 shadow-md">
+        <div className="mb-8">
+          {getTitle()}
         </div>
 
         {/* Progress Steps */}
@@ -263,7 +288,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
               onClick={handleSubmit}
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
             >
-              Submit Application
+              Submit {isServiceOrder ? 'Order' : 'Application'}
             </Button>
           )}
         </div>
