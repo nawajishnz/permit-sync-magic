@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Star } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getTestimonials, Testimonial } from '@/models/testimonials';

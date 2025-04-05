@@ -137,9 +137,9 @@ const TestimonialCard = ({ testimonial }: { testimonial: Testimonial }) => {
 const ApprovedVisaCard = ({ visa }: { visa: ApprovedVisa }) => {
   return (
     <Card className="h-full hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-      <div className="h-48 w-full overflow-hidden bg-gray-100">
+      <div className="h-48 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
         <img 
-          src={visa.image_url || '/placeholder.svg'} 
+          src={visa.image_url} 
           alt={`Approved visa`}
           className="w-full h-full object-contain"
           onError={(e) => {
