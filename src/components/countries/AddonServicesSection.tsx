@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, ArrowRight, Check } from 'lucide-react';
+import { Clock, ArrowRight, Check, ShoppingBag, FileText, Globe, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddonService } from '@/models/addon_services';
@@ -20,16 +20,33 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
   const getServiceImage = (serviceName: string): string => {
     const serviceImages: Record<string, string> = {
       'Rental Agreement': '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png',
-      'Hotel Booking': '/lovable-uploads/hotel-booking.jpg',
-      'Flight Tickets': '/lovable-uploads/flight-tickets.jpg',
-      'Police Clearance Certificate': '/lovable-uploads/police-clearance.jpg',
-      'Document Attestation': '/lovable-uploads/document-attestation.jpg',
-      'Transcript': '/lovable-uploads/transcript.jpg',
-      'Travel Insurance': '/lovable-uploads/travel-insurance.jpg',
-      'Passport Registration/Renew': '/lovable-uploads/passport.jpg'
+      'Hotel Booking': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      'Flight Tickets': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      'Police Clearance Certificate': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      'Document Attestation': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      'Transcript': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      'Travel Insurance': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      'Passport Registration/Renew': '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png'
     };
 
     return serviceImages[serviceName] || '/placeholder.svg';
+  };
+
+  // Get appropriate icon based on service type
+  const getServiceIcon = (serviceName: string) => {
+    const icons: Record<string, React.ElementType> = {
+      'Rental Agreement': FileText,
+      'Hotel Booking': ShoppingBag,
+      'Flight Tickets': Globe,
+      'Police Clearance Certificate': Shield,
+      'Document Attestation': FileText,
+      'Transcript': FileText,
+      'Travel Insurance': Shield,
+      'Passport Registration/Renew': FileText
+    };
+    
+    const IconComponent = icons[serviceName] || FileText;
+    return <IconComponent className="h-4 w-4 mr-1.5 text-green-500" />;
   };
 
   return (
@@ -88,7 +105,7 @@ const AddonServicesSection = ({ services, className = '' }: AddonServicesSection
                   
                   <div className="mt-auto">
                     <div className="flex items-center text-sm text-gray-500 mb-4">
-                      <Check className="h-4 w-4 text-green-500 mr-1.5" />
+                      {getServiceIcon(service.name)}
                       <span>Embassy approved documentation</span>
                     </div>
                     

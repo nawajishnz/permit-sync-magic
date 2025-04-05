@@ -70,7 +70,7 @@ const Index = () => {
       price: '800',
       delivery_days: 10,
       discount_percentage: 15,
-      image_url: '/lovable-uploads/hotel-booking.jpg'
+      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png'
     },
     {
       id: '3',
@@ -79,7 +79,7 @@ const Index = () => {
       price: '800',
       delivery_days: 5,
       discount_percentage: 10,
-      image_url: '/lovable-uploads/flight-tickets.jpg'
+      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png'
     },
     {
       id: '4',
@@ -88,7 +88,7 @@ const Index = () => {
       price: '2500',
       delivery_days: 7,
       discount_percentage: 5,
-      image_url: '/lovable-uploads/police-clearance.jpg'
+      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png'
     }
   ];
 
