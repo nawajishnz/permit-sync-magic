@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ApplicationForm from '@/components/visa-application/ApplicationForm';
@@ -147,21 +148,47 @@ const countryData = {
   }
 };
 
+interface LocationState {
+  serviceOrder?: boolean;
+  serviceName?: string;
+  servicePrice?: string;
+}
+
 const VisaApplication = () => {
   const { countryId, packageId } = useParams<{ countryId: string; packageId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   
+  // Check for service order from location state
+  const locationState = location.state as LocationState;
+  const isServiceOrder = locationState?.serviceOrder === true;
+  const serviceName = locationState?.serviceName;
+  
   useEffect(() => {
-    // Validate parameters
-    if (!countryId || !packageId || !countryData[countryId as keyof typeof countryData]) {
+    // Always provide a fallback for any invalid params
+    if (!countryId || !packageId) {
+      setLoading(false);
+      return;
+    }
+    
+    if (isServiceOrder) {
+      // For service orders, we don't need to validate against countryData
+      setLoading(false);
+      return;
+    }
+    
+    // Validate parameters for visa applications
+    if (!countryData[countryId as keyof typeof countryData]) {
       toast({
-        title: "Invalid Parameters",
-        description: "Could not find the requested visa information.",
+        title: "Invalid Country",
+        description: "Could not find the requested country information.",
         variant: "destructive"
       });
-      navigate('/countries');
+      
+      // Don't navigate away, just show a fallback
+      setLoading(false);
       return;
     }
     
@@ -174,12 +201,14 @@ const VisaApplication = () => {
         description: "The selected visa package does not exist.",
         variant: "destructive"
       });
-      navigate('/countries');
+      
+      // Don't navigate away, just show a fallback
+      setLoading(false);
       return;
     }
     
     setLoading(false);
-  }, [countryId, packageId, navigate, toast]);
+  }, [countryId, packageId, navigate, toast, isServiceOrder]);
   
   if (loading) {
     return (
@@ -189,9 +218,32 @@ const VisaApplication = () => {
     );
   }
   
-  // Safe to use countryId and packageId now
-  const country = countryData[countryId as keyof typeof countryData];
-  const visaPackage = country.visaPackages[parseInt(packageId!, 10)];
+  // Get appropriate title and data based on whether this is a service order or visa application
+  let title = "Application Form";
+  let backLink = "/countries";
+  let visaPackage = { name: "Standard", processingTime: "7-10 days" };
+  let countryName = "United States";
+  
+  if (isServiceOrder) {
+    // If it's a service order
+    title = serviceName || "Service Order";
+    backLink = "/addon-services";
+    visaPackage = { 
+      name: serviceName || "Service Order", 
+      processingTime: "3-5 days" 
+    };
+    countryName = "Service Order";
+  } else if (countryId && packageId && countryData[countryId as keyof typeof countryData]) {
+    // If it's a visa application with valid params
+    const country = countryData[countryId as keyof typeof countryData];
+    const packageIdNum = parseInt(packageId, 10);
+    
+    if (!isNaN(packageIdNum) && packageIdNum >= 0 && packageIdNum < country.visaPackages.length) {
+      countryName = country.name;
+      visaPackage = country.visaPackages[packageIdNum];
+      backLink = `/country/${countryId}`;
+    }
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -200,17 +252,19 @@ const VisaApplication = () => {
       <main className="flex-grow py-8">
         <div className="container max-w-7xl mx-auto px-4">
           <div className="mb-6">
-            <Link to={`/country/${countryId}`}>
+            <Link to={backLink}>
               <Button variant="ghost" size="sm" className="flex items-center text-gray-600">
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back to {country.name} Visa
+                <ArrowLeft className="h-4 w-4 mr-2" /> Back to {isServiceOrder ? "Services" : `${countryName} Visa`}
               </Button>
             </Link>
           </div>
           
           <ApplicationForm 
-            countryName={country.name}
+            countryName={countryName}
             visaType={visaPackage.name}
             processingTime={visaPackage.processingTime}
+            isServiceOrder={isServiceOrder}
+            serviceName={serviceName}
           />
         </div>
       </main>
