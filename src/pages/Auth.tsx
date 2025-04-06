@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -8,11 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from '@/hooks/use-toast';
-import { AlertCircle, LoaderIcon, Facebook, Apple, EyeOff, Eye, ArrowLeft, ArrowRight } from 'lucide-react';
+import { AlertCircle, LoaderIcon, EyeOff, Eye, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 // Admin test account credentials
 const ADMIN_TEST_EMAIL = "admin@permitsy.com";
@@ -81,20 +81,19 @@ const Auth = () => {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (user && userRole) {
       console.log('Auth page - User role:', userRole);
       if (userRole === 'admin') {
-        navigate('/admin');
+        window.location.href = '/admin';
       } else {
-        navigate('/dashboard');
+        window.location.href = '/dashboard';
       }
     }
-  }, [user, userRole, navigate]);
+  }, [user, userRole]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
       if (!email.trim() || !password.trim()) {
         toast({
@@ -106,11 +105,17 @@ const Auth = () => {
         return;
       }
       
+      console.log('Attempting to sign in...');
       await signIn(email, password);
       
       // Note: Navigation will be handled in the AuthContext based on user role
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign in error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign in. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -157,100 +162,94 @@ const Auth = () => {
     setSetupAdmin(true);
     
     try {
-      // Check if admin account already exists
-      const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
+      // First, try to create the admin user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: ADMIN_TEST_EMAIL,
         password: ADMIN_TEST_PASSWORD
       });
-      
-      if (existingUser.user) {
-        console.log("Admin user exists, updating role if needed");
-        // Admin already exists, update role if needed
-        const { data: profileData, error: profileError } = await supabase
+
+      if (signUpError && !signUpError.message.includes('User already registered')) {
+        throw signUpError;
+      }
+
+      const userId = signUpData?.user?.id;
+
+      if (userId) {
+        // Create or update the profile with admin role
+        const { error: profileError } = await supabase
           .from('profiles')
-          .select('role')
-          .eq('id', existingUser.user.id)
-          .single();
-          
-        if (profileError || profileData.role !== 'admin') {
-          console.log("Updating existing user to admin role");
-          // Update the role to admin
+          .upsert({
+            id: userId,
+            email: ADMIN_TEST_EMAIL,
+            full_name: 'Admin User',
+            role: 'admin',
+            created_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          });
+
+        if (profileError) {
+          console.error('Error creating admin profile:', profileError);
+          throw new Error('Failed to create admin profile');
+        }
+
+        toast({
+          title: "Success",
+          description: "Admin account has been created successfully",
+        });
+
+        setEmail(ADMIN_TEST_EMAIL);
+        setPassword(ADMIN_TEST_PASSWORD);
+        setAdminSetupSuccess(true);
+      } else {
+        // Try to sign in if user already exists
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: ADMIN_TEST_EMAIL,
+          password: ADMIN_TEST_PASSWORD
+        });
+
+        if (signInError) {
+          throw signInError;
+        }
+
+        if (signInData.user) {
+          // Update existing user's profile to ensure admin role
           const { error: updateError } = await supabase
             .from('profiles')
-            .update({ role: 'admin' })
-            .eq('id', existingUser.user.id);
-            
+            .upsert({
+              id: signInData.user.id,
+              email: ADMIN_TEST_EMAIL,
+              full_name: 'Admin User',
+              role: 'admin',
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id'
+            });
+
           if (updateError) {
-            console.error('Error updating admin role:', updateError);
-            throw new Error('Failed to set admin role');
+            console.error('Error updating admin profile:', updateError);
+            throw new Error('Failed to update admin profile');
           }
+
+          toast({
+            title: "Success",
+            description: "Admin account is ready to use",
+          });
+
+          setEmail(ADMIN_TEST_EMAIL);
+          setPassword(ADMIN_TEST_PASSWORD);
+          setAdminSetupSuccess(true);
         }
-        
-        toast({
-          title: "Success",
-          description: "Admin account already exists and is ready to use",
-        });
-        
-        setEmail(ADMIN_TEST_EMAIL);
-        setPassword(ADMIN_TEST_PASSWORD);
-        setAdminSetupSuccess(true);
-        return;
-      }
-      
-      if (checkError && !checkError.message.includes('Invalid login credentials')) {
-        console.error("Unexpected error checking admin:", checkError);
-        throw new Error(checkError.message);
-      }
-      
-      console.log("Creating new admin account");
-      // Create new admin account
-      const { data: newUser, error: signUpError } = await supabase.auth.signUp({
-        email: ADMIN_TEST_EMAIL,
-        password: ADMIN_TEST_PASSWORD,
-        options: {
-          data: {
-            full_name: "Admin User",
-          }
-        }
-      });
-      
-      if (signUpError) {
-        console.error("Error creating admin account:", signUpError);
-        throw new Error(signUpError.message);
-      }
-      
-      if (newUser.user) {
-        console.log("Admin user created, setting role", newUser.user.id);
-        // Set the user role to admin
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', newUser.user.id);
-          
-        if (updateError) {
-          console.error('Error setting admin role:', updateError);
-          throw new Error('Failed to set admin role');
-        }
-        
-        toast({
-          title: "Success",
-          description: "Admin account created successfully",
-        });
-        
-        setEmail(ADMIN_TEST_EMAIL);
-        setPassword(ADMIN_TEST_PASSWORD);
-        setAdminSetupSuccess(true);
       }
     } catch (error: any) {
-      console.error('Error creating admin account:', error);
+      console.error('Error setting up admin account:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create admin account",
+        description: error.message || "Failed to set up admin account",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
-      setSetupAdmin(false);
     }
   };
 
@@ -408,29 +407,7 @@ const Auth = () => {
                 </div>
               )}
               
-              {/* Social Sign In */}
-              <div className="mb-6">
-                <div className="flex gap-3 justify-center">
-                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
-                    <Facebook className="h-5 w-5" />
-                  </Button>
-                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
-                    <Apple className="h-5 w-5" />
-                  </Button>
-                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM9.5 8.5L7.5 8.5L12 13L16.5 8.5L14.5 8.5L12 11L9.5 8.5Z" />
-                    </svg>
-                  </Button>
-                </div>
-                
-                <div className="flex items-center gap-3 mt-6">
-                  <Separator className="flex-grow" />
-                  <span className="text-gray-500 text-sm">or</span>
-                  <Separator className="flex-grow" />
-                </div>
-              </div>
-              
+              {/* Form Section */}
               {isSignUp ? (
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
@@ -502,13 +479,11 @@ const Auth = () => {
                   <div className="text-center mt-4">
                     <p className="text-gray-600 text-sm">
                       Already have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => setIsSignUp(false)}
-                        className="text-orange-500 hover:text-orange-600 font-medium"
-                      >
-                        Sign In
-                      </button>
+                      <Link to="/auth">
+                        <Button size="sm" className="text-sm bg-black hover:bg-gray-800 text-white">
+                          Sign In
+                        </Button>
+                      </Link>
                     </p>
                   </div>
                 </form>
@@ -579,7 +554,7 @@ const Auth = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+                    className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -593,13 +568,11 @@ const Auth = () => {
                   <div className="text-center mt-4">
                     <p className="text-gray-600 text-sm">
                       Don't have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => setIsSignUp(true)}
-                        className="text-orange-500 hover:text-orange-600 font-medium"
-                      >
-                        Sign up
-                      </button>
+                      <Link to="/auth">
+                        <Button size="sm" className="text-sm bg-black hover:bg-gray-800 text-white">
+                          Sign up
+                        </Button>
+                      </Link>
                     </p>
                   </div>
                   

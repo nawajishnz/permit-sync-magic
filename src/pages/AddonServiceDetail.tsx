@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -173,13 +172,9 @@ const AddonServiceDetail = () => {
                       </div>
                     )}
                     <img 
-                      src={service.image_url || `https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?auto=format&fit=crop&w=800&q=80`} 
+                      src={service.image_url} 
                       alt={service.name} 
                       className="w-full h-96 object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = `https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?auto=format&fit=crop&w=800&q=80`; 
-                      }}
                     />
                   </div>
                   
@@ -446,13 +441,9 @@ const AddonServiceDetail = () => {
                         <Card className="h-full hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col">
                           <div className="relative h-48">
                             <img 
-                              src={relatedService.image_url || `https://images.unsplash.com/photo-${1618160702438 + serviceIdNumber * 10000}-9b02ab6515c9?auto=format&fit=crop&w=800&q=80`} 
+                              src={relatedService.image_url} 
                               alt={relatedService.name} 
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = `https://images.unsplash.com/photo-${1618160702438 + serviceIdNumber * 10000}-9b02ab6515c9?auto=format&fit=crop&w=800&q=80`;
-                              }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 to-transparent"></div>
                             <div className="absolute bottom-0 left-0 right-0 p-4">

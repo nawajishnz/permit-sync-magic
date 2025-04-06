@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -184,7 +183,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
             <Button
               size="sm"
               variant="ghost"
-              className={`absolute top-11 right-3 z-20 rounded-full h-8 w-8 p-0 
+              className={`absolute top-11 right-3 z-20 h-8 w-8 p-0 
                 ${isSaved 
                   ? 'bg-pink-500/90 text-white hover:bg-pink-600/90 hover:text-white' 
                   : 'bg-black/30 text-white hover:bg-black/40 hover:text-white'
@@ -272,7 +271,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
               <Button
                 size="sm"
                 variant="ghost"
-                className={`absolute top-3 right-3 z-20 rounded-full h-8 w-8 p-0 
+                className={`absolute top-3 right-3 z-20 h-8 w-8 p-0 
                   ${isSaved 
                     ? 'bg-pink-500/90 text-white hover:bg-pink-600/90 hover:text-white' 
                     : 'bg-black/30 text-white hover:bg-black/40 hover:text-white'

@@ -60,25 +60,25 @@ const Index = () => {
       price: '1200',
       delivery_days: 3,
       discount_percentage: 20,
-      image_url: '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png'
+      image_url: 'https://images.pexels.com/photos/955395/pexels-photo-955395.jpeg'
     },
     {
       id: '2',
       name: 'Hotel Booking',
       description: 'Premium hotel reservation service with guaranteed confirmation',
       price: '800',
-      delivery_days: 10,
+      delivery_days: 2,
       discount_percentage: 15,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png'
+      image_url: 'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg'
     },
     {
       id: '3',
       name: 'Flight Tickets',
       description: 'Discounted international flight booking with flexible changes',
       price: '800',
-      delivery_days: 5,
+      delivery_days: 1,
       discount_percentage: 10,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png'
+      image_url: 'https://images.pexels.com/photos/62623/wing-plane-flying-airplane-62623.jpeg'
     },
     {
       id: '4',
@@ -87,7 +87,7 @@ const Index = () => {
       price: '2500',
       delivery_days: 7,
       discount_percentage: 5,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png'
+      image_url: 'https://images.pexels.com/photos/4021256/pexels-photo-4021256.jpeg'
     }
   ];
 
@@ -171,34 +171,10 @@ const Index = () => {
         
         <WhyChooseUs />
         
-        {/* Add-on Services Section */}
-        <section id="addon-services" className="py-16 bg-gradient-to-b from-indigo-50 to-white">
-          <div className="container mx-auto px-4 mb-8">
-            <div className="text-center mb-12">
-              <span className="px-4 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-                Premium Services
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-4 mb-4">
-                Enhance Your Visa Application
-              </h2>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Make your travel preparations seamless with our premium add-on services designed to complement your visa application process.
-              </p>
-            </div>
-          </div>
-          
-          <AddonServicesSection />
-
-          <div className="container mx-auto py-8 text-center">
-            <Link to="/addon-services">
-              <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white group">
-                View All Services <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-          </div>
-        </section>
-        
         <TravelTipsSection />
+
+        {/* Addon Services Section */}
+        <AddonServicesSection />
         
         <div className="py-12 md:py-20 bg-gradient-to-b from-blue-50/60 to-white px-4">
           <Testimonials />

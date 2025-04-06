@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Check, Compass, CalendarClock, Search, Zap, FileText, CreditCard, Globe, MapPin } from 'lucide-react';
@@ -174,7 +173,7 @@ const Hero: React.FC = () => {
                 </div>
                 <Button
                   size="lg"
-                  className="rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-md"
+                  className="bg-indigo-600 hover:bg-indigo-700 shadow-md"
                   onClick={() => {
                     if (selectedCountry) {
                       navigate(`/country/${selectedCountry}`);
@@ -326,7 +325,7 @@ const Hero: React.FC = () => {
                       </div>
                     </div>
                   </motion.div>
-                  
+                
                   {/* Application Progress Steps */}
                   <motion.div
                     variants={itemVariant}

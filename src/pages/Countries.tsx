@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -331,26 +330,24 @@ const CountriesPage = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="rounded-md"
                       onClick={() => setViewMode('grid')}
                     >
-                      <div className={`p-1 rounded ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : ''}`}>
+                      <div className={`p-1 ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : ''}`}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
                       </div>
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="rounded-md"
                       onClick={() => setViewMode('list')}
                     >
-                      <div className={`p-1 rounded ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : ''}`}>
+                      <div className={`p-1 ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : ''}`}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></svg>
                       </div>
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="rounded-full flex gap-2 md:w-auto"
+                      className="flex gap-2 md:w-auto"
                       onClick={() => setShowFilters(!showFilters)}
                     >
                       <Filter size={18} />

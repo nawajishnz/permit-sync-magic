@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type AddonService = {
@@ -72,105 +71,77 @@ export const getSampleAddonServices = (): AddonService[] => {
       price: '1200',
       delivery_days: 3,
       discount_percentage: 20,
-      image_url: '/lovable-uploads/dbcd3c53-8e2f-44b0-bc5b-d246022d31f0.png',
-      long_description: 'Our rental agreement service provides you with a legally binding document that protects both tenant and landlord interests. All agreements are verified by legal experts and meet the requirements for visa applications.',
-      requirements: [
-        'Proof of identity (passport or ID card)',
-        'Property details',
-        'Landlord contact information',
-        'Lease terms (duration, amount, etc.)'
-      ],
-      process: [
-        'Submit your details through our secure form',
-        'Our legal team drafts the agreement according to local laws',
-        'Both parties review and approve the document',
-        'Final agreement is delivered with official attestation'
-      ],
-      faqs: [
-        {
-          question: 'How long does it take to get the rental agreement?',
-          answer: 'Standard processing time is 3 business days. Express service is available for urgent needs.'
-        },
-        {
-          question: 'Is the rental agreement legally binding?',
-          answer: 'Yes, all agreements are drafted by legal professionals and are legally binding in the relevant jurisdiction.'
-        },
-        {
-          question: 'Can I make changes after the agreement is created?',
-          answer: 'Minor changes can be accommodated within 48 hours of delivery at no extra charge.'
-        }
-      ]
+      image_url: 'https://images.pexels.com/photos/955395/pexels-photo-955395.jpeg'
     },
     {
       id: '2',
-      name: 'Hotel Booking',
-      description: 'Premium hotel reservation service with guaranteed confirmation',
+      name: 'Dummy Hotel Booking',
+      description: 'Sample hotel reservation document for visa application purposes only (not a real booking)',
       price: '800',
       delivery_days: 2,
       discount_percentage: 15,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      long_description: 'Our hotel booking service ensures you have guaranteed reservation documentation needed for visa applications. We provide bookings at competitive rates with free cancellation options to give you flexibility.',
+      image_url: 'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
+      long_description: 'Our dummy hotel booking service provides a professionally formatted hotel reservation document for visa application purposes. This is NOT a real hotel booking - it is only for visa documentation purposes.',
       requirements: [
         'Travel dates',
-        'Destination city',
-        'Preferred hotel category (3-5 star)',
-        'Number of travelers'
+        'Preferred hotel category (3-star, 4-star, etc.)',
+        'City and area preferences',
+        'Number of guests'
       ],
       process: [
-        'Provide your trip details and preferences',
-        'Receive multiple hotel options within your budget',
-        'Select your preferred accommodation',
-        'Receive booking confirmation and visa-ready documentation'
+        'Submit your requirements',
+        'We prepare a professional hotel reservation document',
+        'Document review and formatting',
+        'Delivery within 2 business days'
       ],
       faqs: [
         {
-          question: 'Can I cancel the hotel booking after getting my visa?',
-          answer: 'Yes, all our bookings come with free cancellation up to 48 hours before check-in.'
+          question: 'Is this a real hotel booking?',
+          answer: 'No, this is NOT a real hotel booking. This service provides a dummy hotel reservation document for visa application purposes only.'
         },
         {
-          question: 'Do you offer bookings for specific hotel chains?',
-          answer: 'Yes, we can arrange bookings with most major international and local hotel chains based on your preference.'
+          question: 'Will I be able to stay at the hotel?',
+          answer: 'No, this is a documentation service only. You will need to make actual hotel bookings separately for your stay.'
         },
         {
-          question: 'Are the hotel prices competitive compared to booking directly?',
-          answer: 'We offer competitive rates and often have access to special discounts not available to the general public.'
+          question: 'Is this accepted for visa applications?',
+          answer: 'Yes, our dummy booking documents are formatted to meet visa application requirements. However, some embassies may require actual hotel bookings.'
         }
       ]
     },
     {
       id: '3',
-      name: 'Flight Tickets',
-      description: 'Discounted international flight booking with flexible changes',
+      name: 'Dummy Flight Tickets',
+      description: 'Sample flight reservation document for visa application purposes only (not a real ticket)',
       price: '800',
       delivery_days: 1,
       discount_percentage: 10,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      long_description: 'Our flight booking service provides you with the necessary flight itinerary documentation for your visa application. We offer competitive rates and flexible booking options that allow for changes as needed.',
+      image_url: 'https://images.pexels.com/photos/62623/wing-plane-flying-airplane-62623.jpeg',
+      long_description: 'Our dummy flight ticket service provides a professionally formatted flight reservation document for visa application purposes. This is NOT a real flight ticket - it is only for visa documentation purposes.',
       requirements: [
-        'Valid passport details',
-        'Travel dates',
-        'Destination',
+        'Preferred travel dates',
+        'Departure and arrival cities',
         'Preferred airlines (optional)',
-        'Seating preferences (optional)'
+        'Number of passengers'
       ],
       process: [
         'Submit your travel requirements',
-        'Receive multiple flight options',
-        'Select your preferred flight',
-        'Receive booking confirmation and documentation for visa'
+        'We prepare a professional flight reservation document',
+        'Document review and formatting',
+        'Delivery within 24 hours'
       ],
       faqs: [
         {
-          question: 'Can I change my flight dates after booking?',
-          answer: 'Yes, all bookings come with one free date change (fare difference may apply).'
+          question: 'Is this a real flight ticket?',
+          answer: 'No, this is NOT a real flight ticket. This service provides a dummy flight reservation document for visa application purposes only.'
         },
         {
-          question: 'Do I need to pay for the actual ticket for visa purposes?',
-          answer: 'For visa applications, we can provide a verifiable itinerary without full payment, or a fully paid ticket based on your needs.'
+          question: 'Can I board a flight with this document?',
+          answer: 'No, this is a documentation service only. You will need to purchase actual flight tickets separately for your travel.'
         },
         {
-          question: 'Can you book multi-city or complex international routes?',
-          answer: 'Yes, we specialize in handling complex international itineraries and multi-city routes.'
+          question: 'Is this accepted for visa applications?',
+          answer: 'Yes, our dummy ticket documents are formatted to meet visa application requirements. However, some embassies may require actual flight bookings.'
         }
       ]
     },
@@ -181,34 +152,7 @@ export const getSampleAddonServices = (): AddonService[] => {
       price: '2500',
       delivery_days: 7,
       discount_percentage: 5,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
-      long_description: 'Our Police Clearance Certificate (PCC) service handles the complete process of obtaining your police clearance document required for many visa applications. We liaise with relevant authorities to ensure your certificate is issued without delays.',
-      requirements: [
-        'Passport copy',
-        'Proof of address',
-        'Passport-sized photographs',
-        'Application form (we will help you complete this)'
-      ],
-      process: [
-        'Submit your documents through our platform',
-        'We prepare and file your application with authorities',
-        'Follow up on processing status',
-        'Deliver the certificate once issued'
-      ],
-      faqs: [
-        {
-          question: 'How long is the Police Clearance Certificate valid?',
-          answer: 'Typically 6 months from the date of issue, but this varies by country and visa type.'
-        },
-        {
-          question: 'Do I need to appear in person at any point?',
-          answer: 'For some countries, biometric verification may be required. We will inform you if your physical presence is necessary.'
-        },
-        {
-          question: 'Can you expedite the processing time?',
-          answer: 'Yes, we offer express processing at an additional fee, subject to availability from the issuing authority.'
-        }
-      ]
+      image_url: 'https://images.pexels.com/photos/4021256/pexels-photo-4021256.jpeg'
     },
     {
       id: '5',
@@ -217,7 +161,7 @@ export const getSampleAddonServices = (): AddonService[] => {
       price: '1500',
       delivery_days: 5,
       discount_percentage: 10,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      image_url: 'https://images.pexels.com/photos/95916/pexels-photo-95916.jpeg',
       long_description: 'Our document attestation service ensures your important documents meet legal requirements for international recognition. We handle attestation from government departments, embassies, and consulates.',
       requirements: [
         'Original documents or notarized copies',
@@ -252,8 +196,7 @@ export const getSampleAddonServices = (): AddonService[] => {
       description: 'Official academic transcript processing service',
       price: '1800',
       delivery_days: 10,
-      discount_percentage: 0,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      image_url: 'https://images.pexels.com/photos/4778611/pexels-photo-4778611.jpeg',
       long_description: 'Our transcript service helps you obtain official academic transcripts from your educational institutions. We handle the entire process including verification, authentication, and international formatting if required.',
       requirements: [
         'Educational institution details',
@@ -289,7 +232,7 @@ export const getSampleAddonServices = (): AddonService[] => {
       price: '600',
       delivery_days: 1,
       discount_percentage: 5,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      image_url: 'https://images.pexels.com/photos/3943882/pexels-photo-3943882.jpeg',
       long_description: 'Our travel insurance service provides comprehensive coverage that meets visa requirements. Get protection against medical emergencies, trip cancellations, lost luggage, and more with policies tailored to your specific journey.',
       requirements: [
         'Travel dates',
@@ -324,8 +267,7 @@ export const getSampleAddonServices = (): AddonService[] => {
       description: 'Fast-track passport registration and renewal service',
       price: '3500',
       delivery_days: 14,
-      discount_percentage: 0,
-      image_url: '/lovable-uploads/8c33eeef-863c-461b-9170-b1c79770cab1.png',
+      image_url: 'https://images.pexels.com/photos/4386442/pexels-photo-4386442.jpeg',
       long_description: 'Our passport service simplifies the complex process of passport application or renewal. We provide end-to-end assistance from documentation preparation to follow-up with passport authorities to ensure timely processing.',
       requirements: [
         'Completed application form',

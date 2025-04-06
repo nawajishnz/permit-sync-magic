@@ -146,121 +146,112 @@ const AddonServices = () => {
                   ))}
                 </TabsList>
                 
-                <TabsContent value="all" className="mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {isLoading ? (
-                      // Skeleton loading state
-                      Array.from({ length: 8 }).map((_, index) => (
-                        <Card key={`skeleton-${index}`} className="overflow-hidden h-full border border-gray-200 hover:shadow-lg transition-shadow duration-300">
-                          <Skeleton className="h-48 w-full" />
-                          <CardContent className="p-4">
-                            <Skeleton className="h-6 w-3/4 mb-2 mt-2" />
-                            <Skeleton className="h-4 w-1/2 mb-4" />
-                            <Skeleton className="h-20 w-full mb-4" />
-                            <Skeleton className="h-10 w-full rounded" />
-                          </CardContent>
-                        </Card>
-                      ))
-                    ) : (
-                      filteredServices.map((service) => {
-                        // Convert service ID to a number for arithmetic operations
-                        const serviceIdNumber = typeof service.id === 'number' ? 
-                          service.id : Number(service.id) || 0;
-                        
-                        return (
-                          <motion.div
-                            key={service.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.3 }}
-                            whileHover={{ y: -5 }}
-                            className="h-full"
-                          >
-                            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 h-full flex flex-col border border-gray-100">
-                              {/* Top section with image and discount badge */}
-                              <div className="relative">
-                                {service.discount_percentage && service.discount_percentage > 0 && (
-                                  <div className="absolute top-4 left-4 bg-green-500 text-white px-4 py-1.5 rounded-full text-sm font-bold z-10">
-                                    {service.discount_percentage}% OFF
+                {categories.map(category => (
+                  <TabsContent key={category.id} value={category.id} className="mt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {isLoading ? (
+                        // Skeleton loading state
+                        Array.from({ length: 8 }).map((_, index) => (
+                          <Card key={`skeleton-${index}`} className="overflow-hidden h-full border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                            <Skeleton className="h-48 w-full" />
+                            <CardContent className="p-4">
+                              <Skeleton className="h-6 w-3/4 mb-2 mt-2" />
+                              <Skeleton className="h-4 w-1/2 mb-4" />
+                              <Skeleton className="h-20 w-full mb-4" />
+                              <Skeleton className="h-10 w-full rounded" />
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        filteredServices.map((service) => {
+                          // Convert service ID to a number for arithmetic operations
+                          const serviceIdNumber = typeof service.id === 'number' ? 
+                            service.id : Number(service.id) || 0;
+                          
+                          return (
+                            <motion.div
+                              key={service.id}
+                              initial={{ opacity: 0, y: 20 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ duration: 0.3 }}
+                              whileHover={{ y: -5 }}
+                              className="h-full"
+                            >
+                              <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 h-full flex flex-col border border-gray-100">
+                                {/* Top section with image and discount badge */}
+                                <div className="relative">
+                                  {service.discount_percentage && service.discount_percentage > 0 && (
+                                    <div className="absolute top-4 left-4 bg-green-500 text-white px-4 py-1.5 rounded-full text-sm font-bold z-10">
+                                      {service.discount_percentage}% OFF
+                                    </div>
+                                  )}
+                                  <div className="h-[200px] overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
+                                    <img 
+                                      src={service.image_url}
+                                      alt={service.name} 
+                                      className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                                    />
                                   </div>
-                                )}
-                                <div className="h-48 overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
-                                  <img 
-                                    src={service.image_url || `https://images.unsplash.com/photo-${1472396961693 + serviceIdNumber * 7821}-142e6e269027?auto=format&fit=crop&w=800&q=80`}
-                                    alt={service.name} 
-                                    className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.src = `https://images.unsplash.com/photo-${1472396961693 + serviceIdNumber * 7821}-142e6e269027?auto=format&fit=crop&w=800&q=80`;
-                                    }}
-                                  />
-                                </div>
-                                <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent opacity-60"></div>
-                                <div className="absolute bottom-0 left-0 right-0 p-4">
-                                  <h3 className="text-white text-xl font-bold drop-shadow-md">{service.name}</h3>
-                                </div>
-                              </div>
-                              
-                              {/* Content section */}
-                              <div className="p-5 flex-grow flex flex-col">
-                                <div className="flex justify-between items-center mb-3">
-                                  <div className="font-bold text-2xl text-gray-900">
-                                    ₹{service.price}
-                                    <span className="text-sm font-normal text-gray-500 ml-1">Per person</span>
-                                  </div>
-                                  <div className="flex items-center text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
-                                    <Clock className="w-4 h-4 mr-1 text-indigo-600" />
-                                    <span className="font-medium">{service.delivery_days} Days</span>
+                                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent opacity-60"></div>
+                                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                                    <h3 className="text-white text-xl font-bold drop-shadow-md">{service.name}</h3>
                                   </div>
                                 </div>
                                 
-                                <p className="text-gray-600 mb-4 flex-grow">{service.description}</p>
-                                
-                                <div className="mt-auto">
-                                  <div className="flex items-center text-sm text-gray-500 mb-4">
-                                    {getServiceIcon(service.name)}
-                                    <span>Embassy approved documentation</span>
+                                {/* Content section */}
+                                <div className="p-5 flex-grow flex flex-col min-h-[200px]">
+                                  <div className="flex justify-between items-center mb-4">
+                                    <div className="font-bold text-2xl text-gray-900">
+                                      ₹{service.price}
+                                      <span className="text-sm font-normal text-gray-500 ml-1">Per person</span>
+                                    </div>
+                                    <div className="flex items-center text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                                      <Clock className="w-4 h-4 mr-1 text-indigo-600" />
+                                      <span className="font-medium">{service.delivery_days} Days</span>
+                                    </div>
                                   </div>
                                   
-                                  <Link to={`/addon-services/${service.id}`} className="block">
-                                    <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white group flex items-center justify-center">
-                                      View Details 
-                                      <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                                    </Button>
-                                  </Link>
+                                  <p className="text-gray-600 mb-6 flex-grow line-clamp-3">{service.description}</p>
+                                  
+                                  <div className="mt-auto">
+                                    <div className="flex items-center text-sm text-gray-500 mb-4">
+                                      {getServiceIcon(service.name)}
+                                      <span>Embassy approved documentation</span>
+                                    </div>
+                                    
+                                    <Link to={`/addon-services/${service.id}`} className="block">
+                                      <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white group flex items-center justify-center">
+                                        View Details 
+                                        <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                      </Button>
+                                    </Link>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </motion.div>
-                        );
-                      })
-                    )}
-                  </div>
-                  
-                  {/* empty state */}
-                  {!isLoading && filteredServices.length === 0 && (
-                    <div className="text-center py-12">
-                      <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                      <h3 className="text-xl font-semibold text-gray-700 mb-2">No services found</h3>
-                      <p className="text-gray-500 mb-6">We couldn't find any services matching your search criteria.</p>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          setSearchTerm('');
-                          setActiveCategory('all');
-                        }}
-                      >
-                        Clear filters
-                      </Button>
+                            </motion.div>
+                          );
+                        })
+                      )}
                     </div>
-                  )}
-                </TabsContent>
-                
-                {/* Other category tabs will share the same content and filter by category */}
-                {categories.slice(1).map(category => (
-                  <TabsContent key={category.id} value={category.id} className="mt-0">
-                    {/* The content will be rendered by the filter logic in the useEffect */}
+                    
+                    {/* empty state */}
+                    {!isLoading && filteredServices.length === 0 && (
+                      <div className="text-center py-12">
+                        <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No services found</h3>
+                        <p className="text-gray-500 mb-6">We couldn't find any services matching your search criteria.</p>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setSearchTerm('');
+                            setActiveCategory('all');
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      </div>
+                    )}
                   </TabsContent>
                 ))}
               </Tabs>

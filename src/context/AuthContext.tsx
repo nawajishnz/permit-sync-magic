@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -72,12 +71,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Fetching user role for:', userId);
       const { data, error } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, full_name')
         .eq('id', userId)
         .single();
 
       if (error) {
         console.error('Error fetching user role:', error);
+        toast({
+          title: "Warning",
+          description: "Unable to fetch user role. Some features may be limited.",
+          variant: "destructive",
+        });
         setUserRole('user'); // Default to user role on error
         return;
       }
@@ -90,13 +94,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (roleValue === 'admin') {
         console.log('Setting user as admin');
         setUserRole('admin');
+        // Ensure we're on the admin dashboard if we're an admin
+        if (!window.location.pathname.startsWith('/admin')) {
+          navigate('/admin');
+        }
       } else {
         console.log('Setting user as regular user');
-        setUserRole('user'); // Default to user for any other value
+        setUserRole('user');
+        // Redirect to user dashboard if trying to access admin routes
+        if (window.location.pathname.startsWith('/admin')) {
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
       setUserRole('user'); // Default to user role on error
+      navigate('/dashboard');
     }
   };
 
@@ -104,17 +117,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Attempting to sign in with:', { email });
       
-      // First, validate inputs
-      if (!email.trim() || !password.trim()) {
-        toast({
-          title: "Error signing in",
-          description: "Email and password are required",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Attempt sign in
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: email.trim(), 
         password: password.trim() 
@@ -122,66 +124,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Sign in error:', error);
-        
-        // Show specific error message
-        if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Error signing in",
-            description: "The email or password you entered is incorrect. Please try again.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error signing in",
-            description: error.message || "An error occurred during sign in.",
-            variant: "destructive",
-          });
-        }
-        
+        toast({
+          title: "Error signing in",
+          description: error.message || "An error occurred during sign in.",
+          variant: "destructive",
+        });
         return;
       }
       
-      console.log('Sign in successful:', data.user?.id);
-      
       if (data.user) {
-        // Fetch user role to determine redirect
-        try {
-          const { data: userData, error: roleError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
-          
-          if (roleError) {
-            console.error('Error fetching user role after sign in:', roleError);
-            toast({
-              title: "Warning",
-              description: "Unable to determine user role. Redirecting to default dashboard.",
-            });
-            navigate('/dashboard');
-            return;
-          }
-          
+        // Set user immediately
+        setUser(data.user);
+        setSession(data.session);
+        
+        // Fetch user role immediately after sign in
+        const { data: userData, error: roleError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (roleError) {
+          console.error('Error fetching user role:', roleError);
           toast({
-            title: "Success!",
+            title: "Warning",
+            description: "Unable to determine user role. Some features may be limited.",
+            variant: "destructive",
+          });
+          setUserRole('user');
+          navigate('/dashboard');
+          return;
+        }
+        
+        const roleValue = userData?.role;
+        console.log('User role after sign in:', roleValue);
+        
+        // Set role and redirect
+        if (roleValue === 'admin') {
+          setUserRole('admin');
+          toast({
+            title: "Welcome Admin",
+            description: "You have successfully signed in as an administrator.",
+          });
+          // Force navigation to admin
+          window.location.href = '/admin';
+        } else {
+          setUserRole('user');
+          toast({
+            title: "Welcome",
             description: "You have successfully signed in.",
           });
-          
-          // Handle the role as a string value
-          const roleValue = userData?.role;
-          console.log('User role from database after sign in:', roleValue);
-          
-          // Validate the role value and redirect accordingly
-          if (roleValue === 'admin') {
-            console.log('User is admin, redirecting to admin dashboard');
-            navigate('/admin');
-          } else {
-            console.log('User is regular user, redirecting to user dashboard');
-            navigate('/dashboard');
-          }
-        } catch (error) {
-          console.error('Unexpected error fetching user role:', error);
-          navigate('/dashboard');
+          // Force navigation to dashboard
+          window.location.href = '/dashboard';
         }
       }
     } catch (error: any) {
