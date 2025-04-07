@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter, Phone, Mail, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Phone, Mail, MapPin, Linkedin } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
@@ -30,6 +29,13 @@ const Footer: React.FC = () => {
               <a href="#" className="text-gray-400 hover:text-gray-800 transition-colors p-2 bg-white rounded-full shadow-sm">
                 <Twitter size={16} />
               </a>
+              <a 
+                href="#" 
+                className="text-gray-400 hover:text-gray-800 transition-colors p-2 bg-white rounded-full shadow-sm"
+                aria-label="LinkedIn"
+              >
+                <Linkedin size={16} />
+              </a>
             </div>
           </div>
 
@@ -40,11 +46,6 @@ const Footer: React.FC = () => {
               <li>
                 <Link to="/countries" className="text-gray-500 hover:text-gray-800 transition-colors text-sm">
                   Browse Countries
-                </Link>
-              </li>
-              <li>
-                <Link to="/visa-finder" className="text-gray-500 hover:text-gray-800 transition-colors text-sm">
-                  Visa Finder
                 </Link>
               </li>
               <li>
@@ -60,6 +61,11 @@ const Footer: React.FC = () => {
               <li>
                 <Link to="/contact" className="text-gray-500 hover:text-gray-800 transition-colors text-sm">
                   Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin-login" className="text-gray-500 hover:text-gray-800 transition-colors text-sm">
+                  Admin Login
                 </Link>
               </li>
             </ul>

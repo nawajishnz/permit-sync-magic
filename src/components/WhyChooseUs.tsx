@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Globe, Clock, Award, Zap, FileCheck } from 'lucide-react';
@@ -91,10 +90,8 @@ const WhyChooseUs = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <Link to="/visa-finder">
-            <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-lg px-8 py-6 text-lg shadow-md">
-              Find Your Visa Requirements
-            </Button>
+          <Link to="/countries" className="bg-indigo-600 hover:bg-indigo-700 rounded-lg px-8 py-6 text-lg shadow-md">
+            Browse Countries
           </Link>
         </motion.div>
       </div>

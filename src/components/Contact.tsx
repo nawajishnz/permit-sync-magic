@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const Contact = () => {
@@ -38,22 +38,6 @@ export const Contact = () => {
                 <div className="ml-4">
                   <h4 className="text-lg font-medium text-gray-900">Email</h4>
                   <p className="mt-1 text-gray-600">support@permitsy.com</p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600">
-                    <MapPin className="h-6 w-6" />
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <h4 className="text-lg font-medium text-gray-900">Address</h4>
-                  <p className="mt-1 text-gray-600">
-                    123 Visa Street<br />
-                    Suite 456<br />
-                    New York, NY 10001
-                  </p>
                 </div>
               </div>
             </div>

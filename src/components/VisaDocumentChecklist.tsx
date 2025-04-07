@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, FileText, User, Home, CreditCard, Globe, FileImage, Calendar, ArrowRight } from 'lucide-react';
@@ -104,11 +103,8 @@ const VisaDocumentChecklist = () => {
             <p className="text-gray-600 mb-6">
               Our platform automatically guides you through the exact requirements for your specific visa type and destination country.
             </p>
-            <Link to="/visa-finder">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-md">
-                Check Requirements For Your Destination
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+            <Link to="/countries" className="text-indigo-600 hover:text-indigo-700">
+              Browse Countries
             </Link>
           </motion.div>
         </div>

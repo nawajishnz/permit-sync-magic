@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -79,17 +78,12 @@ const CountryFilters: React.FC<CountryFiltersProps> = ({
             <SelectTrigger className="w-full">
               <div className="flex items-center">
                 <Ticket className="h-4 w-4 mr-2 text-gray-500" />
-                <SelectValue placeholder="All Visa Types" />
+                <SelectValue placeholder="Tourist Visa" />
               </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Visa Types</SelectItem>
               <SelectItem value="Tourist">Tourist Visa</SelectItem>
-              <SelectItem value="Business">Business Visa</SelectItem>
-              <SelectItem value="Student">Student Visa</SelectItem>
-              <SelectItem value="Work">Work Visa</SelectItem>
-              <SelectItem value="Transit">Transit Visa</SelectItem>
-              <SelectItem value="eVisa">e-Visa</SelectItem>
             </SelectContent>
           </Select>
         </div>

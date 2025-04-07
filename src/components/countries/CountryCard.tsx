@@ -115,8 +115,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
 
   // Get visa types for a country (placeholder function)
   const getVisaTypes = (country: any) => {
-    const visaType = country.entry_type || 'Tourist';
-    return [visaType, 'Business', 'Student'].slice(0, 2); // Only get 2 visa types for display
+    return ['Tourist Visa']; // Only show Tourist Visa
   };
 
   const { price, visaCount, entryDate, flightInfo, processingTime } = getCountryDetails(country);

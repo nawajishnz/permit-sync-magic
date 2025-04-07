@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -61,9 +60,6 @@ const Header: React.FC = () => {
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="/countries" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
               Browse Countries
-            </Link>
-            <Link to="/visa-finder" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
-              Visa Finder
             </Link>
             <Link to="/addon-services" className="text-gray-800 text-sm font-medium hover:text-primary transition-colors">
               Add-on Services
@@ -151,13 +147,6 @@ const Header: React.FC = () => {
               onClick={() => setIsOpen(false)}
             >
               Browse Countries
-            </Link>
-            <Link 
-              to="/visa-finder" 
-              className="text-gray-800 hover:bg-gray-50 px-4 py-3 rounded-xl"
-              onClick={() => setIsOpen(false)}
-            >
-              Visa Finder
             </Link>
             <Link 
               to="/addon-services" 

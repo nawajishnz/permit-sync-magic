@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Shield, Check, ArrowRight, Plane, Globe, FileCheck } from 'lucide-react';
@@ -226,11 +225,8 @@ const ApplicationSteps = () => {
         
         {/* CTA Button */}
         <div className="text-center mt-10">
-          <Link to="/visa-finder">
-            <Button className="bg-teal-600 hover:bg-teal-700">
-              Start Your Application
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+          <Link to="/countries" className="bg-teal-600 hover:bg-teal-700">
+            Browse Countries
           </Link>
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FileCheck, Clock, Award, ArrowRight, Check, Globe, Search, FileText, CreditCard, Zap, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -189,9 +188,8 @@ const HowItWorks = () => {
                         className="mt-2 bg-white/10 text-white border-white/30 hover:bg-white/20 w-full"
                         asChild
                       >
-                        <Link to="/visa-finder">
-                          Get Started
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                        <Link to="/countries" className="...">
+                          Browse Countries
                         </Link>
                       </Button>
                     </motion.div>
@@ -279,7 +277,7 @@ const HowItWorks = () => {
             className="bg-white text-indigo-700 hover:bg-white/90 shadow-xl"
             asChild
           >
-            <Link to="/visa-finder">
+            <Link to="/countries" className="...">
               Start Your Application
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

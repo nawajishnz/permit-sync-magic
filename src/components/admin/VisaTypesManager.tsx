@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -123,7 +122,7 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
 
   const handleAddNew = () => {
     setFormData({
-      name: '',
+      name: 'Tourist Visa',
       country_id: countryId || '',
       processing_time: '',
       fee: ''
@@ -134,7 +133,7 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
 
   const handleEdit = (visaType: any) => {
     setFormData({
-      name: visaType.name || '',
+      name: 'Tourist Visa',
       country_id: visaType.country_id || '',
       processing_time: visaType.processing_time || '',
       fee: visaType.fee || ''
@@ -175,7 +174,7 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
   const handleSubmit = async () => {
     try {
       // Validate required fields
-      if (!formData.name || !formData.country_id) {
+      if (!formData.country_id) {
         toast({
           title: "Missing required fields",
           description: "Please fill in all required fields",
@@ -184,30 +183,36 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
         return;
       }
       
+      // Always set the name to "Tourist Visa"
+      const updatedFormData = {
+        ...formData,
+        name: 'Tourist Visa'
+      };
+      
       if (isEditMode && currentVisaType) {
         // Update existing visa type
         const { error } = await supabase
           .from('visa_types')
-          .update(formData)
+          .update(updatedFormData)
           .eq('id', currentVisaType.id);
           
         if (error) throw error;
         
         toast({
           title: "Visa type updated",
-          description: `${formData.name} has been successfully updated`,
+          description: `Tourist Visa has been successfully updated`,
         });
       } else {
         // Create new visa type
         const { error } = await supabase
           .from('visa_types')
-          .insert([formData]);
+          .insert([updatedFormData]);
           
         if (error) throw error;
         
         toast({
           title: "Visa type added",
-          description: `${formData.name} has been successfully added`,
+          description: `Tourist Visa has been successfully added`,
         });
       }
       
@@ -245,7 +250,7 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Countries
           </Button>
           <h1 className="text-2xl font-bold">
-            Visa Types for {countryName ? decodeURIComponent(countryName) : 'All Countries'}
+            Tourist Visa for {countryName ? decodeURIComponent(countryName) : 'All Countries'}
           </h1>
         </div>
         <div className="flex gap-2">
@@ -253,14 +258,14 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
             <RefreshCw className="h-4 w-4" /> Refresh
           </Button>
           <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
-            <Plus className="mr-2 h-4 w-4" /> Add Visa Type
+            <Plus className="mr-2 h-4 w-4" /> Add Tourist Visa
           </Button>
         </div>
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>Manage Visa Types</CardTitle>
+          <CardTitle>Manage Tourist Visa</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -269,7 +274,7 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
             </div>
           ) : isError ? (
             <div className="text-center py-8 text-red-500">
-              <p>Error loading visa types. Please try again.</p>
+              <p>Error loading visa data. Please try again.</p>
               <p className="text-sm mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
             </div>
           ) : visaTypes.length > 0 ? (
@@ -287,7 +292,7 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
                 <TableBody>
                   {visaTypes.map((visaType) => (
                     <TableRow key={visaType.id}>
-                      <TableCell className="font-medium">{visaType.name}</TableCell>
+                      <TableCell className="font-medium">Tourist Visa</TableCell>
                       <TableCell>{visaType.countries?.name}</TableCell>
                       <TableCell>{visaType.processing_time}</TableCell>
                       <TableCell>{visaType.fee}</TableCell>
@@ -313,7 +318,7 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>No visa types found. Add your first visa type to get started.</p>
+              <p>No tourist visa found. Add a tourist visa to get started.</p>
             </div>
           )}
         </CardContent>
@@ -323,17 +328,17 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEditMode ? 'Edit Visa Type' : 'Add New Visa Type'}</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Tourist Visa' : 'Add Tourist Visa'}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Visa Type Name *</Label>
+              <Label htmlFor="name">Visa Type</Label>
               <Input
                 id="name"
                 name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="e.g. Tourist Visa"
+                value="Tourist Visa"
+                disabled
+                className="bg-gray-100"
               />
             </div>
             <input 
@@ -367,7 +372,7 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
               Cancel
             </Button>
             <Button onClick={handleSubmit} className="bg-teal hover:bg-teal-600">
-              {isEditMode ? 'Update' : 'Add'} Visa Type
+              {isEditMode ? 'Update' : 'Add'} Tourist Visa
             </Button>
           </DialogFooter>
         </DialogContent>

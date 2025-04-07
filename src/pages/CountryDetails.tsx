@@ -306,7 +306,7 @@ const CountryDetails = () => {
                   )}
                 </span>
                 <div>
-                  <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight">{country.name} Visa</h1>
+                  <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight">{country.name} Tourist Visa</h1>
                   <div className="flex flex-wrap items-center mt-2 gap-2">
                     <div className="flex items-center">
                       <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
@@ -347,7 +347,7 @@ const CountryDetails = () => {
           <div className="w-full lg:w-2/3 space-y-6 md:space-y-8">
             {/* Visa Overview Section */}
             <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
-              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Visa Overview</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Tourist Visa Overview</h2>
               
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 mb-6">
                 <div className="flex flex-col">
@@ -355,7 +355,7 @@ const CountryDetails = () => {
                     <CreditCard className="h-4 w-4 mr-1.5" />
                     <span className="text-xs md:text-sm">Visa Type</span>
                   </div>
-                  <p className="font-medium text-sm md:text-base">{country.name} Tourist Visa</p>
+                  <p className="font-medium text-sm md:text-base">Tourist Visa</p>
                 </div>
                 
                 <div className="flex flex-col">
@@ -391,11 +391,11 @@ const CountryDetails = () => {
             {/* What's Included */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <VisaIncludesCard 
-                title="What's Included" 
+                title="What's Included in Tourist Visa" 
                 items={country.visa_includes} 
               />
               <VisaIncludesCard 
-                title="Permitsy Assistance" 
+                title="Tourist Visa Assistance" 
                 items={country.visa_assistance} 
               />
             </div>

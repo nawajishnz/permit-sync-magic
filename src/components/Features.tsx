@@ -1,4 +1,5 @@
 import { Check, Globe, Shield, Clock, FileText, CreditCard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const features = [
   {

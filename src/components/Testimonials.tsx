@@ -9,6 +9,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import { Link } from 'react-router-dom';
 
 const TestimonialCard = ({ testimonial }: { testimonial: Testimonial }) => (
   <div className="bg-white rounded-xl shadow-md p-6 h-full flex flex-col">
@@ -102,6 +103,12 @@ const Testimonials = () => {
           <p className="text-teal font-medium">
             4.9 out of 5 stars from over 10,000+ reviews
           </p>
+        </div>
+
+        <div className="text-center mt-10">
+          <Link to="/countries" className="text-teal font-medium">
+            Browse Countries
+          </Link>
         </div>
       </div>
     </section>

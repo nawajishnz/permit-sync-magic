@@ -1,12 +1,9 @@
-
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Countries from '@/pages/Countries';
-import VisaFinder from '@/pages/VisaFinder';
 import Auth from '@/pages/Auth';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import AdminDashboard from '@/pages/AdminDashboard';
 import AddonServiceDetail from '@/pages/AddonServiceDetail';
 import AddonServices from '@/pages/AddonServices';
 import Testimonials from '@/pages/Testimonials';
@@ -21,23 +18,44 @@ import Contact from '@/pages/Contact';
 import NotFound from '@/pages/NotFound';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
+import AdminAuth from '@/pages/AdminAuth';
 
-// Create a QueryClient instance with error handling
+// Lazy load the admin dashboard to improve initial page load
+const AdminDashboard = lazy(() => {
+  console.log('Lazy loading AdminDashboard component');
+  return import('@/pages/AdminDashboard')
+    .then(module => {
+      console.log('AdminDashboard loaded successfully');
+      return module;
+    })
+    .catch(error => {
+      console.error('Error loading AdminDashboard:', error);
+      throw error;
+    });
+});
+
+// Create a QueryClient instance with reliable settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minute cache
       refetchOnWindowFocus: false, // Prevent unnecessary refetches
-      retry: 2, // Retry failed requests twice
-      // In newer versions of react-query, use onSettled instead of onError
-      meta: {
-        onError: (error: Error) => {
-          console.error('Query error:', error);
-        }
-      }
+      retry: 1, // Minimal retry to prevent hanging on errors
+      refetchOnReconnect: 'always',
     },
   },
 });
+
+// Loading component for Suspense with better UX
+const PageLoader = () => (
+  <div className="flex justify-center items-center min-h-screen bg-gray-50">
+    <div className="flex flex-col items-center">
+      <div className="animate-spin h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+      <p className="text-gray-700 mb-2">Loading admin dashboard...</p>
+      <p className="text-gray-500 text-sm">This may take a moment</p>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   return (
@@ -47,13 +65,19 @@ const App: React.FC = () => {
           <Route path="/" element={<Index />} />
           <Route path="/countries" element={<Countries />} />
           <Route path="/country/:id" element={<CountryDetails />} />
-          <Route path="/visa-finder" element={<VisaFinder />} />
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/addon-services" element={<AddonServices />} />
           <Route path="/addon-services/:id" element={<AddonServiceDetail />} />
           <Route path="/visa-application/:countryId/:packageId" element={<VisaApplication />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin">{<AdminDashboard />}</ProtectedRoute>} />
+          <Route path="/admin-login" element={<AdminAuth />} />
+          
+          {/* Admin routes with lazy loading */}
+          <Route path="/admin/*" element={
+            <Suspense fallback={<PageLoader />}>
+              <AdminDashboard />
+            </Suspense>
+          } />
           
           {/* Policy Pages */}
           <Route path="/terms" element={<Terms />} />

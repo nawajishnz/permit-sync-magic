@@ -1,14 +1,129 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, MessageCircle, Eye, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Search, Filter, MessageCircle, Eye, CheckCircle, XCircle, Clock, AlertCircle, Upload, FileUp, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+
+// Component for uploading approved visa images
+interface ApprovedVisaUploadProps {
+  applicationId: string;
+}
+
+interface VisaImage {
+  file: File;
+  status: 'uploading' | 'success' | 'error';
+}
+
+const ApprovedVisaUpload: React.FC<ApprovedVisaUploadProps> = ({ applicationId }) => {
+  const [visaImages, setVisaImages] = useState<VisaImage[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files).map(file => ({
+        file,
+        status: 'uploading' as const
+      }));
+      
+      setVisaImages([...visaImages, ...newFiles]);
+      setIsUploading(true);
+      setUploadSuccess(false);
+      
+      // Simulate upload - in a real app, you would upload to your backend
+      setTimeout(() => {
+        setVisaImages(prev => 
+          prev.map(img => img.status === 'uploading' ? {...img, status: 'success' as const} : img)
+        );
+        setIsUploading(false);
+        setUploadSuccess(true);
+        
+        // Reset success message after 3 seconds
+        setTimeout(() => {
+          setUploadSuccess(false);
+        }, 3000);
+        
+        console.log(`Uploaded visa images for application ${applicationId}`);
+      }, 1500);
+    }
+  };
+  
+  const removeImage = (index: number) => {
+    const newImages = [...visaImages];
+    newImages.splice(index, 1);
+    setVisaImages(newImages);
+  };
+
+  return (
+    <div className="mt-4">
+      <div className="space-y-3">
+        {visaImages.length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            {visaImages.map((img, index) => (
+              <div key={index} className="relative group">
+                <div className="bg-white rounded-md border border-gray-200 p-2 h-full">
+                  <div className="flex items-center space-x-2">
+                    <FileUp className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm truncate">{img.file.name}</span>
+                    {img.status === 'uploading' && (
+                      <div className="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full ml-auto"></div>
+                    )}
+                    {img.status === 'success' && (
+                      <CheckCircle className="h-3 w-3 text-green-500 ml-auto" />
+                    )}
+                  </div>
+                </div>
+                <button 
+                  onClick={() => removeImage(index)}
+                  className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3 text-gray-500" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <input
+          type="file"
+          id="visa-images"
+          className="hidden"
+          onChange={handleFileChange}
+          accept=".jpg,.jpeg,.png,.pdf"
+          multiple
+        />
+        <label 
+          htmlFor="visa-images" 
+          className={`border border-dashed rounded-md p-4 flex flex-col items-center justify-center w-full cursor-pointer transition-colors ${isUploading ? 'border-blue-300 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'}`}
+        >
+          {isUploading ? (
+            <>
+              <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full mb-1"></div>
+              <span className="text-sm text-blue-500">Uploading...</span>
+            </>
+          ) : (
+            <>
+              <Upload className="h-6 w-6 text-gray-400 mb-1" />
+              <span className="text-sm text-gray-500">Upload visa image</span>
+            </>
+          )}
+        </label>
+        
+        {uploadSuccess && (
+          <div className="bg-green-50 text-green-700 text-xs flex items-center p-2 rounded">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Upload successful
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const ApplicationsManager = () => {
   // Mock data - in a real app, this would come from API/database
@@ -378,6 +493,14 @@ const ApplicationsManager = () => {
                     className="mt-2"
                   />
                 </div>
+                
+                {/* Show visa image upload section only when status is Approved */}
+                {newStatus === 'Approved' && (
+                  <>
+                    <div className="my-4 border-t border-gray-200"></div>
+                    <ApprovedVisaUpload applicationId={selectedApplication.id} />
+                  </>
+                )}
               </div>
             </div>
             <DialogFooter>

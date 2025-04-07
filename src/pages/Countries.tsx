@@ -159,8 +159,7 @@ const CountriesPage = () => {
 
   // Get visa types for a country (placeholder function)
   const getVisaTypes = (country) => {
-    const visaType = country.entry_type || 'Tourist';
-    return [visaType, 'Business', 'Student'];
+    return ['Tourist Visa'];
   };
 
   // Determine continent based on country name (placeholder)
@@ -245,7 +244,7 @@ const CountriesPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                Explore Visa Requirements Worldwide
+                Explore Tourist Visa Requirements Worldwide
               </motion.h1>
               <motion.p 
                 className="text-base md:text-xl opacity-90 max-w-2xl mx-auto mb-6 md:mb-8"
@@ -449,17 +448,9 @@ const CountriesPage = () => {
                       <p className="text-gray-500 mb-6 max-w-md mx-auto">
                         When you find countries you're interested in, save them here for quick access.
                       </p>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          const allTab = document.querySelector('[data-state="inactive"][value="all"]');
-                          if (allTab instanceof HTMLElement) {
-                            allTab.click();
-                          }
-                        }}
-                      >
+                      <Link to="/countries" className="rounded-full px-8 border border-indigo-300 text-indigo-700 hover:bg-indigo-50">
                         Browse Countries
-                      </Button>
+                      </Link>
                     </div>
                   ) : (
                     <div className={viewMode === 'grid' 
@@ -518,12 +509,6 @@ const CountriesPage = () => {
                 Our visa experts can help you determine the best visa options for your specific needs and guide you through the application process.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Link to="/visa-finder">
-                  <Button className="rounded-full px-8 bg-indigo-600 hover:bg-indigo-700 shadow-md">
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Find My Ideal Visa
-                  </Button>
-                </Link>
                 <Link to="/contact">
                   <Button variant="outline" className="rounded-full px-8 border-indigo-300 text-indigo-700 hover:bg-indigo-50">
                     Contact an Expert

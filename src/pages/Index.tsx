@@ -200,7 +200,7 @@ const Index = () => {
               <p className="text-gray-600 mb-6">
                 If you're an administrator, access the admin dashboard to manage countries, visa applications, and more.
               </p>
-              <Link to="/auth?admin=true">
+              <Link to="/admin-login">
                 <Button className="bg-navy hover:bg-navy/90 shadow-md transition-all duration-300 hover:shadow-lg">
                   Access Admin Portal
                 </Button>
