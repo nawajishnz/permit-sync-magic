@@ -9,7 +9,7 @@ import PopularCountries from '@/components/PopularCountries';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Shield, Users, Clock, Award, Globe, Zap, ArrowRight, LightbulbIcon, MapPin, FileCheck } from 'lucide-react';
+import { Shield, Users, Clock, Award, Globe, Zap, ArrowRight, LightbulbIcon, MapPin, FileCheck, ChevronRight } from 'lucide-react';
 import WhyChooseUs from '@/components/WhyChooseUs';
 import TrustedPartners from '@/components/TrustedPartners';
 import ApplicationSteps from '@/components/ApplicationSteps';
@@ -19,6 +19,7 @@ import TravelTipsSection from '@/components/TravelTipsSection';
 import VisaDocumentChecklist from '@/components/VisaDocumentChecklist';
 import AddonServicesSection from '@/components/countries/AddonServicesSection';
 import { getAddonServices, AddonService } from '@/models/addon_services';
+import ApprovedVisas from '@/components/ApprovedVisas';
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -97,63 +98,106 @@ const Index = () => {
       <main className="flex-grow">
         <Hero />
         
-        {/* Enhanced Stats section */}
-        <motion.div 
-          className="py-12 md:py-16 bg-gradient-to-r from-indigo-50 to-blue-50 px-4"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <div className="container mx-auto">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Why Travelers Trust Permitsy</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">Our proven track record speaks for itself - join thousands of satisfied travelers who've simplified their visa journey with us.</p>
-            </div>
+        {/* Why Travelers Trust Permitsy - Modern Redesign */}
+        <section className="py-20 relative overflow-hidden">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/80 via-blue-50/50 to-white/90"></div>
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-200 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute -bottom-20 -left-40 w-96 h-96 bg-blue-200 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-indigo-100 rounded-full opacity-10 blur-3xl"></div>
+          
+          <div className="container relative mx-auto px-4 z-10">
+            <motion.div 
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <motion.span 
+                className="inline-block px-4 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium mb-4"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                Our Success Metrics
+              </motion.span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-blue-700 to-indigo-700">Why Travelers Trust Permitsy</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto text-lg">Our proven track record speaks for itself - join thousands of satisfied travelers who've simplified their visa journey with us.</p>
+            </motion.div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
               {[
                 { 
                   icon: Shield, 
                   count: '98%', 
                   label: 'Success Rate', 
                   description: 'Applications approved on first submission',
-                  color: 'bg-blue-100 text-blue-600' 
+                  color: 'from-blue-500 to-blue-600',
+                  bgColor: 'bg-blue-50',
+                  textColor: 'text-blue-600' 
                 },
                 { 
                   icon: Users, 
                   count: '50k+', 
                   label: 'Happy Travelers', 
                   description: 'Satisfied customers worldwide',
-                  color: 'bg-indigo-100 text-indigo-600' 
+                  color: 'from-indigo-500 to-indigo-600',
+                  bgColor: 'bg-indigo-50',
+                  textColor: 'text-indigo-600' 
                 },
                 { 
                   icon: Clock, 
                   count: '10x', 
                   label: 'Faster Processing', 
                   description: 'Compared to traditional methods',
-                  color: 'bg-teal-100 text-teal-600' 
+                  color: 'from-teal-500 to-teal-600',
+                  bgColor: 'bg-teal-50',
+                  textColor: 'text-teal-600' 
                 }
               ].map((stat, index) => (
                 <motion.div 
                   key={index}
-                  className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg border border-gray-100 transform transition duration-300 hover:scale-105"
-                  initial={{ opacity: 0, y: 20 }}
+                  className="relative group"
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{ duration: 0.5, delay: index * 0.15 }}
                 >
-                  <div className={`w-14 h-14 rounded-full ${stat.color} flex items-center justify-center mb-4`}>
-                    <stat.icon className="h-7 w-7" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/50 rounded-2xl transform group-hover:-translate-y-2 transition-all duration-300 blur-sm opacity-0 group-hover:opacity-100"></div>
+                  <div className="flex flex-col h-full items-center p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 relative z-10 hover:shadow-2xl transition-all duration-300">
+                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-6 shadow-lg`}>
+                      <stat.icon className="h-9 w-9 text-white" />
+                    </div>
+                    <h3 className="text-4xl font-bold text-gray-900 mb-2 relative">
+                      {stat.count}
+                      <div className="absolute -top-1 -right-4 w-3 h-3 rounded-full bg-indigo-500 opacity-70 animate-pulse"></div>
+                    </h3>
+                    <p className="text-xl font-semibold text-gray-800 mb-3">{stat.label}</p>
+                    <p className="text-gray-600 text-center">{stat.description}</p>
+                    <div className={`absolute bottom-0 left-0 right-0 h-1 ${stat.bgColor} rounded-b-2xl transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}></div>
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-2">{stat.count}</h3>
-                  <p className="text-lg font-medium text-gray-700 mb-2">{stat.label}</p>
-                  <p className="text-gray-500 text-center">{stat.description}</p>
                 </motion.div>
               ))}
             </div>
+            
+            <motion.div 
+              className="text-center mt-8"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+            >
+              <Link to="/countries">
+                <Button className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-6 h-auto text-base rounded-xl shadow-md hover:shadow-lg transition-all">
+                  Browse Destination Countries
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+            </motion.div>
           </div>
-        </motion.div>
+        </section>
 
         <ApplicationSteps />
         
@@ -175,6 +219,11 @@ const Index = () => {
 
         {/* Addon Services Section */}
         <AddonServicesSection />
+        
+        {/* Approved Visas Section */}
+        <div className="bg-white py-4">
+          <ApprovedVisas />
+        </div>
         
         <div className="py-12 md:py-20 bg-gradient-to-b from-blue-50/60 to-white px-4">
           <Testimonials />

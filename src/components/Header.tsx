@@ -44,7 +44,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="backdrop-blur-md bg-white/90 border-b border-gray-100 sticky top-0 z-50">
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
