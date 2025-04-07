@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, X, ArrowRight, Shield, Clock, Award, Users, FileText } from 'lucide-react';
@@ -128,11 +127,8 @@ const VisaComparisonSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <Link to="/visa-finder">
-              <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 rounded-full px-8 py-6 shadow-md">
-                <span className="text-base">Experience the Difference</span>
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+            <Link to="/countries" className="text-indigo-600 hover:text-indigo-700">
+              Browse Countries
             </Link>
           </motion.div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -35,12 +35,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Form schema for adding approved visas
 const approvedVisaSchema = z.object({
-  country: z.string().min(2, "Country name is required"),
-  destination: z.string().min(2, "Destination is required"),
-  visa_type: z.string().min(2, "Visa type is required"),
-  visa_category: z.string().min(2, "Category is required"),
-  duration: z.string().min(1, "Duration is required"),
-  approval_date: z.string().min(1, "Approval date is required"),
+  // Empty schema as we'll only handle the image upload
 });
 
 const TestimonialsManager = () => {
@@ -56,12 +51,7 @@ const TestimonialsManager = () => {
   const approvedVisaForm = useForm<z.infer<typeof approvedVisaSchema>>({
     resolver: zodResolver(approvedVisaSchema),
     defaultValues: {
-      country: "",
-      destination: "",
-      visa_type: "",
-      visa_category: "",
-      duration: "",
-      approval_date: new Date().toISOString().split('T')[0],
+      // No fields required
     },
   });
 
@@ -128,22 +118,70 @@ const TestimonialsManager = () => {
     }
   };
 
+  const getBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const uploadVisaImage = async (file: File): Promise<string> => {
     try {
+      console.log("Uploading file:", file.name, file.type, file.size);
+      
+      // Create a unique file name to avoid collisions
       const fileExt = file.name.split('.').pop();
-      const filePath = `visa_approvals/${Date.now()}.${fileExt}`;
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('public')
-        .upload(filePath, file);
+      // Try different bucket names in order
+      const bucketNamesToTry = ['images', 'public', 'visa-images', 'uploads', 'media'];
+      let uploadSuccessful = false;
+      let publicUrl = '';
       
-      if (uploadError) throw uploadError;
+      // Try each bucket in sequence
+      for (const bucketName of bucketNamesToTry) {
+        try {
+          console.log(`Trying to upload to bucket: ${bucketName}`);
+          const { error } = await supabase.storage
+            .from(bucketName)
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: true
+            });
+          
+          if (!error) {
+            // Get the public URL if upload succeeded
+            const { data } = supabase.storage
+              .from(bucketName)
+              .getPublicUrl(fileName);
+              
+            publicUrl = data.publicUrl;
+            console.log(`Upload successful to ${bucketName}, URL:`, publicUrl);
+            uploadSuccessful = true;
+            break; // Exit the loop if upload succeeds
+          } else {
+            console.error(`Error uploading to ${bucketName}:`, error);
+          }
+        } catch (e) {
+          console.error(`Exception with bucket ${bucketName}:`, e);
+          // Continue to next bucket
+        }
+      }
       
-      const { data } = supabase.storage.from('public').getPublicUrl(filePath);
-      return data.publicUrl;
+      // If any of the uploads succeeded, return the URL
+      if (uploadSuccessful && publicUrl) {
+        return publicUrl;
+      }
+      
+      // If all storage options failed, fall back to base64
+      console.log("All storage options failed, using base64 fallback");
+      return await getBase64(file);
+      
     } catch (error) {
-      console.error("Error uploading image:", error);
-      throw error;
+      console.error("Error details:", error);
+      throw new Error(`File upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -157,42 +195,80 @@ const TestimonialsManager = () => {
       return;
     }
 
+    // Check file size limit (5MB)
+    if (visaImageFile.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "The image must be smaller than 5MB. Please compress the image or select a different one.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      // Upload the image
-      const imageUrl = await uploadVisaImage(visaImageFile);
-      
-      // Add the approved visa record with all required fields
-      await addApprovedVisa({
-        country: values.country,
-        destination: values.destination,
-        visa_type: values.visa_type,
-        visa_category: values.visa_category,
-        duration: values.duration,
-        approval_date: values.approval_date,
-        image_url: imageUrl,
+      // Show a loading toast
+      const loadingToast = toast({
+        title: "Uploading...",
+        description: "Please wait while we upload your visa image.",
       });
       
-      // Reset form and state
-      approvedVisaForm.reset();
-      setVisaImageFile(null);
-      setVisaImageUrl("");
-      setIsAddVisaOpen(false);
+      // Try to upload the image
+      let imageUrl;
+      try {
+        imageUrl = await uploadVisaImage(visaImageFile);
+        console.log("Upload successful:", imageUrl);
+      } catch (uploadError) {
+        console.error("Upload failed:", uploadError);
+        toast({
+          title: "Upload failed",
+          description: "Could not upload the image. Please try again with a different image.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
       
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ['admin-approved-visas'] });
-      queryClient.invalidateQueries({ queryKey: ['approved-visas'] });
-      
-      toast({
-        title: "Visa approval added",
-        description: "The approved visa has been added successfully.",
-      });
-    } catch (error) {
+      // Add the approved visa record with minimal required fields
+      try {
+        await addApprovedVisa({
+          country: "Not specified",
+          destination: "Not specified",
+          visa_type: "Not specified",
+          visa_category: "Not specified", 
+          duration: "Not specified",
+          approval_date: new Date().toISOString().split('T')[0],
+          image_url: imageUrl,
+        });
+        
+        // Reset form and state
+        approvedVisaForm.reset();
+        setVisaImageFile(null);
+        setVisaImageUrl("");
+        setIsAddVisaOpen(false);
+        
+        // Refresh data
+        queryClient.invalidateQueries({ queryKey: ['admin-approved-visas'] });
+        queryClient.invalidateQueries({ queryKey: ['approved-visas'] });
+        
+        toast({
+          title: "Success!",
+          description: "The approved visa has been added successfully.",
+        });
+      } catch (dbError: any) {
+        console.error("Database error:", dbError);
+        toast({
+          title: "Database error",
+          description: dbError?.message || "Failed to save the record. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
       console.error("Error adding approved visa:", error);
       toast({
-        title: "Error adding visa approval",
-        description: "There was an error adding the approved visa record.",
+        title: "Error",
+        description: error?.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -363,33 +439,39 @@ const TestimonialsManager = () => {
                   <Form {...approvedVisaForm}>
                     <form onSubmit={approvedVisaForm.handleSubmit(onApprovedVisaSubmit)} className="space-y-6">
                       {/* Visa Image Upload */}
-                      <div className="mb-4">
-                        <FormLabel>Visa Image</FormLabel>
+                      <div>
                         <div 
-                          className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
-                            visaImageUrl ? 'border-gray-300' : 'border-gray-300 hover:border-gray-400'
+                          className={`flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${
+                            visaImageUrl 
+                              ? 'border-teal-300 bg-teal-50/50' 
+                              : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                           }`}
                           onClick={() => fileInputRef.current?.click()}
                         >
                           {visaImageUrl ? (
-                            <div className="text-center">
-                              <img 
-                                src={visaImageUrl} 
-                                alt="Visa preview" 
-                                className="mx-auto h-32 object-contain mb-2" 
-                              />
-                              <p className="text-xs text-gray-500">
-                                Click to change image
-                              </p>
+                            <div className="text-center w-full">
+                              <div className="bg-white rounded-md p-2 mb-2 shadow-sm mx-auto">
+                                <img 
+                                  src={visaImageUrl} 
+                                  alt="Visa preview" 
+                                  className="mx-auto h-64 object-contain" 
+                                />
+                              </div>
+                              <div className="flex items-center justify-center space-x-2 text-sm text-teal-600">
+                                <Upload className="h-4 w-4" />
+                                <span>Click to change image</span>
+                              </div>
                             </div>
                           ) : (
-                            <div className="space-y-1 text-center">
-                              <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                              <div className="flex text-sm text-gray-600">
-                                <p className="pl-1">Upload visa image</p>
+                            <div className="space-y-2 text-center py-10 w-full">
+                              <div className="bg-gray-50 rounded-full p-4 mx-auto w-20 h-20 flex items-center justify-center">
+                                <Upload className="h-10 w-10 text-gray-400" />
+                              </div>
+                              <div className="text-gray-700 font-medium">
+                                Upload visa image
                               </div>
                               <p className="text-xs text-gray-500">
-                                PNG, JPG, JPEG up to 5MB
+                                Click or drag and drop • PNG, JPG, JPEG
                               </p>
                             </div>
                           )}
@@ -397,116 +479,35 @@ const TestimonialsManager = () => {
                             ref={fileInputRef}
                             type="file"
                             className="hidden"
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/jpg"
                             onChange={handleFileChange}
                           />
                         </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={approvedVisaForm.control}
-                          name="country"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Country</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., India" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={approvedVisaForm.control}
-                          name="destination"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Destination</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., United States" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={approvedVisaForm.control}
-                          name="visa_type"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Visa Type</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., Tourist" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={approvedVisaForm.control}
-                          name="visa_category"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Category</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., B1/B2" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={approvedVisaForm.control}
-                          name="duration"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Duration</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., 10 years" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={approvedVisaForm.control}
-                          name="approval_date"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Approval Date</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                       </div>
                       
                       <div className="flex justify-end gap-3">
                         <Button 
                           type="button" 
                           variant="outline" 
-                          onClick={() => setIsAddVisaOpen(false)}
+                          onClick={() => {
+                            setIsAddVisaOpen(false);
+                            setVisaImageFile(null);
+                            setVisaImageUrl("");
+                          }}
                         >
                           Cancel
                         </Button>
                         <Button 
                           type="submit" 
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || !visaImageFile}
                           className="bg-teal hover:bg-teal/90"
                         >
-                          {isSubmitting ? "Saving..." : "Save Visa"}
+                          {isSubmitting ? (
+                            <div className="flex items-center">
+                              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                              <span>Saving...</span>
+                            </div>
+                          ) : "Save Visa"}
                         </Button>
                       </div>
                     </form>
@@ -537,8 +538,8 @@ const TestimonialsManager = () => {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {approvedVisas.map((visa) => (
-                    <Card key={visa.id} className="overflow-hidden">
-                      <div className="relative h-48">
+                    <Card key={visa.id} className="overflow-hidden group relative">
+                      <div className="h-64">
                         <img 
                           src={visa.image_url} 
                           alt={`Approved Visa`} 
@@ -548,22 +549,15 @@ const TestimonialsManager = () => {
                             target.src = '/placeholder.svg';
                           }}
                         />
-                        <Badge className="absolute top-2 right-2 bg-green-500 hover:bg-green-600">
-                          Approved
-                        </Badge>
                       </div>
-                      <CardContent className="p-4">
-                        <div className="flex justify-end mt-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleDeleteApprovedVisa(visa.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 bg-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleDeleteApprovedVisa(visa.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
                     </Card>
                   ))}
                 </div>

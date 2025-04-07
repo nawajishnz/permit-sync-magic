@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Check, Compass, CalendarClock, Search, Zap, FileText, CreditCard, Globe, MapPin } from 'lucide-react';
@@ -174,7 +173,7 @@ const Hero: React.FC = () => {
                 </div>
                 <Button
                   size="lg"
-                  className="rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-md"
+                  className="bg-indigo-600 hover:bg-indigo-700 shadow-md"
                   onClick={() => {
                     if (selectedCountry) {
                       navigate(`/country/${selectedCountry}`);
@@ -218,15 +217,8 @@ const Hero: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <Link to="/visa-finder">
-                <Button size="lg" variant="outline" className="shadow-sm border border-gray-200 hover:bg-gray-50 text-gray-800 rounded-full w-full sm:w-auto">
-                  Find My Visa
-                </Button>
-              </Link>
-              <Link to="/visa-finder">
-                <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 text-white rounded-full w-full sm:w-auto shadow-md group transition-all duration-300">
-                  Apply Now <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
+              <Link to="/countries" className="shadow-sm border border-gray-200 hover:bg-gray-50 text-gray-800 rounded-full w-full sm:w-auto">
+                Browse Countries
               </Link>
             </motion.div>
           </motion.div>
@@ -326,7 +318,7 @@ const Hero: React.FC = () => {
                       </div>
                     </div>
                   </motion.div>
-                  
+                
                   {/* Application Progress Steps */}
                   <motion.div
                     variants={itemVariant}

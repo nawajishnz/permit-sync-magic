@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Phone, Mail, MapPin, Clock, MessageSquare } from 'lucide-react';
+import { Phone, Mail, Clock, MessageSquare, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Contact = () => {
   const handleSubmit = (e: React.FormEvent) => {
@@ -16,114 +16,151 @@ const Contact = () => {
     console.log('Contact form submitted');
   };
 
+  const fadeInUp = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.5 }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
       <Header />
       <main className="flex-grow">
         {/* Hero section */}
-        <div className="bg-navy text-white py-16">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Contact Us</h1>
-            <p className="text-lg opacity-90 max-w-2xl">
-              Have questions about your visa application? Our team is here to help you every step of the way.
+        <div className="bg-gradient-to-r from-navy to-indigo-800 text-white py-24 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:16px_16px]" />
+          <motion.div 
+            className="container mx-auto px-4 relative z-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-100">
+              Let's Connect
+            </h1>
+            <p className="text-xl opacity-90 max-w-2xl leading-relaxed">
+              Have questions about your visa application? Our dedicated team is here to provide expert guidance every step of the way.
             </p>
-          </div>
+          </motion.div>
         </div>
 
         {/* Contact content */}
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 -mt-12 relative z-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact information */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Get in Touch</h2>
-              <p className="text-gray-600 mb-8">
-                Whether you have a question about visa applications, pricing, or anything else, our team is ready to answer all your questions.
-              </p>
-              
-              <div className="space-y-6 mb-10">
-                <div className="flex items-start">
-                  <div className="bg-navy-50 p-3 rounded-full mr-4">
-                    <Phone className="h-5 w-5 text-navy" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Phone</h3>
-                    <p className="text-gray-600">+91 7975208649</p>
-                  </div>
-                </div>
+            <motion.div 
+              className="space-y-8"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <div className="bg-white rounded-2xl shadow-lg p-8 backdrop-blur-sm border border-gray-100">
+                <h2 className="text-2xl font-bold mb-6 text-navy">Ways to Reach Us</h2>
                 
-                <div className="flex items-start">
-                  <div className="bg-navy-50 p-3 rounded-full mr-4">
-                    <Mail className="h-5 w-5 text-navy" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Email</h3>
-                    <p className="text-gray-600">info@permitsy.com</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="bg-navy-50 p-3 rounded-full mr-4">
-                    <MapPin className="h-5 w-5 text-navy" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Office Address</h3>
-                    <p className="text-gray-600">
-                      HSR Layout<br />
-                      Bangalore<br />
-                      India
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="bg-navy-50 p-3 rounded-full mr-4">
-                    <Clock className="h-5 w-5 text-navy" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Business Hours</h3>
-                    <p className="text-gray-600">
-                      Monday - Friday: 9am - 6pm IST<br />
-                      Saturday: 10am - 4pm IST<br />
-                      Sunday: Closed
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6 bg-navy-50 rounded-lg">
-                <div className="flex items-center mb-4">
-                  <MessageSquare className="h-5 w-5 text-navy mr-2" />
-                  <h3 className="font-medium">Live Chat Support</h3>
-                </div>
-                <p className="text-gray-600 mb-4">
-                  Get instant answers from our visa experts via live chat. Our team is available 24/7 to assist you.
-                </p>
-                <Button className="bg-navy hover:bg-navy-600 text-white w-full">
-                  Start Live Chat
-                </Button>
-              </div>
-            </div>
-            
-            {/* Contact form */}
-            <div>
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <h2 className="text-2xl font-bold mb-6">Send Us a Message</h2>
-                <form onSubmit={handleSubmit}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <Label htmlFor="name">Your Name</Label>
-                      <Input id="name" placeholder="John Doe" className="mt-1" />
+                <div className="space-y-6">
+                  <motion.div 
+                    className="flex items-start group"
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="bg-navy/5 group-hover:bg-navy/10 p-4 rounded-xl mr-4 transition-colors">
+                      <Phone className="h-6 w-6 text-navy" />
                     </div>
                     <div>
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input id="email" type="email" placeholder="john@example.com" className="mt-1" />
+                      <h3 className="font-medium mb-1 text-gray-900">Phone Support</h3>
+                      <p className="text-gray-600 group-hover:text-navy transition-colors">+91 7975208649</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="flex items-start group"
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="bg-navy/5 group-hover:bg-navy/10 p-4 rounded-xl mr-4 transition-colors">
+                      <Mail className="h-6 w-6 text-navy" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium mb-1 text-gray-900">Email Us</h3>
+                      <p className="text-gray-600 group-hover:text-navy transition-colors">info@permitsy.com</p>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="flex items-start group"
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="bg-navy/5 group-hover:bg-navy/10 p-4 rounded-xl mr-4 transition-colors">
+                      <Clock className="h-6 w-6 text-navy" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium mb-1 text-gray-900">Business Hours</h3>
+                      <div className="space-y-1">
+                        <p className="text-gray-600">Monday - Friday: 9am - 6pm IST</p>
+                        <p className="text-gray-600">Saturday: 10am - 4pm IST</p>
+                        <p className="text-gray-600">Sunday: Closed</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+              
+              <motion.div 
+                className="bg-gradient-to-br from-navy to-indigo-800 rounded-2xl p-8 text-white shadow-lg"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center mb-4">
+                  <MessageSquare className="h-6 w-6 mr-3" />
+                  <h3 className="text-xl font-semibold">Live Chat Support</h3>
+                </div>
+                <p className="text-gray-100 mb-6 leading-relaxed">
+                  Get instant answers from our visa experts via live chat. Our team is available 24/7 to assist you with any queries.
+                </p>
+                <Button className="w-full bg-white text-navy hover:bg-gray-100 group">
+                  Start Live Chat
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </motion.div>
+            </motion.div>
+            
+            {/* Contact form */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+                <h2 className="text-2xl font-bold mb-6 text-navy">Send Us a Message</h2>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-gray-700">Your Name</Label>
+                      <Input 
+                        id="name" 
+                        placeholder="John Doe" 
+                        className="rounded-lg border-gray-200 focus:border-navy focus:ring-navy transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-700">Email Address</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="john@example.com" 
+                        className="rounded-lg border-gray-200 focus:border-navy focus:ring-navy transition-colors"
+                      />
                     </div>
                   </div>
                   
-                  <div className="mb-6">
-                    <Label htmlFor="subject">Subject</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="subject" className="text-gray-700">Subject</Label>
                     <Select>
-                      <SelectTrigger id="subject" className="mt-1">
+                      <SelectTrigger 
+                        id="subject" 
+                        className="rounded-lg border-gray-200 focus:border-navy focus:ring-navy transition-colors"
+                      >
                         <SelectValue placeholder="Select a subject" />
                       </SelectTrigger>
                       <SelectContent>
@@ -136,32 +173,26 @@ const Contact = () => {
                     </Select>
                   </div>
                   
-                  <div className="mb-6">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea id="message" placeholder="How can we help you?" className="mt-1 min-h-[150px]" />
+                  <div className="space-y-2">
+                    <Label htmlFor="message" className="text-gray-700">Message</Label>
+                    <Textarea 
+                      id="message" 
+                      placeholder="How can we help you?" 
+                      className="min-h-[150px] rounded-lg border-gray-200 focus:border-navy focus:ring-navy transition-colors"
+                    />
                   </div>
                   
-                  <Button type="submit" className="bg-navy hover:bg-navy-600 text-white w-full">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-navy hover:bg-indigo-800 text-white transition-colors group"
+                  >
                     Send Message
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </form>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-
-        {/* Map section */}
-        <div className="h-96 w-full bg-gray-200 mt-8">
-          <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15555.606369871998!2d77.62718949999999!3d12.9081754!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae144ed898fc2d%3A0x1681f38e8926eb22!2sHSR%20Layout%2C%20Bengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1649871327929!5m2!1sen!2sin" 
-            width="100%" 
-            height="100%" 
-            style={{ border: 0 }} 
-            allowFullScreen 
-            loading="lazy" 
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Permitsy office location"
-          ></iframe>
         </div>
       </main>
       <Footer />

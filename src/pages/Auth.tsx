@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,38 +7,32 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from '@/hooks/use-toast';
-import { AlertCircle, LoaderIcon, Facebook, Apple, EyeOff, Eye, ArrowLeft, ArrowRight } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
+import { LoaderIcon, EyeOff, Eye, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
-// Admin test account credentials
-const ADMIN_TEST_EMAIL = "admin@permitsy.com";
-const ADMIN_TEST_PASSWORD = "admin123";
-
-// Testimonial data
+// Define testimonials
 const testimonials = [
   {
     id: 1,
-    name: "Maria Chen",
-    role: "Digital Nomad & Travel Blogger",
-    image: "/lovable-uploads/d41f500d-3ae8-477d-89e8-4b8f6346774b.png",
-    content: "Permitsy has revolutionized how I manage visas when traveling. The interface is intuitive, and their support team is always quick to respond. I can't imagine planning my travels without it."
+    name: "Sarah Johnson",
+    role: "Business Traveler",
+    content: "Permitsy made my visa application process so easy! I was able to get my business visa in half the time it normally takes.",
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
   },
   {
     id: 2,
-    name: "James Rodriguez",
-    role: "International Business Consultant",
-    image: "/lovable-uploads/c6f0f3d8-3504-4698-82f8-c54a489198c6.png", 
-    content: "As someone who travels frequently for work, Permitsy has been a game-changer. The automated document checklist saves me hours of research for each country I visit."
+    name: "David Chen",
+    role: "Student",
+    content: "As an international student, I was worried about my visa application. Permitsy guided me through every step and I got approved quickly!",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
   },
   {
     id: 3,
-    name: "Sarah Thompson",
-    role: "Study Abroad Program Director",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    content: "I manage visa applications for dozens of students each semester. Permitsy's tracking tools and notifications have eliminated the stress of managing multiple applications simultaneously."
+    name: "Maria Garcia",
+    role: "Tourist",
+    content: "I've used Permitsy for three different countries now. The process is always smooth and the customer service is excellent.",
+    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
   }
 ];
 
@@ -51,11 +44,6 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdminMode, setIsAdminMode] = useState(false);
-  const [showSampleCreds, setShowSampleCreds] = useState(false);
-  const [showLoginHelp, setShowLoginHelp] = useState(false);
-  const [setupAdmin, setSetupAdmin] = useState(false);
-  const [adminSetupSuccess, setAdminSetupSuccess] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -69,32 +57,21 @@ const Auth = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Check if the user is accessing admin login from URL param
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('admin') === 'true') {
-      setIsAdminMode(true);
-      // Show sample credentials for admin demo
-      setShowSampleCreds(true);
-    }
-  }, [location]);
-
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (user && userRole) {
       console.log('Auth page - User role:', userRole);
       if (userRole === 'admin') {
-        navigate('/admin');
+        window.location.href = '/admin';
       } else {
-        navigate('/dashboard');
+        window.location.href = '/dashboard';
       }
     }
-  }, [user, userRole, navigate]);
+  }, [user, userRole]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
       if (!email.trim() || !password.trim()) {
         toast({
@@ -106,11 +83,17 @@ const Auth = () => {
         return;
       }
       
+      console.log('Attempting to sign in...');
       await signIn(email, password);
       
       // Note: Navigation will be handled in the AuthContext based on user role
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign in error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign in. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -147,123 +130,16 @@ const Auth = () => {
     }
   };
 
-  const setAdminCredentials = () => {
-    setEmail(ADMIN_TEST_EMAIL);
-    setPassword(ADMIN_TEST_PASSWORD);
-  };
-
-  const createAdminAccount = async () => {
-    setIsLoading(true);
-    setSetupAdmin(true);
-    
-    try {
-      // Check if admin account already exists
-      const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
-        email: ADMIN_TEST_EMAIL,
-        password: ADMIN_TEST_PASSWORD
-      });
-      
-      if (existingUser.user) {
-        console.log("Admin user exists, updating role if needed");
-        // Admin already exists, update role if needed
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', existingUser.user.id)
-          .single();
-          
-        if (profileError || profileData.role !== 'admin') {
-          console.log("Updating existing user to admin role");
-          // Update the role to admin
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ role: 'admin' })
-            .eq('id', existingUser.user.id);
-            
-          if (updateError) {
-            console.error('Error updating admin role:', updateError);
-            throw new Error('Failed to set admin role');
-          }
-        }
-        
-        toast({
-          title: "Success",
-          description: "Admin account already exists and is ready to use",
-        });
-        
-        setEmail(ADMIN_TEST_EMAIL);
-        setPassword(ADMIN_TEST_PASSWORD);
-        setAdminSetupSuccess(true);
-        return;
-      }
-      
-      if (checkError && !checkError.message.includes('Invalid login credentials')) {
-        console.error("Unexpected error checking admin:", checkError);
-        throw new Error(checkError.message);
-      }
-      
-      console.log("Creating new admin account");
-      // Create new admin account
-      const { data: newUser, error: signUpError } = await supabase.auth.signUp({
-        email: ADMIN_TEST_EMAIL,
-        password: ADMIN_TEST_PASSWORD,
-        options: {
-          data: {
-            full_name: "Admin User",
-          }
-        }
-      });
-      
-      if (signUpError) {
-        console.error("Error creating admin account:", signUpError);
-        throw new Error(signUpError.message);
-      }
-      
-      if (newUser.user) {
-        console.log("Admin user created, setting role", newUser.user.id);
-        // Set the user role to admin
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', newUser.user.id);
-          
-        if (updateError) {
-          console.error('Error setting admin role:', updateError);
-          throw new Error('Failed to set admin role');
-        }
-        
-        toast({
-          title: "Success",
-          description: "Admin account created successfully",
-        });
-        
-        setEmail(ADMIN_TEST_EMAIL);
-        setPassword(ADMIN_TEST_PASSWORD);
-        setAdminSetupSuccess(true);
-      }
-    } catch (error: any) {
-      console.error('Error creating admin account:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create admin account",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-      setSetupAdmin(false);
-    }
-  };
-
-  const openLoginHelp = () => {
-    setShowLoginHelp(true);
-  };
-
-  const nextTestimonial = () => {
-    setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
-  };
-
   const prevTestimonial = () => {
-    setActiveTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    setActiveTestimonial((prev) => 
+      prev === 0 ? testimonials.length - 1 : prev - 1
+    );
+  };
+  
+  const nextTestimonial = () => {
+    setActiveTestimonial((prev) => 
+      (prev + 1) % testimonials.length
+    );
   };
 
   return (
@@ -368,69 +244,6 @@ const Auth = () => {
                 </p>
               </div>
               
-              {isAdminMode && showSampleCreds && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                  <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
-                    <div>
-                      <p className="text-blue-700 font-medium mb-1">Admin Demo Credentials</p>
-                      <p className="text-sm text-blue-600 mb-1.5">Use these credentials to access the admin dashboard:</p>
-                      <div className="bg-white/50 rounded p-2 text-sm mb-3 font-mono">
-                        <p>Email: {ADMIN_TEST_EMAIL}</p>
-                        <p>Password: {ADMIN_TEST_PASSWORD}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button 
-                          onClick={setAdminCredentials} 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
-                        >
-                          Use admin credentials
-                        </Button>
-                        <Button 
-                          onClick={createAdminAccount} 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                          disabled={isLoading || setupAdmin}
-                        >
-                          {setupAdmin ? (
-                            <>
-                              <LoaderIcon className="mr-2 h-3 w-3 animate-spin" />
-                              Setting up...
-                            </>
-                          ) : adminSetupSuccess ? "Admin setup complete" : "Setup admin account"}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Social Sign In */}
-              <div className="mb-6">
-                <div className="flex gap-3 justify-center">
-                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
-                    <Facebook className="h-5 w-5" />
-                  </Button>
-                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
-                    <Apple className="h-5 w-5" />
-                  </Button>
-                  <Button variant="outline" className="h-12 w-12 rounded-full p-0" type="button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM9.5 8.5L7.5 8.5L12 13L16.5 8.5L14.5 8.5L12 11L9.5 8.5Z" />
-                    </svg>
-                  </Button>
-                </div>
-                
-                <div className="flex items-center gap-3 mt-6">
-                  <Separator className="flex-grow" />
-                  <span className="text-gray-500 text-sm">or</span>
-                  <Separator className="flex-grow" />
-                </div>
-              </div>
-              
               {isSignUp ? (
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
@@ -502,13 +315,14 @@ const Auth = () => {
                   <div className="text-center mt-4">
                     <p className="text-gray-600 text-sm">
                       Already have an account?{' '}
-                      <button
+                      <Button 
                         type="button"
                         onClick={() => setIsSignUp(false)}
-                        className="text-orange-500 hover:text-orange-600 font-medium"
+                        variant="link" 
+                        className="text-sm p-0 h-auto text-indigo-600 hover:text-indigo-800"
                       >
                         Sign In
-                      </button>
+                      </Button>
                     </p>
                   </div>
                 </form>
@@ -528,18 +342,25 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  
                   <div className="space-y-2">
-                    <div className="flex justify-between">
+                    <div className="flex items-center justify-between">
                       <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                         Password
                       </label>
-                      <button
+                      <Button 
                         type="button"
-                        onClick={openLoginHelp}
-                        className="text-sm text-orange-500 hover:text-orange-600"
+                        variant="link"
+                        className="text-xs text-indigo-600 hover:text-indigo-800 h-auto p-0" 
+                        onClick={() => {
+                          toast({
+                            title: "Password Reset",
+                            description: "Please contact support to reset your password.",
+                          });
+                        }}
                       >
                         Forgot password?
-                      </button>
+                      </Button>
                     </div>
                     <div className="relative">
                       <Input
@@ -564,16 +385,11 @@ const Auth = () => {
                   <div className="flex items-center">
                     <div className="flex items-center space-x-2">
                       <Checkbox 
-                        id="remember" 
-                        checked={rememberMe} 
-                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                        id="remember-me" 
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                       />
-                      <label
-                        htmlFor="remember"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700"
-                      >
-                        Remember for 30 days
-                      </label>
+                      <label htmlFor="remember-me" className="text-sm text-gray-600">Remember me</label>
                     </div>
                   </div>
                   
@@ -587,47 +403,22 @@ const Auth = () => {
                         <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                         Signing in...
                       </>
-                    ) : 'Login'}
+                    ) : 'Sign In'}
                   </Button>
                   
                   <div className="text-center mt-4">
                     <p className="text-gray-600 text-sm">
                       Don't have an account?{' '}
-                      <button
+                      <Button 
                         type="button"
                         onClick={() => setIsSignUp(true)}
-                        className="text-orange-500 hover:text-orange-600 font-medium"
+                        variant="link" 
+                        className="text-sm p-0 h-auto text-indigo-600 hover:text-indigo-800"
                       >
-                        Sign up
-                      </button>
+                        Sign Up
+                      </Button>
                     </p>
                   </div>
-                  
-                  {isAdminMode && (
-                    <div className="text-center mt-4">
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        onClick={() => setIsAdminMode(false)}
-                        className="text-sm"
-                      >
-                        Switch to User Login
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {!isAdminMode && (
-                    <div className="text-center mt-4">
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        onClick={() => setIsAdminMode(true)}
-                        className="text-sm"
-                      >
-                        Admin Login
-                      </Button>
-                    </div>
-                  )}
                 </form>
               )}
               
@@ -639,54 +430,6 @@ const Auth = () => {
         </div>
       </main>
       <Footer />
-
-      <Dialog open={showLoginHelp} onOpenChange={setShowLoginHelp}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Login Help</DialogTitle>
-            <DialogDescription>
-              If you're having trouble logging in:
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-3">
-            <p className="text-sm">• Check that you're using the correct email and password</p>
-            <p className="text-sm">• Make sure caps lock is off</p>
-            <p className="text-sm">• For admin access, ensure your account has admin privileges</p>
-            <p className="text-sm">• If you've forgotten your password, contact support</p>
-            
-            <div className="bg-blue-50 p-3 rounded-md mt-3 border border-blue-100">
-              <p className="text-sm font-medium text-blue-800">Admin Demo Account:</p>
-              <p className="text-xs mt-1">Email: {ADMIN_TEST_EMAIL}</p>
-              <p className="text-xs">Password: {ADMIN_TEST_PASSWORD}</p>
-              <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                <Button 
-                  onClick={() => {
-                    setAdminCredentials();
-                    setShowLoginHelp(false);
-                  }}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200"
-                >
-                  Use Admin Credentials
-                </Button>
-                <Button 
-                  onClick={() => {
-                    createAdminAccount();
-                    setShowLoginHelp(false);
-                  }}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                  disabled={isLoading || setupAdmin}
-                >
-                  {setupAdmin ? "Setting up..." : "Setup Admin Account"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

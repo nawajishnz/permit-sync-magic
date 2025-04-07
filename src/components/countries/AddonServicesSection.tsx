@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, ArrowRight, Check, FileText, Hotel, Plane, Shield, FileCheck } from 'lucide-react';
@@ -9,7 +8,6 @@ import { useQuery } from '@tanstack/react-query';
 import { getAddonServices } from '@/models/addon_services';
 
 const AddonServiceCard = ({ service }: { service: AddonService }) => {
-  
   const getServiceIcon = (serviceName: string) => {
     const icons = {
       'Hotel': Hotel,
@@ -46,9 +44,6 @@ const AddonServiceCard = ({ service }: { service: AddonService }) => {
     return name; // Return full name if no matching word
   };
   
-  // Convert service ID to a number for arithmetic operations
-  const serviceIdNumber = typeof service.id === 'number' ? service.id : Number(service.id) || 0;
-  
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -57,14 +52,21 @@ const AddonServiceCard = ({ service }: { service: AddonService }) => {
       viewport={{ once: true }}
       className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full"
     >
-      <div className="h-48 overflow-hidden">
+      <div className="h-48 overflow-hidden relative">
         <img 
-          src={service.image_url || `https://images.unsplash.com/photo-${1466721591366 + serviceIdNumber * 5432}-2d5fba72006d?auto=format&fit=crop&w=800&q=80`} 
+          src={service.image_url}
           alt={service.name} 
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = `https://images.unsplash.com/photo-${1466721591366 + serviceIdNumber * 5432}-2d5fba72006d?auto=format&fit=crop&w=800&q=80`; 
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              const fallback = document.createElement('div');
+              fallback.className = 'w-full h-full flex items-center justify-center bg-gray-100';
+              fallback.innerHTML = `<span class="text-gray-500">${service.name}</span>`;
+              parent.appendChild(fallback);
+            }
           }}
         />
       </div>

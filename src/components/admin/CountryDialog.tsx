@@ -54,16 +54,17 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
     formData.processing_steps && formData.processing_steps.length > 0 
       ? formData.processing_steps 
       : [
-        { step: 1, title: '', description: '' },
-        { step: 2, title: '', description: '' },
-        { step: 3, title: '', description: '' },
-        { step: 4, title: '', description: '' }
+        { step: 1, title: 'Document Collection', description: 'Gather all required documents for your tourist visa application' },
+        { step: 2, title: 'Application Review', description: 'Our experts review your tourist visa application for accuracy' },
+        { step: 3, title: 'Embassy Submission', description: 'Submit your tourist visa application to the embassy' },
+        { step: 4, title: 'Visa Processing', description: 'Track your tourist visa application status' }
       ]
   );
   const [faqItems, setFaqItems] = useState<any[]>(
     formData.faq || [
-      { question: '', answer: '' },
-      { question: '', answer: '' }
+      { question: 'What documents are required for a tourist visa?', answer: 'Required documents typically include a valid passport, completed application form, photographs, travel itinerary, and proof of financial means.' },
+      { question: 'How long does tourist visa processing take?', answer: 'Tourist visa processing times vary by country, but typically take between 5-15 business days.' },
+      { question: 'Can I extend my tourist visa?', answer: 'Tourist visa extension policies vary by country. Please check specific country regulations.' }
     ]
   );
   const [embassyDetails, setEmbassyDetails] = useState<any>(
@@ -79,24 +80,36 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
 
   // Update state when formData changes (e.g., when switching between countries)
   useEffect(() => {
-    setVisaIncludes(formData.visa_includes || []);
-    setVisaAssistance(formData.visa_assistance || []);
+    setVisaIncludes(formData.visa_includes || [
+      'Tourist visa application processing',
+      'Document verification',
+      'Embassy appointment scheduling',
+      'Travel insurance assistance'
+    ]);
+    
+    setVisaAssistance(formData.visa_assistance || [
+      '24/7 tourist visa application support',
+      'Document translation services',
+      'Pre-travel consultation',
+      'Emergency assistance'
+    ]);
     
     // Make sure processing steps are properly initialized
     if (formData.processing_steps && Array.isArray(formData.processing_steps) && formData.processing_steps.length > 0) {
       setProcessingSteps(formData.processing_steps);
     } else {
       setProcessingSteps([
-        { step: 1, title: '', description: '' },
-        { step: 2, title: '', description: '' },
-        { step: 3, title: '', description: '' },
-        { step: 4, title: '', description: '' }
+        { step: 1, title: 'Document Collection', description: 'Gather all required documents for your tourist visa application' },
+        { step: 2, title: 'Application Review', description: 'Our experts review your tourist visa application for accuracy' },
+        { step: 3, title: 'Embassy Submission', description: 'Submit your tourist visa application to the embassy' },
+        { step: 4, title: 'Visa Processing', description: 'Track your tourist visa application status' }
       ]);
     }
     
     setFaqItems(formData.faq || [
-      { question: '', answer: '' },
-      { question: '', answer: '' }
+      { question: 'What documents are required for a tourist visa?', answer: 'Required documents typically include a valid passport, completed application form, photographs, travel itinerary, and proof of financial means.' },
+      { question: 'How long does tourist visa processing take?', answer: 'Tourist visa processing times vary by country, but typically take between 5-15 business days.' },
+      { question: 'Can I extend my tourist visa?', answer: 'Tourist visa extension policies vary by country. Please check specific country regulations.' }
     ]);
     setEmbassyDetails(formData.embassy_details || {
       address: '',
@@ -285,8 +298,8 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
         <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-5 mb-6">
             <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
-            <TabsTrigger value="includes">Visa Includes</TabsTrigger>
-            <TabsTrigger value="assistance">Assistance</TabsTrigger>
+            <TabsTrigger value="includes">Tourist Visa Includes</TabsTrigger>
+            <TabsTrigger value="assistance">Tourist Visa Assistance</TabsTrigger>
             <TabsTrigger value="process">Process</TabsTrigger>
             <TabsTrigger value="additional">Additional</TabsTrigger>
           </TabsList>
@@ -372,26 +385,24 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="entry_type" className="font-medium">Entry Type *</Label>
+                <Label htmlFor="entry_type">Entry Type</Label>
                 <Input
                   id="entry_type"
                   name="entry_type"
-                  value={formData.entry_type}
-                  onChange={onInputChange}
-                  placeholder="e.g. Visa Required"
-                  className="border-gray-300 focus:border-teal-500"
+                  value="Tourist Visa"
+                  readOnly
+                  className="bg-gray-100"
                 />
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="validity" className="font-medium">Validity</Label>
+                <Label htmlFor="validity">Validity</Label>
                 <Input
                   id="validity"
                   name="validity"
                   value={formData.validity}
                   onChange={onInputChange}
                   placeholder="e.g. 6 months"
-                  className="border-gray-300 focus:border-teal-500"
                 />
               </div>
               
@@ -438,7 +449,7 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
           <TabsContent value="includes">
             <div className="border p-4 rounded-md bg-gray-50">
               <div className="flex justify-between items-center mb-3">
-                <Label className="text-lg font-medium text-navy-800">What's Included in Visa</Label>
+                <Label className="text-lg font-medium text-navy-800">What's Included in Tourist Visa</Label>
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -481,7 +492,7 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
           <TabsContent value="assistance">
             <div className="border p-4 rounded-md bg-gray-50">
               <div className="flex justify-between items-center mb-3">
-                <Label className="text-lg font-medium text-navy-800">Permitsy Assistance</Label>
+                <Label className="text-lg font-medium text-navy-800">Tourist Visa Assistance</Label>
                 <Button 
                   type="button" 
                   variant="outline" 
