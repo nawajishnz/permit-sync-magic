@@ -190,7 +190,7 @@ const Index = () => {
               transition={{ duration: 0.5, delay: 0.6 }}
             >
               <Link to="/countries">
-                <Button className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-6 h-auto text-base rounded-xl shadow-md hover:shadow-lg transition-all">
+                <Button variant="gradient" size="lg">
                   Browse Destination Countries
                   <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -250,7 +250,7 @@ const Index = () => {
                 If you're an administrator, access the admin dashboard to manage countries, visa applications, and more.
               </p>
               <Link to="/admin-login">
-                <Button className="bg-navy hover:bg-navy/90 shadow-md transition-all duration-300 hover:shadow-lg">
+                <Button variant="default">
                   Access Admin Portal
                 </Button>
               </Link>

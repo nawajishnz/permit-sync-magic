@@ -217,8 +217,10 @@ const Hero: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <Link to="/countries" className="shadow-md border border-gray-200 hover:bg-gray-50 text-gray-800 rounded-lg w-full sm:w-auto text-sm py-2 px-6 font-medium transition-all duration-200">
-                Browse Countries
+              <Link to="/countries">
+                <Button variant="outline" size="lg">
+                  Browse Countries
+                </Button>
               </Link>
             </motion.div>
           </motion.div>

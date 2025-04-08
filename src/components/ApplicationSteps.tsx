@@ -225,8 +225,10 @@ const ApplicationSteps = () => {
         
         {/* CTA Button */}
         <div className="text-center mt-10">
-          <Link to="/countries" className="bg-teal-600 hover:bg-teal-700">
-            Browse Countries
+          <Link to="/countries">
+            <Button variant="default" size="lg">
+              Browse Countries
+            </Button>
           </Link>
         </div>
       </div>

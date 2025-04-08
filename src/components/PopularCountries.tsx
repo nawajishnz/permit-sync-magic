@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Globe, Loader2, Calendar, Plane, MapPin, ArrowRight, BadgeCheck } from 'lucide-react';
@@ -287,7 +286,7 @@ const PopularCountries = () => {
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           <Link to="/countries">
-            <Button variant="outline" className="rounded-full border-gray-200 group">
+            <Button variant="outline">
               <Globe className="mr-2 h-4 w-4" />
               View all countries
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />

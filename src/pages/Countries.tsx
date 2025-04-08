@@ -289,7 +289,7 @@ const CountriesPage = () => {
                   <Button 
                     key={country} 
                     variant="ghost" 
-                    className="rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs"
+                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs"
                     onClick={() => {
                       setSearchTerm(country);
                       navigate(`/countries?search=${encodeURIComponent(country)}`);
