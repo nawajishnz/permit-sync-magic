@@ -347,67 +347,118 @@ const CountryDetails = () => {
           <div className="w-full lg:w-2/3 space-y-6 md:space-y-8">
             {/* Visa Overview Section */}
             <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
-              <h2 className="text-xl md:text-2xl font-bold text-navy mb-5 md:mb-6">Tourist Visa Overview</h2>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-10 w-1 bg-teal-500 rounded-full"></div>
+                <h2 className="text-xl md:text-2xl font-bold text-navy">Tourist Visa Overview</h2>
+              </div>
               
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 mb-6">
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-500 mb-1.5">
-                    <CreditCard className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs md:text-sm">Visa Type</span>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 mb-8">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center text-gray-500 mb-2">
+                    <CreditCard className="h-4 w-4 mr-2 text-teal-600" />
+                    <span className="text-xs md:text-sm font-medium">Visa Type</span>
                   </div>
-                  <p className="font-medium text-sm md:text-base">Tourist Visa</p>
+                  <p className="font-semibold text-sm md:text-base text-navy">Tourist Visa</p>
                 </div>
                 
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-500 mb-1.5">
-                    <Calendar className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs md:text-sm">Length of Stay</span>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center text-gray-500 mb-2">
+                    <Calendar className="h-4 w-4 mr-2 text-teal-600" />
+                    <span className="text-xs md:text-sm font-medium">Length of Stay</span>
                   </div>
-                  <p className="font-medium text-sm md:text-base">{country.length_of_stay || 'Up to 30 days'}</p>
+                  <p className="font-semibold text-sm md:text-base text-navy">{country.length_of_stay || 'Up to 30 days'}</p>
                 </div>
                 
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-500 mb-1.5">
-                    <Clock className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs md:text-sm">Validity</span>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center text-gray-500 mb-2">
+                    <Clock className="h-4 w-4 mr-2 text-teal-600" />
+                    <span className="text-xs md:text-sm font-medium">Validity</span>
                   </div>
-                  <p className="font-medium text-sm md:text-base">{country.validity || 'Up to 180 days'}</p>
+                  <p className="font-semibold text-sm md:text-base text-navy">{country.validity || 'Up to 180 days'}</p>
                 </div>
                 
-                <div className="flex flex-col">
-                  <div className="flex items-center text-gray-500 mb-1.5">
-                    <Globe className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs md:text-sm">Entry</span>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center text-gray-500 mb-2">
+                    <Globe className="h-4 w-4 mr-2 text-teal-600" />
+                    <span className="text-xs md:text-sm font-medium">Entry</span>
                   </div>
-                  <p className="font-medium text-sm md:text-base">{country.entry_type || 'Single'}</p>
+                  <p className="font-semibold text-sm md:text-base text-navy">{country.entry_type || 'Single'}</p>
                 </div>
               </div>
               
               <div className="prose max-w-none text-sm md:text-base">
-                <p className="text-gray-600">{country.description}</p>
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                  <p className="text-gray-700 leading-relaxed">{country.description}</p>
+                </div>
               </div>
             </section>
             
             {/* What's Included */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <VisaIncludesCard 
-                title="What's Included in Tourist Visa" 
-                items={country.visa_includes} 
-              />
-              <VisaIncludesCard 
-                title="Tourist Visa Assistance" 
-                items={country.visa_assistance} 
-              />
+              <div className="bg-gradient-to-br from-teal-50 to-white p-6 rounded-xl border border-teal-100">
+                <div className="flex items-center gap-3 mb-4">
+                  <BadgeCheck className="h-5 w-5 text-teal-600" />
+                  <h3 className="font-semibold text-lg text-navy">What's Included</h3>
+                </div>
+                <ul className="space-y-3">
+                  {country.visa_includes.map((item, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-teal-600 mt-1 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-semibold text-lg text-navy">Visa Assistance</h3>
+                </div>
+                <ul className="space-y-3">
+                  {country.visa_assistance.map((item, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
             
             {/* Tabs Section - Sticky Tabs */}
             <Tabs defaultValue="requirements" className="bg-white rounded-xl md:rounded-2xl shadow-sm">
               <div className="sticky top-16 z-20 bg-white rounded-t-xl border-b">
-                <TabsList className="w-full justify-start p-1 px-5">
-                  <TabsTrigger value="requirements" className="rounded-full">Requirements</TabsTrigger>
-                  <TabsTrigger value="process" className="rounded-full">Process</TabsTrigger>
-                  <TabsTrigger value="faq" className="rounded-full">FAQ</TabsTrigger>
-                  <TabsTrigger value="embassy" className="rounded-full">Embassy</TabsTrigger>
+                <TabsList className="w-full justify-start p-1 px-5 gap-2">
+                  <TabsTrigger value="requirements" className="rounded-full data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
+                    <div className="flex items-center gap-2">
+                      <FileCheck className="h-4 w-4" />
+                      <span>Requirements</span>
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="process" className="rounded-full data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+                    <div className="flex items-center gap-2">
+                      <BarChart className="h-4 w-4" />
+                      <span>Process</span>
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="faq" className="rounded-full data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>FAQ</span>
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="travel-guide" className="rounded-full data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span>Travel Guide</span>
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="culture" className="rounded-full data-[state=active]:bg-rose-50 data-[state=active]:text-rose-700">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>Culture</span>
+                    </div>
+                  </TabsTrigger>
                 </TabsList>
               </div>
               
@@ -426,9 +477,32 @@ const CountryDetails = () => {
                     />
                   ))}
                 </div>
+
+                {/* Additional Requirements Info */}
+                <div className="mt-8 space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-navy mb-2">Important Notes</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-2">
+                      <li>All documents must be in English or officially translated</li>
+                      <li>Passport must be valid for at least 6 months beyond your stay</li>
+                      <li>Provide colored scans of original documents</li>
+                      <li>Digital photographs must meet specific requirements</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-navy mb-2">Common Rejection Reasons</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-2">
+                      <li>Incomplete or incorrect information in the application</li>
+                      <li>Insufficient funds or financial documentation</li>
+                      <li>Poor quality or non-compliant photographs</li>
+                      <li>Missing supporting documents</li>
+                    </ul>
+                  </div>
+                </div>
               </TabsContent>
               
-              {/* Process Tab */}
+              {/* Process Tab - Enhanced */}
               <TabsContent value="process" className="p-5 md:p-8 focus:outline-none">
                 <h3 className="text-lg md:text-xl font-semibold text-navy mb-4">Application Process</h3>
                 <div className="mt-6 space-y-0">
@@ -441,6 +515,25 @@ const CountryDetails = () => {
                       isLast={index === country.processing_steps.length - 1}
                     />
                   ))}
+                </div>
+
+                {/* Processing Time Breakdown */}
+                <div className="mt-8 bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-navy mb-3">Processing Time Breakdown</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Document Verification:</span>
+                      <span className="font-medium">24-48 hours</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Embassy Processing:</span>
+                      <span className="font-medium">3-5 business days</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Visa Issuance:</span>
+                      <span className="font-medium">1-2 business days</span>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
               
@@ -458,10 +551,202 @@ const CountryDetails = () => {
                 </div>
               </TabsContent>
               
-              {/* Embassy Tab */}
-              <TabsContent value="embassy" className="p-5 md:p-8 focus:outline-none">
-                <h3 className="text-lg md:text-xl font-semibold text-navy mb-4">Embassy & Consulate Information</h3>
-                <EmbassyCard details={country.embassy_details} />
+              {/* Travel Guide Tab - New */}
+              <TabsContent value="travel-guide" className="p-5 md:p-8 focus:outline-none">
+                <h3 className="text-lg md:text-xl font-semibold text-navy mb-4">Essential Travel Information</h3>
+                
+                {/* Best Time to Visit */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-navy mb-3">Best Time to Visit</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h5 className="font-medium mb-2">Peak Season</h5>
+                      <p className="text-sm text-gray-600">June to August</p>
+                      <p className="text-xs text-gray-500 mt-1">Perfect weather, busy tourist season</p>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h5 className="font-medium mb-2">Shoulder Season</h5>
+                      <p className="text-sm text-gray-600">March to May, September to November</p>
+                      <p className="text-xs text-gray-500 mt-1">Moderate crowds, better rates</p>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <h5 className="font-medium mb-2">Off Season</h5>
+                      <p className="text-sm text-gray-600">December to February</p>
+                      <p className="text-xs text-gray-500 mt-1">Lower prices, fewer tourists</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transportation */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-navy mb-3">Getting Around</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Public Transportation</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Extensive metro network in major cities</li>
+                        <li>• Regular bus services</li>
+                        <li>• Taxi and ride-sharing services available</li>
+                      </ul>
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">From the Airport</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Airport express trains</li>
+                        <li>• Airport shuttle buses</li>
+                        <li>• Licensed airport taxis</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Accommodation */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-navy mb-3">Where to Stay</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Budget</h5>
+                      <p className="text-sm text-gray-600">Hostels and budget hotels</p>
+                      <p className="text-xs text-gray-500 mt-1">$30-50 per night</p>
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Mid-Range</h5>
+                      <p className="text-sm text-gray-600">3-star hotels and apartments</p>
+                      <p className="text-xs text-gray-500 mt-1">$100-200 per night</p>
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Luxury</h5>
+                      <p className="text-sm text-gray-600">4-5 star hotels and resorts</p>
+                      <p className="text-xs text-gray-500 mt-1">$250+ per night</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Safety Tips */}
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-navy mb-3">Safety Tips</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ul className="text-sm text-gray-600 space-y-2">
+                      <li>• Keep important documents secure</li>
+                      <li>• Be aware of local customs and dress codes</li>
+                      <li>• Use official transportation services</li>
+                    </ul>
+                    <ul className="text-sm text-gray-600 space-y-2">
+                      <li>• Stay in well-reviewed accommodations</li>
+                      <li>• Keep emergency numbers handy</li>
+                      <li>• Get travel insurance</li>
+                    </ul>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Culture Tab - New */}
+              <TabsContent value="culture" className="p-5 md:p-8 focus:outline-none">
+                <h3 className="text-lg md:text-xl font-semibold text-navy mb-4">Cultural Guide</h3>
+                
+                {/* Customs and Etiquette */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-navy mb-3">Customs & Etiquette</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h5 className="font-medium mb-2">Do's</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Dress modestly when visiting religious sites</li>
+                        <li>• Remove shoes when entering homes</li>
+                        <li>• Learn basic local greetings</li>
+                        <li>• Ask permission before taking photos</li>
+                      </ul>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h5 className="font-medium mb-2">Don'ts</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Don't point with your feet or fingers</li>
+                        <li>• Avoid public displays of affection</li>
+                        <li>• Don't touch people's heads</li>
+                        <li>• Don't discuss sensitive political topics</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Language */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-navy mb-3">Essential Phrases</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Basic Greetings</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Hello</li>
+                        <li>• Thank you</li>
+                        <li>• Please</li>
+                        <li>• Goodbye</li>
+                      </ul>
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Useful Phrases</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Where is...?</li>
+                        <li>• How much?</li>
+                        <li>• I don't understand</li>
+                        <li>• Can you help me?</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Food Culture */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-navy mb-3">Food Culture</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Must-Try Dishes</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Local specialties</li>
+                        <li>• Street food</li>
+                        <li>• Traditional desserts</li>
+                      </ul>
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Dining Etiquette</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Table manners</li>
+                        <li>• Tipping customs</li>
+                        <li>• Meal times</li>
+                      </ul>
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <h5 className="font-medium mb-2">Dietary Options</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Vegetarian choices</li>
+                        <li>• Halal options</li>
+                        <li>• Food allergies</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Festivals and Events */}
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-navy mb-3">Major Festivals & Events</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="font-medium mb-2">Traditional Festivals</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• New Year celebrations</li>
+                        <li>• Religious festivals</li>
+                        <li>• Cultural events</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h5 className="font-medium mb-2">Modern Events</h5>
+                      <ul className="text-sm text-gray-600 space-y-2">
+                        <li>• Music festivals</li>
+                        <li>• Food festivals</li>
+                        <li>• Art exhibitions</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
             
@@ -502,13 +787,19 @@ const CountryDetails = () => {
             <div className="lg:sticky lg:top-24">
               <div className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-navy">Apply Now</h2>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-1 bg-teal-500 rounded-full"></div>
+                    <h2 className="text-xl font-bold text-navy">Apply Now</h2>
+                  </div>
                   <Badge className="bg-teal-500 hover:bg-teal-600">Fast Process</Badge>
                 </div>
                 
                 {/* Pricing Tier Selection */}
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Select Processing Speed</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-teal-600" />
+                    Select Processing Speed
+                  </h3>
                   <div className="grid grid-cols-1 gap-3">
                     {country.pricingTiers.length === 0 ? (
                       <Card className="border border-dashed border-gray-200 p-4 text-center text-gray-500">
@@ -532,30 +823,35 @@ const CountryDetails = () => {
                 </div>
                 
                 {/* Expected delivery date */}
-                <div className="bg-teal-50 border border-teal-100 rounded-lg p-3 mb-6">
-                  <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-teal-600 mr-2 flex-shrink-0" />
+                <div className="bg-gradient-to-r from-teal-50 to-teal-100/30 border border-teal-100 rounded-lg p-4 mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-teal-600" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium text-teal-900">Estimated Delivery</p>
-                      <p className="text-sm text-teal-700">{formattedEstimatedDate}</p>
+                      <p className="text-sm text-teal-700 font-semibold">{formattedEstimatedDate}</p>
                     </div>
                   </div>
                 </div>
                 
                 {/* Number of travelers */}
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Number of Travelers</h3>
-                  <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4 text-teal-600" />
+                    Number of Travelers
+                  </h3>
+                  <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                     <button 
-                      className="px-4 py-3 text-gray-500 hover:text-gray-700 disabled:opacity-50 flex-shrink-0"
+                      className="p-4 text-gray-500 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-50 flex-shrink-0 transition-colors"
                       onClick={handleDecreaseTravellers}
                       disabled={travellers <= 1}
                     >
                       <Minus className="h-4 w-4" />
                     </button>
-                    <div className="flex-1 text-center font-medium">{travellers}</div>
+                    <div className="flex-1 text-center font-medium text-navy">{travellers}</div>
                     <button 
-                      className="px-4 py-3 text-gray-500 hover:text-gray-700 flex-shrink-0"
+                      className="p-4 text-gray-500 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0 transition-colors"
                       onClick={handleIncreaseTravellers}
                     >
                       <Plus className="h-4 w-4" />
@@ -564,65 +860,74 @@ const CountryDetails = () => {
                 </div>
                 
                 {/* Summary */}
-                <div className="border-t border-b border-gray-100 py-4 mb-5">
-                  <div className="flex justify-between mb-2">
+                <div className="border-t border-b border-gray-100 py-4 mb-5 space-y-3">
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Base price</span>
-                    <span className="font-medium">{selectedPackage.price}</span>
+                    <span className="font-medium text-navy">{selectedPackage.price}</span>
                   </div>
-                  <div className="flex justify-between mb-2">
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Travelers</span>
-                    <span className="font-medium">{travellers}</span>
+                    <span className="font-medium text-navy">{travellers}</span>
                   </div>
-                  <div className="flex justify-between text-navy font-bold mt-3">
-                    <span>Total</span>
-                    <span>₹{totalAmount.toLocaleString('en-IN')}</span>
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <span className="text-navy font-bold">Total Amount</span>
+                    <span className="text-lg font-bold text-teal-600">₹{totalAmount.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
                 
                 {/* Apply now button */}
                 <Button 
-                  className="w-full mb-3 bg-teal-600 hover:bg-teal-700"
+                  className="w-full mb-3 bg-teal-600 hover:bg-teal-700 h-12 text-base font-medium"
                   onClick={handleApplyNow}
                 >
                   Apply Now
                 </Button>
                 
                 <div className="flex items-center justify-center text-xs text-gray-500 mb-6">
-                  <ShieldCheck className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                  <ShieldCheck className="h-4 w-4 mr-1.5 text-teal-600" />
                   <span>Secure payment • Money-back guarantee</span>
                 </div>
                 
                 {/* Trustpilot-style reviews */}
                 <div className="mt-4 border-t border-gray-100 pt-4">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <Award className="h-4 w-4 mr-1.5 text-green-600" />
-                      <span className="text-sm font-medium">Trusted by thousands</span>
+                    <div className="flex items-center gap-2">
+                      <Award className="h-5 w-5 text-green-600" />
+                      <span className="text-sm font-medium text-navy">Trusted by thousands</span>
                     </div>
                     <div className="flex">
                       {Array(5).fill(0).map((_, i) => (
-                        <Star key={i} className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                        <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                       ))}
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 italic">
-                    {country.name === "Dubai" || country.name === "UAE" ? 
-                      `"The Dubai visa process was incredibly smooth. Permitsy handled everything efficiently and my visa was approved in just 2 days!"` : 
-                      `"The visa process was incredibly smooth. Permitsy handled everything efficiently and my ${country.name} visa was approved in just 2 days!"`}
-                  </div>
-                  <div className="text-xs font-medium mt-1">
-                    Amit P. • Verified customer
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-700 italic leading-relaxed">
+                      {country.name === "Dubai" || country.name === "UAE" ? 
+                        `"The Dubai visa process was incredibly smooth. Permitsy handled everything efficiently and my visa was approved in just 2 days!"` : 
+                        `"The visa process was incredibly smooth. Permitsy handled everything efficiently and my ${country.name} visa was approved in just 2 days!"`}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center">
+                        <span className="text-xs font-medium text-teal-700">AP</span>
+                      </div>
+                      <div className="text-xs font-medium text-gray-900">
+                        Amit P. • <span className="text-teal-600">Verified customer</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
                 {/* Need help */}
-                <div className="mt-6 bg-blue-50 p-3 rounded-lg">
-                  <div className="flex items-center">
-                    <MessageSquare className="h-5 w-5 text-blue-600 mr-2" />
-                    <span className="font-medium text-sm text-blue-700">Need help with your visa?</span>
+                <div className="mt-6 bg-gradient-to-r from-blue-50 to-blue-100/30 p-4 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span className="font-medium text-sm text-blue-900">Need help with your visa?</span>
                   </div>
-                  <p className="text-xs text-blue-600 mt-1">Our visa experts are here to assist you with any questions.</p>
-                  <Button variant="outline" size="sm" className="w-full mt-2 bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800">
+                  <p className="text-xs text-blue-700 mb-3">Our visa experts are here to assist you with any questions.</p>
+                  <Button variant="outline" size="sm" className="w-full bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 font-medium">
                     Contact Support
                   </Button>
                 </div>

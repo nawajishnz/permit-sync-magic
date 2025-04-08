@@ -42,12 +42,13 @@ const VisaComparisonSection = () => {
     <section className="py-20 bg-gradient-to-b from-white to-blue-50/30">
       <div className="container mx-auto px-4">
         <motion.div 
-          className="text-center mb-16"
+          className="text-center mb-16 relative"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
+          {/* Remove all decorative elements */}
           <span className="inline-block px-4 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium mb-4">
             Why Choose Us
           </span>
@@ -61,79 +62,81 @@ const VisaComparisonSection = () => {
 
         <div className="max-w-5xl mx-auto">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse shadow-lg rounded-xl overflow-hidden">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="p-5 text-left text-gray-500 font-medium border-b-2 border-gray-100 w-1/3 rounded-tl-xl">Comparison</th>
-                  <th className="p-5 text-center text-gray-500 font-medium border-b-2 border-gray-100 w-1/3">
-                    Traditional Process
-                  </th>
-                  <th className="p-5 text-center text-indigo-600 font-medium border-b-2 border-gray-100 w-1/3 bg-indigo-50/50 rounded-tr-xl">
-                    <span className="flex items-center justify-center">
-                      <span className="mr-2">Permitsy</span>
-                      <motion.div 
-                        className="bg-indigo-100 text-indigo-600 text-xs px-2 py-1 rounded-full"
-                        animate={{ scale: [1, 1.05, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        Recommended
-                      </motion.div>
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonData.map((item, index) => (
-                  <motion.tr 
-                    key={index}
-                    className={`border-b border-gray-100 ${index === comparisonData.length - 1 ? 'border-b-0' : ''}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                  >
-                    <td className="p-5 text-gray-800 font-medium flex items-center">
-                      <div className="bg-gray-100 p-2 rounded-lg mr-3">
-                        <item.icon className="h-5 w-5 text-gray-600" />
-                      </div>
-                      {item.aspect}
-                    </td>
-                    <td className="p-5 text-gray-600">
-                      <div className="flex items-center">
-                        <div className="bg-red-100 p-1 rounded-full mr-2">
-                          <X className="h-4 w-4 text-red-500 flex-shrink-0" />
-                        </div>
-                        <span className="text-sm">{item.traditional}</span>
-                      </div>
-                    </td>
-                    <td className={`p-5 bg-indigo-50/50 ${index === comparisonData.length - 1 ? 'rounded-br-xl' : ''}`}>
-                      <div className="flex items-center">
-                        <div className="bg-green-100 p-1 rounded-full mr-2">
-                          <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                        </div>
-                        <span className="text-gray-800 text-sm font-medium">{item.permitsy}</span>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            <div className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100">
+              {/* Table Header */}
+              <div className="grid grid-cols-3 border-b border-gray-100">
+                <div className="p-6 text-left border-r border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-800">Comparison</h3>
+                </div>
+                <div className="p-6 text-center border-r border-gray-100 bg-gray-50">
+                  <h3 className="text-lg font-semibold text-gray-600">Traditional Process</h3>
+                </div>
+                <div className="p-6 text-center relative bg-indigo-50 overflow-hidden">
+                  {/* Background accent */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-blue-500/10"></div>
+                  
+                  {/* Header content */}
+                  <div className="relative">
+                    <h3 className="text-xl font-bold text-indigo-700 mb-2">Permitsy</h3>
+                    <div className="inline-block bg-indigo-600 text-white text-sm font-medium px-4 py-1 rounded-full shadow-sm">
+                      Recommended
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Table Body */}
+              {comparisonData.map((item, index) => (
+                <motion.div 
+                  key={index}
+                  className={`grid grid-cols-3 border-b border-gray-100 ${index === comparisonData.length - 1 ? 'border-b-0' : ''}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  {/* Aspect Column */}
+                  <div className="p-6 flex items-center border-r border-gray-100">
+                    <div className="bg-gray-100 p-2.5 rounded-lg mr-4 flex-shrink-0">
+                      <item.icon className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <span className="font-medium text-gray-800">{item.aspect}</span>
+                  </div>
+                  
+                  {/* Traditional Process Column */}
+                  <div className="p-6 border-r border-gray-100 bg-gray-50 flex items-center">
+                    <div className="bg-red-100 p-2 rounded-full mr-3 flex-shrink-0">
+                      <X className="h-4 w-4 text-red-500" />
+                    </div>
+                    <span className="text-gray-600">{item.traditional}</span>
+                  </div>
+                  
+                  {/* Permitsy Column */}
+                  <div className="p-6 bg-indigo-50 relative flex items-center">
+                    <div className="bg-green-100 p-2 rounded-full mr-3 flex-shrink-0 shadow-sm border border-green-200">
+                      <Check className="h-4 w-4 text-green-600" />
+                    </div>
+                    <span className="text-indigo-900 font-medium">{item.permitsy}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-          <motion.div 
-            className="mt-12 text-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <Link to="/countries">
-              <Button variant="default" size="lg" className="text-white font-medium">
-                Browse Countries
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </motion.div>
+            <motion.div 
+              className="mt-12 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <Link to="/countries">
+                <Button variant="default" size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-6 h-auto">
+                  Browse Countries
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>

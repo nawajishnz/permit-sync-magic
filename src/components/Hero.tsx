@@ -230,13 +230,13 @@ const Hero: React.FC = () => {
               <div className="flex flex-wrap items-baseline justify-center lg:justify-start">
                 <span className="whitespace-nowrap mr-2">From application to approval,</span>
                 <span className="mr-2">our</span> 
-                <span className="text-green-600">visa experts got you</span>
+                <span className="text-blue-600">visa experts got you</span>
               </div>
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: '67%' }}
                 transition={{ delay: 0.5, duration: 0.8 }}
-                className="h-1 bg-green-500 mt-2 mx-auto lg:mx-0"
+                className="h-1 bg-blue-500 mt-2 mx-auto lg:mx-0"
               />
             </h1>
             
@@ -366,7 +366,7 @@ const Hero: React.FC = () => {
                             <div className="flex flex-col justify-center pl-3">
                               <h3 className="text-xl font-bold text-gray-800 mb-2">{client.name.split(' ')[0]}</h3>
                               <div className="flex items-center gap-1 mb-2">
-                                <span className="text-green-600 bg-green-50 p-0.5 rounded-full"><Check className="h-3.5 w-3.5" /></span>
+                                <span className="text-blue-600 bg-blue-50 p-0.5 rounded-full"><Check className="h-3.5 w-3.5" /></span>
                                 <span className="text-sm text-gray-600">Approved for {client.journey.includes('Euro') ? 'Schengen' : client.destination} visa {client.dateReceived}</span>
                               </div>
                               
@@ -374,7 +374,7 @@ const Hero: React.FC = () => {
                               
                               {/* Countries Expertise */}
                               <div className="mt-1">
-                                <div className="text-xs font-medium text-green-700 mb-1">VISA ISSUED FOR</div>
+                                <div className="text-xs font-medium text-blue-700 mb-1">VISA ISSUED FOR</div>
                                 <div className="flex items-center gap-1">
                                   {client.flags.map((flag, i) => (
                                     <div 
