@@ -25,6 +25,9 @@ const config = {
         sans: ["Poppins", ...fontFamily.sans],
         poppins: ["Poppins", ...fontFamily.sans],
       },
+      backgroundImage: {
+        'grid-white': "linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px)",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

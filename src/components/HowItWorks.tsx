@@ -18,13 +18,13 @@ const steps = [
   }, 
   {
     id: 2,
-    title: 'AI-Powered Documentation',
-    description: 'Our intelligent system prepares and verifies your documents automatically.',
-    icon: Zap,
+    title: 'Document Verification',
+    description: 'Our system checks your documents for completeness and accuracy before submission.',
+    icon: ShieldCheck,
     color: 'from-purple-400 to-purple-600',
     bgColor: 'bg-purple-100',
     iconColor: 'text-purple-600',
-    features: ['Automatic formatting', 'Error detection', 'Document generation']
+    features: ['Thorough review', 'Format validation', 'Requirement checklist']
   }, 
   {
     id: 3,

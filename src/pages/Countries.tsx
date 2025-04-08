@@ -228,18 +228,40 @@ const CountriesPage = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white overflow-x-hidden">
       <Header />
       <main className="flex-grow">
-        {/* Hero section - more compact on mobile */}
-        <div className="bg-gradient-to-r from-indigo-600 to-blue-700 text-white relative overflow-hidden">
+        {/* Hero section - more modern and professional */}
+        <div className="bg-gradient-to-br from-indigo-700 via-blue-600 to-purple-700 text-white relative overflow-hidden">
+          {/* 3D Decorative elements */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-24 -left-24 w-72 h-72 bg-indigo-500/20 rounded-full filter blur-3xl animate-blob"></div>
-            <div className="absolute top-10 right-10 w-72 h-72 bg-blue-500/20 rounded-full filter blur-3xl animate-blob animation-delay-2000"></div>
-            <div className="absolute bottom-10 right-1/3 w-72 h-72 bg-indigo-400/20 rounded-full filter blur-3xl animate-blob animation-delay-4000"></div>
+            <div className="absolute -top-24 -left-24 w-80 h-80 bg-indigo-400/30 rounded-full filter blur-3xl animate-pulse"></div>
+            <div className="absolute top-10 right-10 w-96 h-96 bg-blue-400/20 rounded-full filter blur-3xl animate-blob"></div>
+            <div className="absolute bottom-10 right-1/3 w-72 h-72 bg-purple-400/30 rounded-full filter blur-3xl animate-pulse animation-delay-2000"></div>
+            
+            {/* Decorative patterns */}
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-blue-500/5 bg-[size:40px_40px] [background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)]"></div>
+            
+            {/* Globe illustration */}
+            <div className="absolute right-0 top-0 opacity-10 md:opacity-20 transform translate-x-1/4 -translate-y-1/4">
+              <svg width="600" height="600" viewBox="0 0 600 600" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                <circle cx="300" cy="300" r="280" stroke="currentColor" strokeWidth="2" strokeDasharray="8 8" />
+                <circle cx="300" cy="300" r="230" stroke="currentColor" strokeWidth="2" />
+                <circle cx="300" cy="300" r="180" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+                <path d="M300 20 C300 580 300 580 300 20" stroke="currentColor" strokeWidth="1" />
+                <path d="M20 300 C580 300 580 300 20 300" stroke="currentColor" strokeWidth="1" />
+                <path d="M155 88 C445 512 445 512 155 88" stroke="currentColor" strokeWidth="1" />
+                <path d="M88 445 C512 155 512 155 88 445" stroke="currentColor" strokeWidth="1" />
+              </svg>
+            </div>
           </div>
           
-          <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
+          <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
             <div className="max-w-3xl mx-auto text-center">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-xs font-medium text-white/90 mb-6 animate-pulse">
+                <span className="flex h-2 w-2 rounded-full bg-teal-400"></span>
+                <span>Explore 195+ Countries</span>
+              </div>
+              
               <motion.h1 
-                className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 tracking-tight"
+                className="text-4xl md:text-6xl font-bold mb-4 md:mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
@@ -247,7 +269,7 @@ const CountriesPage = () => {
                 Explore Tourist Visa Requirements Worldwide
               </motion.h1>
               <motion.p 
-                className="text-base md:text-xl opacity-90 max-w-2xl mx-auto mb-6 md:mb-8"
+                className="text-base md:text-xl opacity-90 max-w-2xl mx-auto mb-8 md:mb-10 text-blue-50"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
@@ -256,40 +278,46 @@ const CountriesPage = () => {
               </motion.p>
               
               <motion.form 
-                className="mt-8 flex flex-col md:flex-row gap-3"
+                className="mt-8 relative max-w-2xl mx-auto"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
                 onSubmit={handleSearch}
               >
-                <div className="relative flex-grow">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <Input 
-                    placeholder="Search countries or visa types..." 
-                    className="pl-10 w-full h-12 bg-white/10 backdrop-blur-md border-white/20 text-white placeholder:text-white/70 rounded-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                <div className="flex flex-col md:flex-row gap-3 relative z-10">
+                  <div className="relative flex-grow md:min-w-[400px]">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-indigo-300" />
+                    <Input 
+                      placeholder="Search countries or visa types..." 
+                      className="pl-12 py-6 w-full h-14 bg-white/10 backdrop-blur-md border-white/20 text-white placeholder:text-white/70 rounded-full shadow-xl focus:ring-2 focus:ring-white/30 transition-all duration-300"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="h-14 px-8 md:px-10 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 text-base border-0"
+                  >
+                    Find Visas
+                  </Button>
                 </div>
-                <Button 
-                  type="submit" 
-                  className="h-12 px-6 md:px-8 rounded-full bg-white text-indigo-700 hover:bg-white/90"
-                >
-                  Find Visas
-                </Button>
+                
+                {/* Search bar highlight effect */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
               </motion.form>
               
               <motion.div 
-                className="flex flex-wrap justify-center gap-2 mt-6"
+                className="flex flex-wrap justify-center gap-2 mt-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
+                <span className="text-xs text-white/70 mr-1 self-center">Popular:</span>
                 {['United States', 'Canada', 'Australia', 'UK', 'Japan'].map((country, index) => (
                   <Button 
                     key={country} 
                     variant="ghost" 
-                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs"
+                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs rounded-full px-4 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300"
                     onClick={() => {
                       setSearchTerm(country);
                       navigate(`/countries?search=${encodeURIComponent(country)}`);
@@ -302,10 +330,10 @@ const CountriesPage = () => {
             </div>
           </div>
 
-          {/* Wave divider */}
-          <div className="h-16 md:h-24 lg:h-32 bg-white relative overflow-hidden">
-            <svg className="absolute -top-1 left-0 w-full text-indigo-600 fill-current" viewBox="0 0 1200 120" preserveAspectRatio="none">
-              <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"></path>
+          {/* Modern wave divider */}
+          <div className="relative h-24 md:h-32 lg:h-40">
+            <svg className="absolute -bottom-px left-0 w-full fill-white" preserveAspectRatio="none" viewBox="0 0 1440 120">
+              <path d="M0,96L48,80C96,64,192,32,288,26.7C384,21,480,43,576,58.7C672,75,768,85,864,80C960,75,1056,53,1152,42.7C1248,32,1344,32,1392,32L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
             </svg>
           </div>
         </div>

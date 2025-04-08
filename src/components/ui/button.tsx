@@ -5,25 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-teal-600 text-white hover:bg-teal-700 shadow-sm",
+        default: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-gray-200 bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-indigo-200 bg-white hover:bg-indigo-50 hover:text-indigo-600 text-gray-700",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        gradient: "bg-gradient-to-r from-teal-600 to-blue-500 text-white hover:shadow-md hover:from-teal-700 hover:to-blue-600",
+          "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
+        ghost: "hover:bg-indigo-50 hover:text-indigo-600 text-gray-700",
+        link: "text-indigo-600 underline-offset-4 hover:underline",
+        gradient: "bg-gradient-to-r from-indigo-600 to-blue-500 text-white hover:shadow-md hover:from-indigo-700 hover:to-blue-600",
       },
       size: {
-        default: "h-10 px-5 py-2",
-        sm: "h-9 px-4 text-xs",
-        lg: "h-12 px-8 text-base",
+        default: "h-10 px-4 py-2",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-11 px-6 text-base",
         icon: "h-10 w-10 p-0",
       },
     },

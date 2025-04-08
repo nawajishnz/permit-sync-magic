@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, FileText, User, Home, CreditCard, Globe, FileImage, Calendar, ArrowRight } from 'lucide-react';
+import { FileText, User, Home, CreditCard, Globe, FileImage, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -25,7 +25,7 @@ const VisaDocumentChecklist = () => {
       color: "bg-purple-100 text-purple-600"
     },
     {
-      icon: Calendar,
+      icon: Globe,
       title: "Travel Itinerary",
       description: "Flight reservations and detailed travel plans",
       color: "bg-amber-100 text-amber-600"
@@ -41,12 +41,6 @@ const VisaDocumentChecklist = () => {
       title: "Financial Documents",
       description: "Bank statements showing sufficient funds for your trip",
       color: "bg-rose-100 text-rose-600"
-    },
-    {
-      icon: Globe,
-      title: "Travel Insurance",
-      description: "Proof of travel insurance coverage for your entire stay",
-      color: "bg-teal-100 text-teal-600"
     }
   ];
 
@@ -72,7 +66,7 @@ const VisaDocumentChecklist = () => {
         </motion.div>
 
         <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {documents.map((doc, index) => (
               <motion.div
                 key={index}
@@ -94,7 +88,7 @@ const VisaDocumentChecklist = () => {
           </div>
 
           <motion.div 
-            className="mt-8 pt-8 border-t border-gray-100 text-center"
+            className="mt-10 pt-8 border-t border-gray-100 text-center"
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -103,8 +97,11 @@ const VisaDocumentChecklist = () => {
             <p className="text-gray-600 mb-6">
               Our platform automatically guides you through the exact requirements for your specific visa type and destination country.
             </p>
-            <Link to="/countries" className="text-indigo-600 hover:text-indigo-700">
-              Browse Countries
+            <Link to="/countries">
+              <Button variant="default" size="lg" className="text-white font-medium">
+                Browse Countries
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </Link>
           </motion.div>
         </div>

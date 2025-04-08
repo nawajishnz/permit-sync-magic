@@ -51,13 +51,13 @@ const ApprovedVisas: React.FC = () => {
         <div className="text-center py-12 text-gray-500">No approved visas available to display.</div>
       ) : (
         <div className="relative overflow-hidden mb-16">
-          <div className="flex animate-scroll-left whitespace-nowrap py-6">
+          <div className="flex animate-scroll-left whitespace-nowrap py-4">
             {scrollingVisas.map((visa, index) => (
               <div 
                 key={`${visa.id}-${index}`}
-                className="inline-block px-4"
+                className="inline-block px-2"
               >
-                <div className="h-[480px] w-[340px] rounded-lg overflow-hidden border border-gray-300 shadow-md bg-white flex items-center justify-center p-3">
+                <div className="h-[360px] w-[280px] rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white flex items-center justify-center p-2">
                   <img 
                     src={visa.image_url} 
                     alt={`Approved Visa`}

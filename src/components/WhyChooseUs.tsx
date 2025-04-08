@@ -14,8 +14,8 @@ const WhyChooseUs = () => {
     },
     {
       icon: Zap,
-      title: "AI-Powered Efficiency",
-      description: "Our technology optimizes your application for approval and reduces processing time by up to 10x compared to traditional methods.",
+      title: "Digital Processing",
+      description: "Our streamlined digital system reduces processing time by up to 10x compared to traditional methods.",
       color: "bg-purple-100 text-purple-600"
     },
     {
@@ -90,8 +90,10 @@ const WhyChooseUs = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <Link to="/countries" className="bg-indigo-600 hover:bg-indigo-700 rounded-lg px-8 py-6 text-lg shadow-md">
-            Browse Countries
+          <Link to="/countries">
+            <Button variant="default" size="lg" className="text-white font-medium">
+              Browse Countries
+            </Button>
           </Link>
         </motion.div>
       </div>

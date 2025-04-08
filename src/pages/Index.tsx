@@ -8,10 +8,9 @@ import Testimonials from '@/components/Testimonials';
 import PopularCountries from '@/components/PopularCountries';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, useInView, useAnimation } from 'framer-motion';
 import { Shield, Users, Clock, Award, Globe, Zap, ArrowRight, LightbulbIcon, MapPin, FileCheck, ChevronRight } from 'lucide-react';
 import WhyChooseUs from '@/components/WhyChooseUs';
-import TrustedPartners from '@/components/TrustedPartners';
 import ApplicationSteps from '@/components/ApplicationSteps';
 import { useIsMobile } from '@/hooks/use-mobile';
 import VisaComparisonSection from '@/components/VisaComparisonSection';
@@ -92,6 +91,37 @@ const Index = () => {
     }
   ];
 
+  const Counter = ({ end, duration = 2 }: { end: number, duration?: number }) => {
+    const [count, setCount] = useState(0);
+    const ref = React.useRef(null);
+    const isInView = useInView(ref);
+    const controls = useAnimation();
+  
+    useEffect(() => {
+      if (isInView) {
+        let startTime: number;
+        let animationFrame: number;
+  
+        const animate = (timestamp: number) => {
+          if (!startTime) startTime = timestamp;
+          const progress = (timestamp - startTime) / (duration * 1000);
+  
+          if (progress < 1) {
+            setCount(Math.floor(end * progress));
+            animationFrame = requestAnimationFrame(animate);
+          } else {
+            setCount(end);
+          }
+        };
+  
+        animationFrame = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(animationFrame);
+      }
+    }, [isInView, end, duration]);
+  
+    return <span ref={ref}>{count}</span>;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50/30 overflow-x-hidden">
       <Header />
@@ -127,56 +157,66 @@ const Index = () => {
               <p className="text-gray-600 max-w-2xl mx-auto text-lg">Our proven track record speaks for itself - join thousands of satisfied travelers who've simplified their visa journey with us.</p>
             </motion.div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-0 mb-4">
               {[
                 { 
                   icon: Shield, 
-                  count: '98%', 
+                  count: 98,
+                  suffix: '%', 
                   label: 'Success Rate', 
                   description: 'Applications approved on first submission',
                   color: 'from-blue-500 to-blue-600',
                   bgColor: 'bg-blue-50',
-                  textColor: 'text-blue-600' 
+                  textColor: 'text-blue-600',
+                  iconBg: 'from-blue-400 via-blue-500 to-blue-600'
                 },
                 { 
                   icon: Users, 
-                  count: '50k+', 
+                  count: 50,
+                  suffix: 'k+', 
                   label: 'Happy Travelers', 
                   description: 'Satisfied customers worldwide',
                   color: 'from-indigo-500 to-indigo-600',
                   bgColor: 'bg-indigo-50',
-                  textColor: 'text-indigo-600' 
+                  textColor: 'text-indigo-600',
+                  iconBg: 'from-indigo-400 via-indigo-500 to-indigo-600'
                 },
                 { 
                   icon: Clock, 
-                  count: '10x', 
+                  count: 10,
+                  suffix: 'x', 
                   label: 'Faster Processing', 
                   description: 'Compared to traditional methods',
                   color: 'from-teal-500 to-teal-600',
                   bgColor: 'bg-teal-50',
-                  textColor: 'text-teal-600' 
+                  textColor: 'text-teal-600',
+                  iconBg: 'from-teal-400 via-teal-500 to-teal-600'
                 }
               ].map((stat, index) => (
                 <motion.div 
                   key={index}
                   className="relative group"
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 15 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.15 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/50 rounded-2xl transform group-hover:-translate-y-2 transition-all duration-300 blur-sm opacity-0 group-hover:opacity-100"></div>
-                  <div className="flex flex-col h-full items-center p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 relative z-10 hover:shadow-2xl transition-all duration-300">
-                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-6 shadow-lg`}>
-                      <stat.icon className="h-9 w-9 text-white" />
-                    </div>
-                    <h3 className="text-4xl font-bold text-gray-900 mb-2 relative">
-                      {stat.count}
-                      <div className="absolute -top-1 -right-4 w-3 h-3 rounded-full bg-indigo-500 opacity-70 animate-pulse"></div>
+                  <div className="flex flex-col items-center justify-center p-4">
+                    <motion.div 
+                      className={`w-14 h-14 rounded-full bg-gradient-to-br ${stat.iconBg} flex items-center justify-center mb-3 shadow-md relative overflow-hidden group-hover:scale-110 transition-transform duration-300`}
+                      whileHover={{ rotate: 360 }}
+                      transition={{ duration: 0.8, ease: "easeInOut" }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-transparent rotate-180 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                      <stat.icon className="h-7 w-7 text-white drop-shadow-md" />
+                    </motion.div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1 relative flex items-center">
+                      <Counter end={stat.count} />
+                      {stat.suffix}
+                      <div className="absolute -top-0.5 -right-2 w-1.5 h-1.5 rounded-full bg-indigo-500 opacity-70 animate-pulse"></div>
                     </h3>
-                    <p className="text-xl font-semibold text-gray-800 mb-3">{stat.label}</p>
-                    <p className="text-gray-600 text-center">{stat.description}</p>
-                    <div className={`absolute bottom-0 left-0 right-0 h-1 ${stat.bgColor} rounded-b-2xl transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}></div>
+                    <p className="text-base font-semibold text-gray-800 mb-1">{stat.label}</p>
+                    <p className="text-xs text-gray-600 text-center max-w-[85%]">{stat.description}</p>
                   </div>
                 </motion.div>
               ))}
@@ -228,8 +268,6 @@ const Index = () => {
         <div className="py-12 md:py-20 bg-gradient-to-b from-blue-50/60 to-white px-4">
           <Testimonials />
         </div>
-        
-        <TrustedPartners />
         
         <div className="py-12 md:py-20 bg-white px-4">
           <PopularCountries />

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
@@ -26,7 +25,7 @@ const PopularDestinations = () => {
         .from('countries')
         .select('*')
         .order('name')
-        .limit(4);
+        .limit(8);
       
       if (error) {
         console.error('Error fetching destinations:', error);
@@ -81,19 +80,13 @@ const PopularDestinations = () => {
     <section className="py-16">
       <div className="container mx-auto">
         <motion.div 
-          className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 px-4 sm:px-0"
+          className="text-center mb-8"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-navy mb-4 sm:mb-0">Popular Destinations</h2>
-          <div className="flex flex-wrap gap-2">
-            <button className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-medium text-sm">All</button>
-            <button className="text-gray-500 px-3 py-1 rounded-full font-medium text-sm hover:bg-gray-100">Instant</button>
-            <button className="text-gray-500 px-3 py-1 rounded-full font-medium text-sm hover:bg-gray-100">In a week</button>
-            <button className="text-gray-500 px-3 py-1 rounded-full font-medium text-sm hover:bg-gray-100">In a month</button>
-          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-navy">Popular Destinations</h2>
         </motion.div>
         
         {isLoading ? (
@@ -109,7 +102,7 @@ const PopularDestinations = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 sm:px-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-0">
             {destinations.map((destination, index) => (
               <motion.div
                 key={destination.id}

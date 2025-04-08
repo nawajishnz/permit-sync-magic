@@ -175,58 +175,101 @@ const AddonServices = () => {
                               whileInView={{ opacity: 1, y: 0 }}
                               viewport={{ once: true }}
                               transition={{ duration: 0.3 }}
-                              whileHover={{ y: -5 }}
+                              whileHover={{ 
+                                y: -5,
+                                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+                              }}
                               className="h-full"
                             >
-                              <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 h-full flex flex-col border border-gray-100">
+                              <div className="bg-white rounded-xl overflow-hidden h-full flex flex-col border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 relative">
                                 {/* Top section with image and discount badge */}
-                                <div className="relative">
+                                <div className="relative group">
                                   {service.discount_percentage && service.discount_percentage > 0 && (
-                                    <div className="absolute top-4 left-4 bg-green-500 text-white px-4 py-1.5 rounded-full text-sm font-bold z-10">
-                                      {service.discount_percentage}% OFF
+                                    <div className="absolute top-4 right-4 z-20 flex items-center justify-center">
+                                      <div className="relative">
+                                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 w-16 h-16 rounded-full absolute animate-ping opacity-20"></div>
+                                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg flex items-center justify-center relative">
+                                          <span className="text-lg font-extrabold">{service.discount_percentage}%</span>
+                                          <span className="text-xs ml-0.5 font-medium">OFF</span>
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
-                                  <div className="h-[200px] overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
+                                  <div className="h-[220px] overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
                                     <img 
                                       src={service.image_url}
                                       alt={service.name} 
-                                      className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-in-out"
                                     />
                                   </div>
-                                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent opacity-60"></div>
-                                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                                    <h3 className="text-white text-xl font-bold drop-shadow-md">{service.name}</h3>
+                                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-300"></div>
+                                  
+                                  {/* Service type badge */}
+                                  <div className="absolute top-4 left-4">
+                                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-slate-800 shadow-sm flex items-center">
+                                      {getServiceIcon(service.name)}
+                                      <span className="ml-1.5">{
+                                        service.name.includes('Document') ? 'Document' :
+                                        service.name.includes('Hotel') ? 'Accommodation' :
+                                        service.name.includes('Insurance') ? 'Insurance' :
+                                        service.name.includes('Flight') ? 'Transportation' : 'Service'
+                                      }</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Title with gradient overlay */}
+                                  <div className="absolute bottom-0 left-0 right-0 p-5">
+                                    <h3 className="text-white text-xl font-bold drop-shadow-md group-hover:text-teal-200 transition-colors duration-300">{service.name}</h3>
                                   </div>
                                 </div>
                                 
                                 {/* Content section */}
-                                <div className="p-5 flex-grow flex flex-col min-h-[200px]">
+                                <div className="p-5 flex-grow flex flex-col">
+                                  {/* Price and delivery time */}
                                   <div className="flex justify-between items-center mb-4">
-                                    <div className="font-bold text-2xl text-gray-900">
-                                      ₹{service.price}
-                                      <span className="text-sm font-normal text-gray-500 ml-1">Per person</span>
+                                    <div className="flex flex-col">
+                                      <div className="flex items-baseline">
+                                        <span className="font-bold text-2xl text-slate-800">₹{service.price}</span>
+                                        {service.discount_percentage && service.discount_percentage > 0 && (
+                                          <span className="text-sm font-medium text-gray-500 line-through ml-2">
+                                            ₹{Math.round(Number(service.price) / (1 - Number(service.discount_percentage)/100))}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-xs text-gray-500">Per person</span>
                                     </div>
-                                    <div className="flex items-center text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
-                                      <Clock className="w-4 h-4 mr-1 text-indigo-600" />
-                                      <span className="font-medium">{service.delivery_days} Days</span>
+                                    <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full">
+                                      <Clock className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
+                                      <span className="font-medium text-sm">{service.delivery_days} Days</span>
                                     </div>
                                   </div>
                                   
-                                  <p className="text-gray-600 mb-6 flex-grow line-clamp-3">{service.description}</p>
+                                  {/* Description */}
+                                  <p className="text-gray-600 mb-6 text-sm flex-grow line-clamp-3">{service.description}</p>
                                   
-                                  <div className="mt-auto">
-                                    <div className="flex items-center text-sm text-gray-500 mb-4">
-                                      {getServiceIcon(service.name)}
+                                  {/* Features list */}
+                                  <div className="mt-auto space-y-2.5 mb-5">
+                                    <div className="flex items-center text-sm text-gray-700">
+                                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mr-2.5 flex-shrink-0">
+                                        <Check className="h-3 w-3 text-green-600" />
+                                      </div>
                                       <span>Embassy approved documentation</span>
                                     </div>
-                                    
-                                    <Link to={`/addon-services/${service.id}`} className="block">
-                                      <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white group flex items-center justify-center">
-                                        View Details 
-                                        <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                                      </Button>
-                                    </Link>
+                                    <div className="flex items-center text-sm text-gray-700">
+                                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mr-2.5 flex-shrink-0">
+                                        <Check className="h-3 w-3 text-green-600" />
+                                      </div>
+                                      <span>Secure online processing</span>
+                                    </div>
                                   </div>
+                                  
+                                  {/* Button */}
+                                  <Link to={`/addon-services/${service.id}`} className="block">
+                                    <Button className="w-full bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white shadow-md group flex items-center justify-center h-11 border-0">
+                                      View Details 
+                                      <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                    </Button>
+                                  </Link>
                                 </div>
                               </div>
                             </motion.div>

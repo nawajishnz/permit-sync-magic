@@ -92,22 +92,22 @@ const VisaComparisonSection = () => {
                     viewport={{ once: true }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
-                    <td className="p-6 text-gray-800 font-medium flex items-center">
+                    <td className="p-5 text-gray-800 font-medium flex items-center">
                       <div className="bg-gray-100 p-2 rounded-lg mr-3">
                         <item.icon className="h-5 w-5 text-gray-600" />
                       </div>
                       {item.aspect}
                     </td>
-                    <td className="p-6 text-center bg-white">
-                      <div className="flex items-center justify-center">
+                    <td className="p-5 text-gray-600">
+                      <div className="flex items-center">
                         <div className="bg-red-100 p-1 rounded-full mr-2">
                           <X className="h-4 w-4 text-red-500 flex-shrink-0" />
                         </div>
-                        <span className="text-gray-600 text-sm">{item.traditional}</span>
+                        <span className="text-sm">{item.traditional}</span>
                       </div>
                     </td>
-                    <td className={`p-6 text-center bg-indigo-50/50 ${index === comparisonData.length - 1 ? 'rounded-br-xl' : ''}`}>
-                      <div className="flex items-center justify-center">
+                    <td className={`p-5 bg-indigo-50/50 ${index === comparisonData.length - 1 ? 'rounded-br-xl' : ''}`}>
+                      <div className="flex items-center">
                         <div className="bg-green-100 p-1 rounded-full mr-2">
                           <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                         </div>
@@ -127,8 +127,11 @@ const VisaComparisonSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <Link to="/countries" className="text-indigo-600 hover:text-indigo-700">
-              Browse Countries
+            <Link to="/countries">
+              <Button variant="default" size="lg" className="text-white font-medium">
+                Browse Countries
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </Link>
           </motion.div>
         </div>

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Compass, CalendarClock, Search, Zap, FileText, CreditCard, Globe, MapPin, Shield, Award } from 'lucide-react';
+import { ArrowRight, Check, Compass, CalendarClock, Search, Zap, FileText, CreditCard, Globe, MapPin, Shield, Award, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Select,
@@ -15,11 +15,146 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
+// Mock expert data
+const experts = [
+  { 
+    id: 1, 
+    name: 'Ramya', 
+    rate: '96%', 
+    specialty: 'UK visas',
+    image: '/images/experts/ramya.jpg',
+    flags: ['uk', 'us', 'ca', 'sg']
+  },
+  { 
+    id: 2, 
+    name: 'Arjun', 
+    rate: '98%', 
+    specialty: 'Schengen visas',
+    image: '/images/experts/arjun.jpg',
+    flags: ['fr', 'de', 'it', 'es']
+  },
+  { 
+    id: 3, 
+    name: 'Priya', 
+    rate: '94%', 
+    specialty: 'Australia visas',
+    image: '/images/experts/priya.jpg',
+    flags: ['au', 'nz', 'jp', 'kr']
+  },
+];
+
+// Mock successful clients data
+const successfulClients = [
+  { 
+    id: 1, 
+    name: 'Ramya S.', 
+    journey: 'Trip to London',
+    feedback: 'Got my UK visa in just 3 days!',
+    image: 'https://randomuser.me/api/portraits/women/67.jpg',
+    destination: 'United Kingdom',
+    flags: ['uk'],
+    dateReceived: '2 weeks ago'
+  },
+  { 
+    id: 2, 
+    name: 'Arjun K.', 
+    journey: 'Euro trip adventure',
+    feedback: 'Schengen visa approved within a week',
+    image: 'https://randomuser.me/api/portraits/men/76.jpg',
+    destination: 'Europe',
+    flags: ['fr', 'de', 'it', 'es'],
+    dateReceived: '5 days ago'
+  },
+  { 
+    id: 3, 
+    name: 'Priya M.', 
+    journey: 'Business trip to Sydney',
+    feedback: 'Smooth process, hassle-free approval',
+    image: 'https://randomuser.me/api/portraits/women/50.jpg',
+    destination: 'Australia',
+    flags: ['au'],
+    dateReceived: 'Yesterday'
+  },
+  { 
+    id: 4, 
+    name: 'Rahul T.', 
+    journey: 'Vacation in Dubai',
+    feedback: "Fastest visa process I've experienced",
+    image: 'https://randomuser.me/api/portraits/men/41.jpg',
+    destination: 'UAE',
+    flags: ['ae'],
+    dateReceived: '3 days ago'
+  },
+  { 
+    id: 5, 
+    name: 'Meera P.', 
+    journey: 'Study abroad program',
+    feedback: 'Excellent assistance with student visa',
+    image: 'https://randomuser.me/api/portraits/women/31.jpg',
+    destination: 'Canada',
+    flags: ['ca'],
+    dateReceived: '1 week ago'
+  },
+  { 
+    id: 6, 
+    name: 'Vikram S.', 
+    journey: 'Family trip to Singapore',
+    feedback: 'The whole family got visas in one go!',
+    image: 'https://randomuser.me/api/portraits/men/23.jpg',
+    destination: 'Singapore',
+    flags: ['sg'],
+    dateReceived: '4 days ago'
+  },
+  { 
+    id: 7, 
+    name: 'Ananya R.', 
+    journey: 'Conference in Tokyo',
+    feedback: 'Japan visa without any complications',
+    image: 'https://randomuser.me/api/portraits/women/74.jpg',
+    destination: 'Japan',
+    flags: ['jp'],
+    dateReceived: '10 days ago'
+  },
+  { 
+    id: 8, 
+    name: 'Nikhil D.', 
+    journey: 'Backpacking in Thailand',
+    feedback: 'Tourist visa approved in 24 hours',
+    image: 'https://randomuser.me/api/portraits/men/65.jpg',
+    destination: 'Thailand',
+    flags: ['th'],
+    dateReceived: '1 week ago'
+  }
+];
+
 const Hero: React.FC = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [currentClient, setCurrentClient] = useState(0);
+  
+  // Change client every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentClient((prev) => (prev + 1) % successfulClients.length);
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Dashboard animation variants
+  const dashboardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.8,
+        staggerChildren: 0.2
+      } 
+    }
+  };
   
   // Use React Query for better caching and optimized fetching
   const { data: countries = [], isLoading } = useQuery({
@@ -59,121 +194,80 @@ const Hero: React.FC = () => {
     }
   };
   
-  // Animation variants for the dashboard preview
-  const dashboardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.8,
-        staggerChildren: 0.2
-      } 
-    }
-  };
-  
-  const itemVariant = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.5 }
-    }
-  };
-
-  const applicationSteps = [
-    { 
-      id: 1, 
-      title: "Complete Application & Payment", 
-      icon: FileText,
-      description: "Fill out your tourist visa application with all required details and make a secure payment"
-    },
-    { 
-      id: 2, 
-      title: "Document Verification", 
-      icon: Zap,
-      description: "Our AI-powered system verifies your documents and ensures compliance with embassy requirements"
-    },
-    { 
-      id: 3, 
-      title: "Expert Processing", 
-      icon: Globe,
-      description: "Visa specialists ensure your application meets all country-specific requirements"
-    },
-    { 
-      id: 4, 
-      title: "Visa Delivery", 
-      icon: CreditCard,
-      description: "Receive your approved tourist visa digitally or by mail, ready for your travels"
-    }
-  ];
-  
   return (
-    <section className="relative overflow-hidden pt-10 pb-12 sm:pt-14 sm:pb-16 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20">
-      {/* Background gradient elements */}
-      <div className="absolute top-0 -left-20 w-[500px] h-[500px] rounded-full bg-blue-400/10 blur-3xl opacity-20"></div>
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-3xl opacity-20"></div>
+    <section className="relative overflow-hidden pt-6 pb-8 sm:pt-10 sm:pb-12 md:pt-12 md:pb-12 lg:pt-14 lg:pb-14">
+      {/* Background elements */}
+      <div className="absolute top-0 -left-20 w-[400px] h-[400px] rounded-full bg-blue-400/10 blur-3xl opacity-20"></div>
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-indigo-600/10 blur-3xl opacity-20"></div>
       
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
-          {/* Hero content - Always rendered first in DOM for mobile priority */}
+      <div className="container mx-auto px-6 sm:px-8 lg:px-10 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-16 items-center">
+          {/* Left side - Hero content */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="order-1 lg:order-1 max-w-xl mx-auto lg:mx-0 text-center lg:text-left"
+            className="order-1 lg:order-1 max-w-lg mx-auto lg:mx-0 text-center lg:text-left px-2 lg:px-4"
           >
-            <div className="inline-flex items-center px-3 py-1.5 mb-5 rounded-full bg-indigo-50 border border-indigo-100 shadow-sm">
+            <div className="inline-flex items-center px-3 py-1 mb-3 rounded-full bg-indigo-50 border border-indigo-100 shadow-sm">
               <span className="text-xs font-medium text-indigo-600 mr-2">98% Success Rate</span>
               <div className="h-1 w-1 rounded-full bg-indigo-300"></div>
               <span className="text-xs ml-2 text-indigo-500 font-medium">4.9 ★ (1.2k+ reviews)</span>
             </div>
             
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4 sm:mb-6 leading-tight">
-              <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
-                Tourist Visa
-              </span>
-              <span className="block mt-1">Made Simple</span>
+            <div className="mb-3">
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-base font-medium text-gray-700"
+              >
+                India's most loved visa platform <span className="text-red-500">❤️</span>
+              </motion.p>
+            </div>
+            
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 mb-3 sm:mb-4 leading-tight">
+              <div className="flex flex-wrap items-baseline justify-center lg:justify-start">
+                <span className="whitespace-nowrap mr-2">From application to approval,</span>
+                <span className="mr-2">our</span> 
+                <span className="text-green-600">visa experts got you</span>
+              </div>
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: '67%' }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="h-1 bg-green-500 mt-2 mx-auto lg:mx-0"
+              />
             </h1>
             
-            <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 max-w-lg mx-auto lg:mx-0 leading-relaxed">
               Get your tourist visa in just 4 easy steps. No embassy visits, no paperwork hassles, just seamless travel preparation.
             </p>
             
             {/* Country Dropdown */}
-            <div className="relative mb-8 sm:mb-10 max-w-md mx-auto lg:mx-0">
-              <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative mb-5 sm:mb-6 max-w-md mx-auto lg:mx-0">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <div className="flex-grow">
-                  <Select value={selectedCountry} onValueChange={handleCountrySelect}>
-                    <SelectTrigger className="w-full h-12 pl-12 rounded-lg border-gray-200 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 bg-white">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <MapPin className="h-5 w-5 text-indigo-500" />
-                      </div>
-                      <SelectValue placeholder="Where do you want to travel?" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px] overflow-y-auto bg-white">
-                      {isLoading ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Search className="h-4 w-4 mr-2 animate-spin text-indigo-600" />
-                          <span>Loading countries...</span>
-                        </div>
-                      ) : countries.length > 0 ? (
-                        countries.map((country) => (
-                          <SelectItem key={country.id} value={country.id}>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
+                    <Select value={selectedCountry} onValueChange={handleCountrySelect}>
+                      <SelectTrigger className="text-left h-12 bg-white shadow-sm border-gray-200 pl-10 rounded-full">
+                        <SelectValue placeholder="Where do you want to travel?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries.map((country: any) => (
+                          <SelectItem key={country.id} value={country.id.toString()}>
                             {country.name}
                           </SelectItem>
-                        ))
-                      ) : (
-                        <div className="p-3 text-center text-gray-500">
-                          No countries found
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <Button
                   size="default"
-                  className="bg-indigo-600 hover:bg-indigo-700 shadow-md h-12 px-6 rounded-lg transition-all duration-200"
+                  variant="default"
+                  className="shadow-md h-12 rounded-full px-5"
                   onClick={() => {
                     if (selectedCountry) {
                       navigate(`/country/${selectedCountry}`);
@@ -188,7 +282,7 @@ const Hero: React.FC = () => {
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-2 gap-y-4 gap-x-6 md:gap-x-8 max-w-md mx-auto lg:mx-0 mb-8">
+            <div className="grid grid-cols-2 gap-y-3 gap-x-4 md:gap-x-6 max-w-md mx-auto lg:mx-0 mb-5">
               {[
                 { icon: Shield, text: '190+ countries covered' },
                 { icon: CalendarClock, text: 'Fast 3-5 day processing' },
@@ -202,197 +296,104 @@ const Hero: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: 0.1 * i }}
                 >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 mr-3 shadow-sm">
-                    <feature.icon className="h-4 w-4" />
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 mr-2 shadow-sm">
+                    <feature.icon className="h-3.5 w-3.5" />
                   </div>
-                  <span className="text-gray-700 text-sm font-medium">{feature.text}</span>
+                  <span className="text-gray-700 text-xs font-medium">{feature.text}</span>
                 </motion.div>
               ))}
             </div>
             
             {/* CTA buttons */}
             <motion.div 
-              className="flex flex-col sm:flex-row gap-4 mt-8 justify-center lg:justify-start"
+              className="flex flex-col sm:flex-row gap-3 mt-5 justify-center lg:justify-start"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
               <Link to="/countries">
-                <Button variant="outline" size="lg">
-                  Browse Countries
+                <Button variant="default" size="default" className="h-10 rounded-full">
+                  Browse Countries <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
             </motion.div>
           </motion.div>
           
-          {/* Application Process Visualization */}
+          {/* Right side - Visa Experts Section */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="order-2 lg:order-2 mt-10 lg:mt-0"
+            className="order-2 lg:order-2 mt-6 lg:mt-0 px-2 lg:px-4"
           >
-            <div className="relative max-w-md mx-auto lg:max-w-full">
-              {/* Decorative elements */}
-              <div className="absolute -top-6 -right-6 w-64 h-64 rounded-full bg-indigo-100 opacity-60 blur-3xl"></div>
-              <div className="absolute -bottom-10 -left-10 w-64 h-64 rounded-full bg-blue-100 opacity-60 blur-3xl"></div>
-              
-              {/* Card with sticky header */}
-              <motion.div 
-                className="bg-white rounded-2xl shadow-lg border border-gray-100 relative z-10 flex flex-col"
-                initial="hidden"
-                animate="visible"
-                variants={dashboardVariants}
-                whileHover={{ y: -3, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-              >
-                {/* Sticky Header */}
-                <div className="bg-indigo-600 p-4 flex items-center justify-between sticky top-0 z-20">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-indigo-400/60 w-3 h-3 rounded-full"></div>
-                    <div className="bg-indigo-400/60 w-3 h-3 rounded-full"></div>
-                    <div className="bg-indigo-400/60 w-3 h-3 rounded-full"></div>
-                    <div className="bg-indigo-400/60 w-3 h-3 rounded-full"></div>
-                  </div>
-                  <div className="text-white font-medium text-base">Visa Application Platform</div>
-                  <div className="w-16"></div> {/* Spacer for balance */}
-                </div>
+            <div className="relative w-full md:max-w-[500px] lg:max-w-[550px] mx-auto">
+              {/* Meet Your Visa Experts Section */}
+              <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100 p-8 px-10 relative">
+                {/* Background decorative elements */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50/50 rounded-bl-[100px]"></div>
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-50/50 rounded-tr-[100px]"></div>
                 
-                {/* Scrollable Content Container */}
-                <div className="h-[450px] overflow-y-auto">
-                  <div className="p-5">
-                    {/* Active Application Step View */}
-                    <motion.div
-                      variants={itemVariant}
-                      className="mb-6"
-                    >
-                      <div className="flex items-start gap-5 mb-5">
-                        <div className="shrink-0 w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center">
-                          <Zap className="h-7 w-7 text-purple-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm text-indigo-600 font-medium mb-1">Step 2 of 4</div>
-                          <h3 className="text-xl font-semibold text-gray-800 mb-1">Getting your documents</h3>
-                          <p className="text-sm text-gray-600">Smart document processing ⚡</p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
-                        <div className="flex flex-col items-center">
-                          <div className="w-12 h-14 bg-gray-200 rounded flex items-center justify-center mb-2">
-                            <FileText className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <span className="text-sm text-gray-500">Form.pdf</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center">
-                          <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center mb-2 border border-gray-100">
-                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
-                              <Search className="h-5 w-5 text-indigo-500" />
+                {/* Title */}
+                <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 relative z-10">
+                  <span className="text-gray-700">Recent </span>
+                  <span className="text-blue-600">Visa Approvals</span>
+                </h2>
+                
+                {/* Expert Cards with Pagination */}
+                <div className="relative py-3 z-10">
+                  <AnimatePresence mode="wait">
+                    {successfulClients.map((client, index) => (
+                      index === currentClient && (
+                        <motion.div
+                          key={client.id}
+                          className="bg-white rounded-xl overflow-hidden"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <div className="p-5 px-7 flex">
+                            {/* Expert Image */}
+                            <div className="w-20 h-20 rounded-full overflow-hidden mr-6 flex-shrink-0 border-2 border-gray-100 shadow-md">
+                              <img 
+                                src={client.image} 
+                                alt={client.name} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            
+                            {/* Expert Info */}
+                            <div className="flex flex-col justify-center pl-3">
+                              <h3 className="text-xl font-bold text-gray-800 mb-2">{client.name.split(' ')[0]}</h3>
+                              <div className="flex items-center gap-1 mb-2">
+                                <span className="text-green-600 bg-green-50 p-0.5 rounded-full"><Check className="h-3.5 w-3.5" /></span>
+                                <span className="text-sm text-gray-600">Approved for {client.journey.includes('Euro') ? 'Schengen' : client.destination} visa {client.dateReceived}</span>
+                              </div>
+                              
+                              <div className="mb-3 text-sm italic text-gray-600">"{client.feedback}"</div>
+                              
+                              {/* Countries Expertise */}
+                              <div className="mt-1">
+                                <div className="text-xs font-medium text-green-700 mb-1">VISA ISSUED FOR</div>
+                                <div className="flex items-center gap-1">
+                                  {client.flags.map((flag, i) => (
+                                    <div 
+                                      key={i}
+                                      className="w-6 h-4 rounded-sm overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50"
+                                    >
+                                      <span className="text-[8px] font-bold text-gray-700">{flag.toUpperCase()}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <span className="text-sm text-indigo-600 font-medium">Processing</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center">
-                          <div className="w-12 h-14 bg-gray-200 rounded flex items-center justify-center mb-2">
-                            <FileText className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <span className="text-sm text-gray-500">Visa.pdf</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  
-                    {/* Divider line */}
-                    <div className="w-full h-px bg-gray-200 mb-6"></div>
-                  
-                    {/* Application Progress Steps */}
-                    <div className="mb-6">
-                      <div className="relative mb-5">
-                        <div className="absolute top-4 left-3 right-3 h-0.5 bg-gray-200"></div>
-                        <div className="flex justify-between relative">
-                          <div className="flex flex-col items-center">
-                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-green-500 text-white">
-                              <Check className="h-4 w-4" />
-                            </div>
-                            <span className="text-xs mt-2 text-center font-medium">Complete</span>
-                          </div>
-                          
-                          <div className="flex flex-col items-center">
-                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-green-500 text-white">
-                              <Check className="h-4 w-4" />
-                            </div>
-                            <span className="text-xs mt-2 text-center font-medium">Docum...</span>
-                          </div>
-                          
-                          <div className="flex flex-col items-center">
-                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-600 text-white">
-                              <span className="text-xs font-medium">3</span>
-                            </div>
-                            <span className="text-xs mt-2 text-center font-medium">Expert</span>
-                          </div>
-                          
-                          <div className="flex flex-col items-center">
-                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-500">
-                              <span className="text-xs font-medium">4</span>
-                            </div>
-                            <span className="text-xs mt-2 text-center font-medium">Visa</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm font-medium text-gray-700">Estimated completion:</div>
-                        <div className="text-green-600 text-sm font-medium">3-5 business days</div>
-                      </div>
-                    </div>
-                    
-                    {/* Divider line */}
-                    <div className="w-full h-px bg-gray-200 mb-6"></div>
-                    
-                    {/* Step description */}
-                    <div className="text-center">
-                      <h4 className="font-semibold text-gray-800 mb-3 text-lg">
-                        Sit back as we handle your visa application
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        Our advanced system is scanning and preparing your documents while our experts are standing by to review
-                      </p>
-                    </div>
-                    
-                    {/* Extra content to demonstrate scrolling */}
-                    <div className="mt-8 pt-8 border-t border-gray-200">
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-gray-700">Additional Information</h4>
-                        <p className="text-sm text-gray-600">
-                          Our visa professionals will review all your documents thoroughly to ensure compliance with embassy requirements.
-                          The processing times may vary based on destination country and visa type.
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          You will receive email notifications at each stage of your application process.
-                          Feel free to contact our support team if you have any questions.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                        </motion.div>
+                      )
+                    ))}
+                  </AnimatePresence>
                 </div>
-              </motion.div>
-              
-              {/* Floating element - plane */}
-              <motion.div 
-                className="absolute -bottom-3 right-8 w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center transform -rotate-12"
-                animate={{ 
-                  rotate: [-12, -6, -12],
-                  y: [0, -5, 0]
-                }}
-                transition={{ 
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
-              >
-                <span className="text-lg">✈️</span>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         </div>
