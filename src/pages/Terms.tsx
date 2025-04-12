@@ -1,17 +1,42 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { getLegalPageBySlug, type LegalPage } from '@/models/legal_pages';
 
 const Terms = () => {
-  const lastUpdated = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const [pageData, setPageData] = useState<LegalPage | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>(
+    new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  );
+  
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setLoading(true);
+        const data = await getLegalPageBySlug('terms-of-service');
+        if (data) {
+          setPageData(data);
+          setLastUpdated(new Date(data.last_updated).toLocaleDateString('en-US', { 
+            month: 'long', day: 'numeric', year: 'numeric' 
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching Terms of Service:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchContent();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-grow pt-20 md:pt-24">
         <div className="bg-navy text-white py-12">
           <div className="container mx-auto px-4">
             <h1 className="text-3xl font-bold">Terms of Service</h1>
@@ -23,7 +48,15 @@ const Terms = () => {
           <div className="max-w-4xl mx-auto">
             <Card className="shadow-md mb-8">
               <CardContent className="p-8">
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+                  </div>
+                ) : pageData ? (
+                  <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: pageData.content }} />
+                ) : (
                 <div className="space-y-8">
+                    {/* Fallback content in case database fetch fails */}
                   <section>
                     <h2 className="text-2xl font-semibold text-navy mb-4">1. Introduction</h2>
                     <p className="text-gray-700 leading-relaxed mb-4">
@@ -95,6 +128,7 @@ const Terms = () => {
                     </ul>
                   </section>
                 </div>
+                )}
               </CardContent>
             </Card>
           </div>

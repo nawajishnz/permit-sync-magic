@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -11,7 +10,7 @@ const Refunds = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-grow pt-20 md:pt-24">
         <div className="bg-navy text-white py-12">
           <div className="container mx-auto px-4">
             <h1 className="text-3xl font-bold">Refund Policy</h1>

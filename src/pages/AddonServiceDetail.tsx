@@ -146,7 +146,7 @@ const AddonServiceDetail = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 bg-gray-50">
+      <main className="flex-grow pt-20 md:pt-24 bg-gray-50">
         {/* Service Hero */}
         <section className="pt-12 pb-8">
           <div className="container mx-auto px-4">

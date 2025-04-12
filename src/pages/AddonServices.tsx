@@ -86,7 +86,7 @@ const AddonServices = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 bg-gradient-to-b from-gray-50 to-white">
+      <main className="flex-grow pt-20 md:pt-24">
         {/* Hero Section */}
         <section className="bg-indigo-600 py-16 md:py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-indigo-800 opacity-90"></div>

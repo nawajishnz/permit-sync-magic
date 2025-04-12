@@ -19,6 +19,8 @@ import NotFound from '@/pages/NotFound';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import AdminAuth from '@/pages/AdminAuth';
+import ScrollToTop from '@/components/ScrollToTop';
+import NavigationScrollToTop from '@/components/NavigationScrollToTop';
 
 // Lazy load the admin dashboard to improve initial page load
 const AdminDashboard = lazy(() => {
@@ -33,6 +35,9 @@ const AdminDashboard = lazy(() => {
       throw error;
     });
 });
+
+// Lazy load the AdminLegalPages component
+const AdminLegalPages = lazy(() => import('@/pages/admin/LegalPages'));
 
 // Create a QueryClient instance with reliable settings
 const queryClient = new QueryClient({
@@ -61,6 +66,8 @@ const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <ScrollToTop />
+        <NavigationScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/countries" element={<Countries />} />
@@ -72,7 +79,7 @@ const App: React.FC = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin-login" element={<AdminAuth />} />
           
-          {/* Admin routes with lazy loading */}
+          {/* Admin routes */}
           <Route path="/admin/*" element={
             <Suspense fallback={<PageLoader />}>
               <AdminDashboard />

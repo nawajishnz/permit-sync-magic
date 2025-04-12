@@ -556,6 +556,33 @@ export type Database = {
           },
         ]
       }
+      legal_pages: {
+        Row: {
+          id: string
+          title: string
+          slug: string
+          content: string
+          last_updated: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          slug: string
+          content: string
+          last_updated?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          slug?: string
+          content?: string
+          last_updated?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

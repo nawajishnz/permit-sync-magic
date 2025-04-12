@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter, Phone, Mail, MapPin, Linkedin } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Phone, Mail, MapPin, Linkedin, Lock } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
@@ -64,7 +64,8 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/admin-login" className="text-gray-500 hover:text-gray-800 transition-colors text-sm">
+                <Link to="/admin-login" className="text-gray-500 hover:text-gray-800 transition-colors text-sm flex items-center">
+                  <Lock className="h-3 w-3 mr-1" />
                   Admin Login
                 </Link>
               </li>

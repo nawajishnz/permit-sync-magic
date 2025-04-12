@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Star, Quote, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { Star, Quote, ChevronLeft, ChevronRight, MessageSquare, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Testimonial {
@@ -82,8 +82,8 @@ const Testimonials: React.FC = () => {
   // Generate star ratings
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }).map((_, i) => (
-      <Star
-        key={i}
+        <Star 
+          key={i} 
         className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
       />
     ));
@@ -106,7 +106,7 @@ const Testimonials: React.FC = () => {
             Read genuine reviews from travelers who successfully obtained their visas using our services
           </p>
         </div>
-
+        
         <div className="relative max-w-4xl mx-auto">
           {/* Main testimonial */}
           <motion.div
@@ -115,14 +115,15 @@ const Testimonials: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className="bg-white rounded-2xl p-8 shadow-lg mb-6 relative"
+            className="bg-white rounded-2xl p-4 sm:p-8 shadow-lg mb-6 relative"
           >
-            <div className="absolute top-6 right-8 text-indigo-100">
-              <Quote className="w-20 h-20 rotate-180" />
+            <div className="absolute top-4 sm:top-6 right-4 sm:right-8 text-indigo-100 hidden sm:block">
+              <Quote className="w-8 h-8 sm:w-20 sm:h-20 rotate-180 opacity-30 sm:opacity-100" />
             </div>
-            <div className="flex flex-col sm:flex-row gap-6 relative z-10">
-              <div className="flex-shrink-0 flex flex-col items-center sm:items-start">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-2xl overflow-hidden mb-2">
+            <div className="flex flex-row items-start gap-4 sm:gap-6 relative z-10">
+              {/* Avatar Column */}
+              <div className="flex-shrink-0">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-100 rounded-full flex items-center justify-center text-lg sm:text-xl overflow-hidden">
                   {currentTestimonial.avatarUrl ? (
                     <img 
                       src={currentTestimonial.avatarUrl} 
@@ -133,23 +134,20 @@ const Testimonials: React.FC = () => {
                     <span>{currentTestimonial.name.charAt(0)}</span>
                   )}
                 </div>
-                <span className="text-sm font-medium text-gray-800">{currentTestimonial.name}</span>
-                <div className="flex items-center text-xs text-gray-600 mt-1">
-                  <span>{currentTestimonial.countryFlag}</span>
-                  <span className="ml-1">{currentTestimonial.location}</span>
-                </div>
-                <div className="flex mt-2">
-                  {renderStars(currentTestimonial.rating)}
-                </div>
               </div>
 
-              <div className="flex-1">
-                <p className="text-gray-700 italic mb-4 relative">
+              {/* Text Content Column */}
+              <div className="flex-1 flex flex-col items-start">
+                <span className="text-base sm:text-lg font-semibold text-gray-900 mb-1">{currentTestimonial.name}</span>
+                <div className="flex items-center text-xs text-gray-600 mb-2">
+                  <Check className="w-3 h-3 text-blue-600 mr-1.5 flex-shrink-0" />
+                  <span>Applied from {currentTestimonial.location}</span> • <span className="text-gray-500">{currentTestimonial.date}</span>
+                </div>
+                <p className="text-xs sm:text-base text-gray-700 italic mb-3 relative break-words">
                   "{currentTestimonial.comment}"
                 </p>
-                <div className="text-sm text-gray-500 mt-auto">
-                  {currentTestimonial.date}
-                </div>
+                <div className="text-[10px] text-indigo-600 font-medium uppercase tracking-wider mb-1">Visa Issued For</div>
+                <span className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{currentTestimonial.countryFlag}</span>
               </div>
             </div>
           </motion.div>
@@ -225,7 +223,7 @@ const Testimonials: React.FC = () => {
             </div>
           </div>
         </div>
-
+        
         {/* CTA */}
         <div className="text-center mt-16">
           <Button className="bg-indigo-600 hover:bg-indigo-700 shadow-md transform hover:translate-y-[-2px] transition-all">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,36 +10,36 @@ import { toast } from '@/hooks/use-toast';
 import { LoaderIcon, EyeOff, Eye, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
-// Define testimonials
+// Testimonial data
 const testimonials = [
   {
     id: 1,
-    name: "Sarah Johnson",
-    role: "Business Traveler",
-    content: "Permitsy made my visa application process so easy! I was able to get my business visa in half the time it normally takes.",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
+    name: "Maria Chen",
+    role: "Digital Nomad & Travel Blogger",
+    image: "/lovable-uploads/d41f500d-3ae8-477d-89e8-4b8f6346774b.png",
+    content: "Permitsy has revolutionized how I manage visas when traveling. The interface is intuitive, and their support team is always quick to respond. I can't imagine planning my travels without it."
   },
   {
     id: 2,
-    name: "David Chen",
-    role: "Student",
-    content: "As an international student, I was worried about my visa application. Permitsy guided me through every step and I got approved quickly!",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
+    name: "James Rodriguez",
+    role: "International Business Consultant",
+    image: "/lovable-uploads/c6f0f3d8-3504-4698-82f8-c54a489198c6.png", 
+    content: "As someone who travels frequently for work, Permitsy has been a game-changer. The automated document checklist saves me hours of research for each country I visit."
   },
   {
     id: 3,
-    name: "Maria Garcia",
-    role: "Tourist",
-    content: "I've used Permitsy for three different countries now. The process is always smooth and the customer service is excellent.",
-    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
+    name: "Sarah Thompson",
+    role: "Study Abroad Program Director",
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+    content: "I manage visa applications for dozens of students each semester. Permitsy's tracking tools and notifications have eliminated the stress of managing multiple applications simultaneously."
   }
 ];
 
 const Auth = () => {
   const { signIn, signUp, user, userRole } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -87,14 +87,24 @@ const Auth = () => {
       await signIn(email, password);
       
       // Note: Navigation will be handled in the AuthContext based on user role
+      // No need to do anything here as the AuthContext will redirect
     } catch (error: any) {
       console.error('Sign in error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sign in. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
+      
+      // Specific error handling for invalid credentials
+      if (error.message?.includes('Invalid login credentials')) {
+        toast({
+          title: "Authentication Failed",
+          description: "Invalid email or password. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to sign in. Please try again.",
+          variant: "destructive",
+        });
+      }
       setIsLoading(false);
     }
   };
@@ -128,18 +138,6 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const prevTestimonial = () => {
-    setActiveTestimonial((prev) => 
-      prev === 0 ? testimonials.length - 1 : prev - 1
-    );
-  };
-  
-  const nextTestimonial = () => {
-    setActiveTestimonial((prev) => 
-      (prev + 1) % testimonials.length
-    );
   };
 
   return (
@@ -208,14 +206,14 @@ const Auth = () => {
                     
                     <div className="flex gap-2">
                       <button 
-                        onClick={prevTestimonial}
+                        onClick={() => setActiveTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
                         className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                         aria-label="Previous testimonial"
                       >
                         <ArrowLeft className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={nextTestimonial}
+                        onClick={() => setActiveTestimonial((prev) => (prev + 1) % testimonials.length)}
                         className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                         aria-label="Next testimonial"
                       >
@@ -244,6 +242,7 @@ const Auth = () => {
                 </p>
               </div>
               
+              {/* Form Section */}
               {isSignUp ? (
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
@@ -309,19 +308,19 @@ const Auth = () => {
                         <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                         Creating Account...
                       </>
-                    ) : 'Sign Up'}
+                    ) : 'Create Account'}
                   </Button>
                   
                   <div className="text-center mt-4">
                     <p className="text-gray-600 text-sm">
                       Already have an account?{' '}
                       <Button 
-                        type="button"
+                        type="button" 
+                        variant="ghost" 
                         onClick={() => setIsSignUp(false)}
-                        variant="link" 
-                        className="text-sm p-0 h-auto text-indigo-600 hover:text-indigo-800"
+                        className="text-sm"
                       >
-                        Sign In
+                        Sign in
                       </Button>
                     </p>
                   </div>
@@ -344,24 +343,9 @@ const Auth = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                        Password
-                      </label>
-                      <Button 
-                        type="button"
-                        variant="link"
-                        className="text-xs text-indigo-600 hover:text-indigo-800 h-auto p-0" 
-                        onClick={() => {
-                          toast({
-                            title: "Password Reset",
-                            description: "Please contact support to reset your password.",
-                          });
-                        }}
-                      >
-                        Forgot password?
-                      </Button>
-                    </div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                      Password
+                    </label>
                     <div className="relative">
                       <Input
                         id="password"
@@ -385,17 +369,22 @@ const Auth = () => {
                   <div className="flex items-center">
                     <div className="flex items-center space-x-2">
                       <Checkbox 
-                        id="remember-me" 
-                        checked={rememberMe}
-                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                        id="remember" 
+                        checked={rememberMe} 
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
                       />
-                      <label htmlFor="remember-me" className="text-sm text-gray-600">Remember me</label>
+                      <label
+                        htmlFor="remember"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700"
+                      >
+                        Remember for 30 days
+                      </label>
                     </div>
                   </div>
                   
                   <Button 
                     type="submit" 
-                    className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+                    className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -403,19 +392,19 @@ const Auth = () => {
                         <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                         Signing in...
                       </>
-                    ) : 'Sign In'}
+                    ) : 'Login'}
                   </Button>
                   
                   <div className="text-center mt-4">
                     <p className="text-gray-600 text-sm">
                       Don't have an account?{' '}
                       <Button 
-                        type="button"
+                        type="button" 
+                        variant="ghost" 
                         onClick={() => setIsSignUp(true)}
-                        variant="link" 
-                        className="text-sm p-0 h-auto text-indigo-600 hover:text-indigo-800"
+                        className="text-sm"
                       >
-                        Sign Up
+                        Sign up
                       </Button>
                     </p>
                   </div>

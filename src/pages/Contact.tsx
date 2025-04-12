@@ -25,7 +25,7 @@ const Contact = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-grow pt-20 md:pt-24">
         {/* Hero section */}
         <div className="bg-gradient-to-r from-navy to-indigo-800 text-white py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:16px_16px]" />

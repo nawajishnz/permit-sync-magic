@@ -264,7 +264,7 @@ const AdminAuth = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow bg-gray-50 py-12">
+      <main className="flex-grow pt-20 md:pt-24">
         <div className="container mx-auto px-4">
           <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm p-8">
             <div className="mb-8 text-center">

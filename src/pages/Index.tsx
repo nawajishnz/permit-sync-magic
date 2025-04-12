@@ -125,8 +125,13 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50/30 overflow-x-hidden">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-grow pt-20 md:pt-24">
         <Hero />
+        
+        {/* Popular Destinations Section - Moved above Why Travelers Trust Permitsy */}
+        <div className="pt-2 pb-4 md:pt-4 md:pb-10 bg-white px-4">
+          <PopularDestinations />
+        </div>
         
         {/* Why Travelers Trust Permitsy - Modern Redesign */}
         <section className="py-20 relative overflow-hidden">
@@ -157,7 +162,7 @@ const Index = () => {
               <p className="text-gray-600 max-w-2xl mx-auto text-lg">Our proven track record speaks for itself - join thousands of satisfied travelers who've simplified their visa journey with us.</p>
             </motion.div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-0 mb-4">
+            <div className="grid grid-cols-3 gap-2 md:gap-6 mb-4">
               {[
                 { 
                   icon: Shield, 
@@ -201,22 +206,22 @@ const Index = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  <div className="flex flex-col items-center justify-center p-4">
+                  <div className="flex flex-col items-center justify-center p-2 md:p-4">
                     <motion.div 
-                      className={`w-14 h-14 rounded-full bg-gradient-to-br ${stat.iconBg} flex items-center justify-center mb-3 shadow-md relative overflow-hidden group-hover:scale-110 transition-transform duration-300`}
+                      className={`w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br ${stat.iconBg} flex items-center justify-center mb-2 md:mb-3 shadow-md relative overflow-hidden group-hover:scale-110 transition-transform duration-300`}
                       whileHover={{ rotate: 360 }}
                       transition={{ duration: 0.8, ease: "easeInOut" }}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-transparent rotate-180 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                      <stat.icon className="h-7 w-7 text-white drop-shadow-md" />
+                      <stat.icon className="h-5 w-5 md:h-7 md:w-7 text-white drop-shadow-md" />
                     </motion.div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-1 relative flex items-center">
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-1 relative flex items-center">
                       <Counter end={stat.count} />
                       {stat.suffix}
                       <div className="absolute -top-0.5 -right-2 w-1.5 h-1.5 rounded-full bg-indigo-500 opacity-70 animate-pulse"></div>
                     </h3>
-                    <p className="text-base font-semibold text-gray-800 mb-1">{stat.label}</p>
-                    <p className="text-xs text-gray-600 text-center max-w-[85%]">{stat.description}</p>
+                    <p className="text-sm md:text-base font-semibold text-gray-800 mb-1 text-center">{stat.label}</p>
+                    <p className="text-[10px] leading-tight md:text-xs text-gray-600 text-center max-w-[90%] md:max-w-[85%]">{stat.description}</p>
                   </div>
                 </motion.div>
               ))}
@@ -243,10 +248,6 @@ const Index = () => {
         
         {/* Document Checklist - New Section */}
         <VisaDocumentChecklist />
-        
-        <div className="py-12 md:py-20 bg-white px-4">
-          <PopularDestinations />
-        </div>
         
         <HowItWorks />
         

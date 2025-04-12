@@ -114,6 +114,10 @@ const config = {
         "scroll-right": {
           "0%": { transform: "translateX(-50%)" },
           "100%": { transform: "translateX(0)" }
+        },
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" }
         }
       },
       animation: {
@@ -121,7 +125,8 @@ const config = {
         "accordion-up": "accordion-up 0.2s ease-out",
         blob: "blob 7s infinite",
         "scroll-left": "scroll-left 30s linear infinite",
-        "scroll-right": "scroll-right 35s linear infinite"
+        "scroll-right": "scroll-right 35s linear infinite",
+        "shimmer": "shimmer 2s infinite"
       },
     },
   },

@@ -117,9 +117,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('AuthContext: signIn method called for:', { email });
       
-      // Clear any previous sessions first to avoid conflicts
-      await supabase.auth.signOut();
-      console.log('AuthContext: Signed out previous session');
+      // Don't sign out first - this can cause issues
+      // await supabase.auth.signOut();
       
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: email.trim(), 
@@ -133,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: error.message || "An error occurred during sign in.",
           variant: "destructive",
         });
-        return;
+        throw error; // Throw error to be handled by the component
       }
       
       if (data.user) {
@@ -147,12 +146,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('AuthContext: Fetching user role for:', data.user.id);
           const { data: userData, error: roleError } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, full_name')
             .eq('id', data.user.id)
             .single();
           
           if (roleError) {
             console.error('AuthContext: Error fetching user role:', roleError);
+            
+            // Try to create profile if it doesn't exist
+            if (roleError.code === 'PGRST116') {
+              // Create a profile for this user
+              const { error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: data.user.id,
+                  full_name: data.user.user_metadata.full_name || email,
+                  role: 'user'
+                });
+              
+              if (createError) {
+                console.error('Failed to create profile:', createError);
+              } else {
+                console.log('Created missing profile for user');
+                setUserRole('user');
+                window.location.replace('/dashboard');
+                return;
+              }
+            }
+            
             toast({
               title: "Warning",
               description: "Unable to determine user role. Some features may be limited.",
@@ -241,6 +262,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('Sign up response:', data);
       
+      // Manually create profile record (as a backup in case the trigger fails)
+      if (data.user) {
+        try {
+          console.log('Creating profile for new user:', data.user.id);
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              full_name: fullName,
+              role: 'user'
+            });
+            
+          if (profileError) {
+            console.error('Error creating profile:', profileError);
+            // Don't throw here - the trigger might have handled it already
+          } else {
+            console.log('Profile created successfully');
+          }
+        } catch (profileErr) {
+          console.error('Unexpected error creating profile:', profileErr);
+        }
+      }
+      
       toast({
         title: "Account created!",
         description: "You have successfully created an account. Please sign in.",
@@ -252,6 +296,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "An unexpected error occurred. Please try again later.",
         variant: "destructive",
       });
+      throw error;
     }
   };
 

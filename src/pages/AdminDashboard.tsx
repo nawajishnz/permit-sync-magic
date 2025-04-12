@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import AdminComponentTester from '@/components/admin/AdminComponentTester';
+import AdminLegalPages from '@/pages/admin/LegalPages';
 
 // Create a simple queryClient instance for admin pages
 const queryClient = new QueryClient({
@@ -280,6 +281,7 @@ const AdminDashboard = () => {
               <Route path="/testimonials" element={<SafeComponent component={TestimonialsManager} />} />
               <Route path="/analytics" element={<SafeComponent component={AnalyticsDashboard} />} />
               <Route path="/component-tester" element={<AdminComponentTester />} />
+              <Route path="/legal-pages" element={<AdminLegalPages />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </div>

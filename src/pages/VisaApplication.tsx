@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -249,7 +248,7 @@ const VisaApplication = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <main className="flex-grow py-8">
+      <main className="flex-grow pt-20 md:pt-24 py-8">
         <div className="container max-w-7xl mx-auto px-4">
           <div className="mb-6">
             <Link to={backLink}>

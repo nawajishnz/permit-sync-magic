@@ -227,7 +227,7 @@ const CountriesPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white overflow-x-hidden">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-grow pt-20 md:pt-24">
         {/* Hero section - more modern and professional */}
         <div className="bg-gradient-to-br from-indigo-700 via-blue-600 to-purple-700 text-white relative overflow-hidden">
           {/* 3D Decorative elements */}

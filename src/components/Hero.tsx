@@ -195,7 +195,7 @@ const Hero: React.FC = () => {
   };
   
   return (
-    <section className="relative overflow-hidden pt-6 pb-8 sm:pt-10 sm:pb-12 md:pt-12 md:pb-12 lg:pt-14 lg:pb-14">
+    <section className="relative overflow-hidden pt-8 pb-8 sm:pt-12 sm:pb-12 md:pt-14 md:pb-12 lg:pt-16 lg:pb-14">
       {/* Background elements */}
       <div className="absolute top-0 -left-20 w-[400px] h-[400px] rounded-full bg-blue-400/10 blur-3xl opacity-20"></div>
       <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-indigo-600/10 blur-3xl opacity-20"></div>
@@ -250,18 +250,18 @@ const Hero: React.FC = () => {
                 <div className="flex-grow">
                   <div className="relative">
                     <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-400" />
-                    <Select value={selectedCountry} onValueChange={handleCountrySelect}>
+                  <Select value={selectedCountry} onValueChange={handleCountrySelect}>
                       <SelectTrigger className="text-left h-12 bg-white shadow-sm border-gray-200 pl-10 rounded-full">
-                        <SelectValue placeholder="Where do you want to travel?" />
-                      </SelectTrigger>
+                      <SelectValue placeholder="Where do you want to travel?" />
+                    </SelectTrigger>
                       <SelectContent>
                         {countries.map((country: any) => (
                           <SelectItem key={country.id} value={country.id.toString()}>
                             {country.name}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                    </SelectContent>
+                  </Select>
                   </div>
                 </div>
                 <Button
@@ -368,7 +368,7 @@ const Hero: React.FC = () => {
                               <div className="flex items-center gap-1 mb-2">
                                 <span className="text-blue-600 bg-blue-50 p-0.5 rounded-full"><Check className="h-3.5 w-3.5" /></span>
                                 <span className="text-sm text-gray-600">Approved for {client.journey.includes('Euro') ? 'Schengen' : client.destination} visa {client.dateReceived}</span>
-                              </div>
+                          </div>
                               
                               <div className="mb-3 text-sm italic text-gray-600">"{client.feedback}"</div>
                               
@@ -382,13 +382,13 @@ const Hero: React.FC = () => {
                                       className="w-6 h-4 rounded-sm overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50"
                                     >
                                       <span className="text-[8px] font-bold text-gray-700">{flag.toUpperCase()}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
                           </div>
-                        </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                      </div>
+                    </div>
+                  </motion.div>
                       )
                     ))}
                   </AnimatePresence>

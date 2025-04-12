@@ -77,10 +77,10 @@ const PopularDestinations = () => {
   }, [error, toast]);
 
   return (
-    <section className="py-16">
+    <section className="pt-2 pb-8">
       <div className="container mx-auto">
         <motion.div 
-          className="text-center mb-8"
+          className="text-center mb-6"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -171,7 +171,7 @@ const PopularDestinations = () => {
         )}
         
         <motion.div 
-          className="text-center mt-10"
+          className="text-center mt-6"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
