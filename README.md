@@ -1,69 +1,83 @@
-# Welcome to your Lovable project
+# Permitsy - Visa Application Platform
 
-## Project info
+Permitsy is a modern web application designed to streamline the visa application process for travelers. With a clean, intuitive interface, it allows users to apply for tourist visas, track their applications, and receive support throughout the process.
 
-**URL**: https://lovable.dev/projects/bd33aa69-3189-4561-aabc-9f1cb6456e09
+## Features
 
-## How can I edit this code?
+- **Country-specific Visa Information**: Detailed information about visa requirements, processing times, and entry conditions for various countries.
+- **Online Application Process**: Complete visa applications online with a step-by-step guided process.
+- **Document Management**: Upload and manage required documents for visa applications.
+- **Application Tracking**: Track the status of visa applications in real-time.
+- **User Dashboard**: Personalized dashboard for managing multiple applications and travel documents.
+- **Admin Portal**: Administrative interface for managing visa applications, approvals, and customer support.
 
-There are several ways of editing your application.
+## Technologies Used
 
-**Use Lovable**
+- **Frontend**: React, TypeScript, Tailwind CSS, Shadcn UI
+- **Build Tools**: Vite
+- **Backend**: Supabase (PostgreSQL, Authentication, Storage)
+- **State Management**: React Context API
+- **Routing**: React Router
+- **Form Handling**: React Hook Form
+- **Animations**: Framer Motion
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bd33aa69-3189-4561-aabc-9f1cb6456e09) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v16.0.0 or higher)
+- npm or yarn
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository:
+   ```
+   git clone https://github.com/nawajishmaeen/Permitsy.git
+   cd Permitsy
+   ```
 
-Follow these steps:
+2. Install dependencies:
+   ```
+   npm install
+   # or
+   yarn install
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. Start the development server:
+   ```
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4. Build for production:
+   ```
+   npm run build
+   # or
+   yarn build
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Project Structure
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+  ├── components/       # Reusable UI components
+  ├── pages/            # Page components for routing
+  ├── hooks/            # Custom React hooks
+  ├── models/           # Data models and types
+  ├── integrations/     # External service integrations
+  ├── lib/              # Utility functions and helpers
+  ├── assets/           # Static assets like images
+  ├── styles/           # Global styles
+  └── App.tsx           # Main application component
 ```
 
-**Edit a file directly in GitHub**
+## License
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-**Use GitHub Codespaces**
+## Acknowledgments
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/bd33aa69-3189-4561-aabc-9f1cb6456e09) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- Shadcn UI for the beautiful component library
+- Lucide Icons for the icon set
+- All contributors to this project
