@@ -73,6 +73,7 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      // Basic validation
       if (!email.trim() || !password.trim()) {
         toast({
           title: "Error",
@@ -83,15 +84,18 @@ const Auth = () => {
         return;
       }
       
-      console.log('Attempting to sign in...');
+      console.log('Attempting to sign in with:', email);
+      
+      // Clear the signIn method from AuthContext
       await signIn(email, password);
       
-      // Note: Navigation will be handled in the AuthContext based on user role
-      // No need to do anything here as the AuthContext will redirect
+      // Navigation is now handled by AuthContext based on user role
+      // We don't need to handle navigation here
+      console.log('Sign-in handled by AuthContext');
     } catch (error: any) {
-      console.error('Sign in error:', error);
+      console.error('Sign in error in Auth component:', error);
       
-      // Specific error handling for invalid credentials
+      // Handle specific error cases
       if (error.message?.includes('Invalid login credentials')) {
         toast({
           title: "Authentication Failed",
@@ -100,11 +104,12 @@ const Auth = () => {
         });
       } else {
         toast({
-          title: "Error",
-          description: error.message || "Failed to sign in. Please try again.",
+          title: "Sign-in Error",
+          description: error.message || "An error occurred while signing in. Please try again.",
           variant: "destructive",
         });
       }
+    } finally {
       setIsLoading(false);
     }
   };
@@ -113,6 +118,7 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      // Form validation
       if (!email.trim() || !password.trim() || !fullName.trim()) {
         toast({
           title: "Error",
@@ -123,9 +129,10 @@ const Auth = () => {
         return;
       }
       
+      // Password validation
       if (password.length < 6) {
         toast({
-          title: "Error",
+          title: "Password Error",
           description: "Password must be at least 6 characters long",
           variant: "destructive",
         });
@@ -133,8 +140,39 @@ const Auth = () => {
         return;
       }
       
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast({
+          title: "Email Error",
+          description: "Please enter a valid email address",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('Attempting to sign up with:', email);
       await signUp(email, password, fullName);
-      setIsSignUp(false); // Switch back to login view after signup
+      
+      // Show success message
+      toast({
+        title: "Account Created",
+        description: "Your account has been created successfully. Please sign in.",
+      });
+      
+      // Switch to login view
+      setIsSignUp(false);
+      
+      // Clear form fields
+      setPassword('');
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      toast({
+        title: "Sign-up Error",
+        description: error.message || "An error occurred while creating your account.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

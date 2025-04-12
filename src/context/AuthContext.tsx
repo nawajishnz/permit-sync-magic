@@ -3,6 +3,13 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { 
+  checkSession, 
+  refreshSession, 
+  getUserProfile, 
+  createUserProfile,
+  setupAuthDebugger 
+} from '@/utils/supabaseHelpers';
 
 type AuthContextType = {
   session: Session | null;
@@ -32,84 +39,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        console.log('Auth state changed:', event);
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+    // Set up debugging
+    const subscription = setupAuthDebugger();
+    
+    // Initial session check
+    const initializeAuth = async () => {
+      try {
+        // Get the current session
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
-        // Fetch user role if logged in
-        if (currentSession?.user) {
-          setTimeout(async () => {
-            await fetchUserRole(currentSession.user.id);
-          }, 0);
-        } else {
-          setUserRole(null);
+        if (error) {
+          console.error('Error getting initial session:', error);
+          setLoading(false);
+          return;
         }
+        
+        if (currentSession) {
+          console.log('Found existing session, setting up user state');
+          setSession(currentSession);
+          setUser(currentSession.user);
+          
+          // If we have a user, get their role from profiles
+          if (currentSession.user) {
+            await fetchUserRole(currentSession.user.id);
+          }
+        }
+      } catch (error) {
+        console.error('Unexpected error during initialization:', error);
+      } finally {
+        setLoading(false);
       }
-    );
+    };
+    
+    initializeAuth();
 
-    // Then check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-      console.log('Initial session check:', currentSession ? 'Session found' : 'No session');
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        await fetchUserRole(currentSession.user.id);
-      }
-      
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    // Cleanup
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserRole = async (userId: string) => {
     try {
-      console.log('Fetching user role for:', userId);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role, full_name')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user role:', error);
-        toast({
-          title: "Warning",
-          description: "Unable to fetch user role. Some features may be limited.",
-          variant: "destructive",
+      console.log('Fetching user role for ID:', userId);
+      
+      const profile = await getUserProfile(userId);
+      
+      if (!profile) {
+        console.log('No profile found, creating default profile');
+        const { profile: newProfile, error } = await createUserProfile(userId, {
+          full_name: user?.user_metadata?.full_name || user?.email || 'User',
         });
-        setUserRole('user'); // Default to user role on error
+        
+        if (error) {
+          console.error('Error creating profile:', error);
+          setUserRole('user'); // Default to user role on error
+          return;
+        }
+        
+        setUserRole(newProfile?.role || 'user');
         return;
       }
       
-      // Handle the role as a string value
-      const roleValue = data?.role;
-      console.log('User role fetched from DB:', roleValue);
-      
-      // Validate the role value
-      if (roleValue === 'admin') {
-        console.log('Setting user as admin');
-        setUserRole('admin');
-        // Ensure we're on the admin dashboard if we're an admin
-        if (!window.location.pathname.startsWith('/admin')) {
-          navigate('/admin');
-        }
-      } else {
-        console.log('Setting user as regular user');
-        setUserRole('user');
-        // Redirect to user dashboard if trying to access admin routes
-        if (window.location.pathname.startsWith('/admin')) {
-          navigate('/dashboard');
-        }
-      }
+      console.log('User role from database:', profile.role);
+      setUserRole(profile.role);
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
       setUserRole('user'); // Default to user role on error
-      navigate('/dashboard');
     }
   };
 
@@ -117,9 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('AuthContext: signIn method called for:', { email });
       
-      // Don't sign out first - this can cause issues
-      // await supabase.auth.signOut();
+      // Sign out first to clear any stale sessions
+      await supabase.auth.signOut();
       
+      // Attempt sign in with provided credentials
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: email.trim(), 
         password: password.trim() 
@@ -135,96 +132,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error; // Throw error to be handled by the component
       }
       
-      if (data.user) {
-        console.log('AuthContext: User authenticated successfully:', data.user.id);
-        // Set user immediately
-        setUser(data.user);
-        setSession(data.session);
+      if (!data.user || !data.session) {
+        console.error('AuthContext: No user or session data returned');
+        toast({
+          title: "Error signing in",
+          description: "No user data returned from authentication service.",
+          variant: "destructive",
+        });
+        throw new Error("No user data returned");
+      }
+      
+      console.log('AuthContext: User authenticated successfully:', data.user.id);
+      
+      // Set user and session
+      setUser(data.user);
+      setSession(data.session);
+      
+      // Get the user's profile and role
+      const profile = await getUserProfile(data.user.id);
+      
+      if (!profile) {
+        // Create profile if it doesn't exist
+        console.log('AuthContext: Profile not found, creating new profile');
+        const { profile: newProfile, error } = await createUserProfile(
+          data.user.id, 
+          { 
+            full_name: data.user.user_metadata?.full_name || email,
+            role: 'user'
+          }
+        );
         
-        try {
-          // Fetch user role immediately after sign in
-          console.log('AuthContext: Fetching user role for:', data.user.id);
-          const { data: userData, error: roleError } = await supabase
-            .from('profiles')
-            .select('role, full_name')
-            .eq('id', data.user.id)
-            .single();
-          
-          if (roleError) {
-            console.error('AuthContext: Error fetching user role:', roleError);
-            
-            // Try to create profile if it doesn't exist
-            if (roleError.code === 'PGRST116') {
-              // Create a profile for this user
-              const { error: createError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: data.user.id,
-                  full_name: data.user.user_metadata.full_name || email,
-                  role: 'user'
-                });
-              
-              if (createError) {
-                console.error('Failed to create profile:', createError);
-              } else {
-                console.log('Created missing profile for user');
-                setUserRole('user');
-                window.location.replace('/dashboard');
-                return;
-              }
-            }
-            
-            toast({
-              title: "Warning",
-              description: "Unable to determine user role. Some features may be limited.",
-              variant: "destructive",
-            });
-            setUserRole('user');
-            window.location.replace('/dashboard');
-            return;
-          }
-          
-          const roleValue = userData?.role;
-          console.log('AuthContext: User role after sign in:', roleValue);
-          
-          // Set role and redirect
-          if (roleValue === 'admin') {
-            console.log('AuthContext: Admin user confirmed, preparing redirect');
-            setUserRole('admin');
-            toast({
-              title: "Welcome Admin",
-              description: "You have successfully signed in as an administrator.",
-            });
-            
-            // Use setTimeout for more reliable state updates before redirect
-            setTimeout(() => {
-              console.log('AuthContext: Executing admin redirect');
-              window.location.replace('/admin');
-            }, 250);
-          } else {
-            console.log('AuthContext: Regular user confirmed, preparing redirect');
-            setUserRole('user');
-            toast({
-              title: "Welcome",
-              description: "You have successfully signed in.",
-            });
-            
-            // Use setTimeout for more reliable state updates before redirect
-            setTimeout(() => {
-              console.log('AuthContext: Executing user redirect');
-              window.location.replace('/dashboard');
-            }, 250);
-          }
-        } catch (fetchError) {
-          console.error('AuthContext: Error in role fetch:', fetchError);
-          setUserRole('user'); // Default to user role
-          
-          // Use setTimeout for more reliable redirect
-          setTimeout(() => {
-            console.log('AuthContext: Executing default redirect after error');
-            window.location.replace('/dashboard');
-          }, 250);
+        if (error) {
+          console.error('AuthContext: Failed to create profile:', error);
+          toast({
+            title: "Profile Error",
+            description: "Failed to create user profile.",
+            variant: "destructive",
+          });
+          setUserRole('user');
+        } else {
+          setUserRole(newProfile?.role || 'user');
         }
+        
+        // Redirect to dashboard
+        setTimeout(() => {
+          window.location.replace('/dashboard');
+        }, 300);
+        return;
+      }
+      
+      // Set role based on profile
+      const roleValue = profile.role as 'admin' | 'user' | null;
+      console.log('AuthContext: User role after sign in:', roleValue);
+      
+      setUserRole(roleValue || 'user');
+      
+      // Redirect based on role
+      if (roleValue === 'admin') {
+        toast({
+          title: "Welcome Admin",
+          description: "You have successfully signed in as an administrator.",
+        });
+        setTimeout(() => {
+          window.location.replace('/admin');
+        }, 300);
+      } else {
+        toast({
+          title: "Welcome",
+          description: "You have successfully signed in.",
+        });
+        setTimeout(() => {
+          window.location.replace('/dashboard');
+        }, 300);
       }
     } catch (error: any) {
       console.error('AuthContext: Unexpected error during sign in:', error);
@@ -240,6 +219,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       console.log('Attempting to sign up with:', { email, fullName });
+      
+      // Sign out first to ensure no session conflicts
+      await supabase.auth.signOut();
+      
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -262,21 +245,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('Sign up response:', data);
       
-      // Manually create profile record (as a backup in case the trigger fails)
+      // Create profile for new user
       if (data.user) {
         try {
           console.log('Creating profile for new user:', data.user.id);
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              full_name: fullName,
-              role: 'user'
-            });
+          const { error: profileError } = await createUserProfile(
+            data.user.id,
+            { full_name: fullName, role: 'user' }
+          );
             
           if (profileError) {
             console.error('Error creating profile:', profileError);
-            // Don't throw here - the trigger might have handled it already
           } else {
             console.log('Profile created successfully');
           }
@@ -303,6 +282,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      
+      // Clear state
+      setSession(null);
+      setUser(null);
+      setUserRole(null);
+      
       toast({
         title: "Signed out",
         description: "You have been successfully signed out.",

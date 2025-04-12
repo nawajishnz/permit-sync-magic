@@ -8,4 +8,17 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    storageKey: 'permitsy-auth',
+    detectSessionInUrl: true,
+    flowType: 'implicit'
+  }
+});
+
+// Debug - log any session errors
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state changed:', event, 'Session:', !!session);
+});
