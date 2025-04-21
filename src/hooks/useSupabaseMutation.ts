@@ -25,9 +25,10 @@ export const useSupabaseInsert = <T>(config: MutationConfig<T>) => {
   
   return useMutation({
     mutationFn: async (insertData: any) => {
+      // Using type casting to handle the dynamic table data
       const { data, error } = await supabase
         .from(table)
-        .insert(insertData)
+        .insert(insertData as any)
         .select('*')
         .single();
         
@@ -80,9 +81,10 @@ export const useSupabaseUpdate = <T>(config: MutationConfig<T>) => {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string, data: any }) => {
+      // Using type casting to handle the dynamic table data
       const { data: responseData, error } = await supabase
         .from(table)
-        .update(data)
+        .update(data as any)
         .eq('id', id)
         .select('*')
         .single();
@@ -179,4 +181,4 @@ export const useSupabaseDelete = <T>(config: MutationConfig<T>) => {
       if (onError) onError(error);
     }
   });
-}; 
+};

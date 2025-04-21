@@ -109,8 +109,16 @@ export const useCountryData = (countryId: string | undefined) => {
 
         // Select the first package found
         const selectedPackage: VisaPackage | null = visaPackages && visaPackages.length > 0
-            ? visaPackages[0] as VisaPackage
-            : null;
+          ? {
+              id: visaPackages[0].id,
+              name: visaPackages[0].name,
+              government_fee: visaPackages[0].government_fee,
+              service_fee: visaPackages[0].service_fee,
+              processing_days: visaPackages[0].processing_days,
+              total_price: visaPackages[0].total_price,
+              country_id: visaPackages[0].country_id
+            }
+          : null;
 
         // Log the final selected package
         console.log('[useCountryData] Final selectedPackage:', selectedPackage);

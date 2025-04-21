@@ -1,25 +1,33 @@
-import { sendContactFormEmail } from '@/utils/emailService';
-import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
+// Simple placeholder for contact API without Next.js dependency
+import { supabase } from '@/integrations/supabase/client';
 
+export async function handleContactForm(data: {
+  name: string;
+  email: string;
+  message: string;
+  subject?: string;
+}) {
   try {
-    const formData = req.body;
+    // Store contact message in Supabase
+    const { error } = await supabase
+      .from('contact_messages')
+      .insert({
+        name: data.name,
+        email: data.email,
+        message: data.message,
+        subject: data.subject || 'Website Contact Form',
+        status: 'new'
+      });
+
+    if (error) throw error;
     
-    // Validate required fields
-    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    // Send email
-    await sendContactFormEmail(formData);
-
-    return res.status(200).json({ message: 'Message sent successfully' });
+    return { success: true };
   } catch (error) {
-    console.error('Error in contact API:', error);
-    return res.status(500).json({ message: 'Failed to send message' });
+    console.error('Error submitting contact form:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    };
   }
-} 
+}

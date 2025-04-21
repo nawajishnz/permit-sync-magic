@@ -42,7 +42,6 @@ import EmbassyCard from '@/components/country/EmbassyCard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// Restore helper function to get flag emoji from country code
 const getCountryEmoji = (countryName: string): string => {
   const emojiMap: {[key: string]: string} = {
     'United States': '🇺🇸',
@@ -59,12 +58,10 @@ const getCountryEmoji = (countryName: string): string => {
     'China': '🇨🇳',
     'Italy': '🇮🇹',
     'Spain': '🇪🇸'
-    // Add more as needed
   };
   return emojiMap[countryName] || '🏳️';
 };
 
-// Define a type for visa packages
 type VisaPackage = {
   id: string;
   country_id: string;
@@ -84,7 +81,6 @@ const CountryDetails = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Main country data query
   const { 
     data: country, 
     isLoading: isLoadingCountry, 
@@ -92,7 +88,6 @@ const CountryDetails = () => {
     error: countryError 
   } = useCountryData(countryId);
 
-  // Dedicated visa package query
   const { 
     data: visaPackage, 
     isLoading: isLoadingPackage,
@@ -143,11 +138,9 @@ const CountryDetails = () => {
     refetchOnMount: true
   });
 
-  // State for active tab and travelers
   const [activeTab, setActiveTab] = useState("details");
   const [numberOfTravelers, setNumberOfTravelers] = useState(1);
 
-  // Calculate pricing based on package data
   const getBasePrice = (): number => {
     if (visaPackage) {
       return visaPackage.total_price || 
@@ -166,7 +159,6 @@ const CountryDetails = () => {
   const numericBasePrice = getBasePrice();
   const totalAmount = numericBasePrice * numberOfTravelers;
 
-  // Get processing time from visa package or fallback
   const getProcessingTime = (): string => {
     if (visaPackage?.processing_days) {
       return `${visaPackage.processing_days} business days`;
@@ -174,15 +166,13 @@ const CountryDetails = () => {
     return country?.packageDetails?.processing_time || 'N/A';
   };
 
-  // Delivery date calculation
   const getEstimatedDate = (): string => {
     const processingDays = visaPackage?.processing_days || 15;
     const today = new Date();
-    const deliveryDate = addDays(today, processingDays + 2); // Add buffer days
-    return format(deliveryDate, 'PP'); // Format to localized date
+    const deliveryDate = addDays(today, processingDays + 2);
+    return format(deliveryDate, 'PP');
   };
 
-  // Handle apply button click
   const handleApplyNow = () => {
     if (countryId) {
       navigate(`/visa-application/${countryId}`);
@@ -195,7 +185,6 @@ const CountryDetails = () => {
     }
   };
 
-  // Loading state
   if (isLoadingCountry) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -211,7 +200,6 @@ const CountryDetails = () => {
     );
   }
 
-  // Error state  
   if (isCountryError || !country) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -238,16 +226,49 @@ const CountryDetails = () => {
     );
   }
 
+  const PricingFeatures = ({ packageDetails }: { packageDetails: VisaPackage | null }) => {
+    if (!packageDetails) return null;
+
+    const totalPrice = 
+      (packageDetails.government_fee || 0) + (packageDetails.service_fee || 0);
+    
+    const formattedPrice = new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'USD',
+    }).format(totalPrice);
+
+    return (
+      <ul className="space-y-2 text-sm">
+        <li className="flex items-start">
+          <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
+            <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+          </div>
+          <span>Government fee: ${packageDetails.government_fee}</span>
+        </li>
+        <li className="flex items-start">
+          <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
+            <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+          </div>
+          <span>Service fee: ${packageDetails.service_fee}</span>
+        </li>
+        <li className="flex items-start">
+          <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
+            <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
+          </div>
+          <span>Processing time: {packageDetails.processing_days} days</span>
+        </li>
+      </ul>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <Header />
       <main className="flex-grow pt-20 md:pt-24 bg-white">
       
-      {/* Country Banner */}
       <div className="relative bg-gradient-to-r from-indigo-600 to-blue-500">
         <div className="absolute inset-0 bg-black/30 z-10"></div>
         
-        {/* Featured Image */}
         <div className="relative h-64 md:h-96">
           <img 
             src={country.banner || 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000'}
@@ -260,7 +281,6 @@ const CountryDetails = () => {
           />
         </div>
 
-        {/* Banner Content Overlay */}
         <div className="absolute top-0 left-0 right-0 bottom-0 z-20 flex flex-col justify-end">
           <div className="container mx-auto px-4 py-6 md:py-8">
             <div className="flex flex-col space-y-4 text-white">
@@ -308,12 +328,9 @@ const CountryDetails = () => {
         </div>
       </div>
       
-      {/* Two-column layout - stacked on mobile, scrollable left side with sticky right side */}
       <div className="container mx-auto px-4 py-6 md:py-8 relative">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left column - scrollable content */}
           <div className="w-full lg:w-2/3 space-y-6 md:space-y-8">
-            {/* Visa Overview Section */}
             <section className="bg-white rounded-xl md:rounded-2xl shadow-sm p-5 md:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="h-10 w-1 bg-teal-500 rounded-full"></div>
@@ -354,7 +371,6 @@ const CountryDetails = () => {
                 </div>
               </div>
               
-              {/* Visa Package Details Section */}
               {visaPackage && (
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
                   <h3 className="font-medium text-gray-800 mb-3 flex items-center">
@@ -403,7 +419,6 @@ const CountryDetails = () => {
               </div>
             </section>
             
-            {/* Visa Information Tabs */}
             <div className="bg-white rounded-xl md:rounded-2xl shadow-sm overflow-hidden">
               <Tabs defaultValue="details" className="w-full" onValueChange={setActiveTab}>
                 <div className="border-b border-gray-100">
@@ -478,7 +493,6 @@ const CountryDetails = () => {
                 <TabsContent value="travel" className="p-5 md:p-6 focus:outline-none">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Travel Information</h3>
                   
-                  {/* Condensed Travel Info Sections */}
                   <div className="space-y-6">
                     <div className="bg-amber-50 p-4 rounded-lg">
                       <h4 className="font-medium text-gray-800 mb-2">Best Time to Visit</h4>
@@ -512,7 +526,6 @@ const CountryDetails = () => {
               </Tabs>
             </div>
             
-            {/* Why Choose Us - Simplified */}
             <section className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-6">
               <h2 className="text-xl font-bold text-navy mb-4">Why Choose Permitsy</h2>
               
@@ -550,7 +563,6 @@ const CountryDetails = () => {
             </section>
           </div>
           
-          {/* Right column - sticky booking form */}
           <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
             <div className="sticky top-24">
               <Card className="shadow-md border-0">
@@ -576,11 +588,9 @@ const CountryDetails = () => {
                     </div>
                   </div>
 
-                  {/* Booking Details Section */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-medium text-gray-700 border-t pt-4">Booking Details</h3>
                     
-                    {/* Number of Travelers */}
                     <div className="flex items-center justify-between">
                       <label htmlFor="travellers" className="text-sm text-gray-600 flex items-center">
                         <Users className="h-4 w-4 mr-2 text-gray-400" /> Number of Travelers
@@ -596,7 +606,6 @@ const CountryDetails = () => {
                       </div>
                     </div>
                     
-                    {/* Estimated Date */}
                     <div className="flex items-center justify-between text-sm">
                        <div className="text-gray-600 flex items-center">
                          <Calendar className="h-4 w-4 mr-2 text-gray-400" /> Estimated Delivery
@@ -604,7 +613,6 @@ const CountryDetails = () => {
                        <span className="font-medium text-gray-800">{getEstimatedDate()}</span>
                     </div>
                     
-                    {/* Total Amount */}
                     <div className="border-t pt-4">
                        <div className="flex justify-between items-center mb-1">
                          <span className="text-sm text-gray-600">Total Amount</span>
@@ -613,7 +621,6 @@ const CountryDetails = () => {
                        <p className="text-xs text-gray-400 text-right">Inclusive of all taxes</p>
                     </div>
                     
-                    {/* Call to action */}
                     <Button
                       onClick={handleApplyNow}
                       className="w-full py-6 text-base rounded-lg mt-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition-all duration-300"
@@ -631,10 +638,9 @@ const CountryDetails = () => {
           </div>
         </div>
       </div>
-      </main>
-      <Footer />
-    </div>
-  );
-};
+    </main>
+    <Footer />
+  </div>
+);
 
 export default CountryDetails;

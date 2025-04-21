@@ -1,357 +1,468 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  FileText, Clock, CheckCircle, AlertCircle, User, FileCheck, 
-  Search, Filter, Download, Bell, Calendar, ChevronRight,
-  Edit, Upload, ArrowUpRight, TrendingUp, RefreshCw, XCircle,
-  BarChart, CircleDashed, CheckSquare, BellRing, Menu, MapPin,
-  Settings, LogOut, Info
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  FileText, 
+  AlertCircle, 
+  Download,
+  UploadCloud,
+  Calendar,
+  Info
 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
+import UploadDocumentDialog from './UploadDocumentDialog';
 
-interface ApplicationTrackerProps {
-  applicationId: string;
-}
+// Helper component for document status
+const DocumentStatus = ({ status }) => {
+  if (status === 'verified') {
+    return <CheckCircle className="h-5 w-5 text-green-500" />;
+  } else if (status === 'rejected') {
+    return <XCircle className="h-5 w-5 text-red-500" />;
+  } else if (status === 'uploaded') {
+    return <Clock className="h-5 w-5 text-amber-500" />;
+  } else {
+    return <FileText className="h-5 w-5 text-gray-400" />;
+  }
+};
 
-const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({ applicationId }) => {
+// Component to display the status badge
+const StatusBadge = ({ status }) => {
+  const statusConfig = {
+    'pending': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
+    'in_progress': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'In Progress' },
+    'document_review': { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Document Review' },
+    'documents_required': { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Documents Required' },
+    'approved': { bg: 'bg-green-100', text: 'text-green-800', label: 'Approved' },
+    'rejected': { bg: 'bg-red-100', text: 'text-red-800', label: 'Rejected' },
+    'interview_scheduled': { bg: 'bg-indigo-100', text: 'text-indigo-800', label: 'Interview Scheduled' }
+  };
+
+  const config = statusConfig[status] || statusConfig['pending'];
+
+  return (
+    <Badge variant="outline" className={`${config.bg} ${config.text} border-0`}>
+      {config.label}
+    </Badge>
+  );
+};
+
+// Timeline component
+const Timeline = ({ events }) => {
+  if (!events || events.length === 0) {
+    return <div className="text-gray-500 text-sm italic">No timeline events yet</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {events.map((event, index) => (
+        <div key={index} className="flex">
+          <div className="mr-4 flex flex-col items-center">
+            <div className={`rounded-full p-1 ${index === 0 ? 'bg-blue-500' : 'bg-gray-200'}`}>
+              <div className="h-2 w-2 rounded-full bg-white"></div>
+            </div>
+            {index < events.length - 1 && <div className="h-full w-px bg-gray-200 flex-grow"></div>}
+          </div>
+          <div className={`pb-4 ${index === 0 ? 'text-blue-600' : 'text-gray-600'}`}>
+            <p className="text-sm font-medium">{event.event}</p>
+            <time className="text-xs text-gray-500">{new Date(event.date).toLocaleDateString()}</time>
+            {event.description && (
+              <p className="text-sm mt-1">{event.description}</p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Main application tracker component
+const ApplicationTracker = () => {
+  const { applicationId } = useParams();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = React.useState('overview');
+  const [uploadingDocumentType, setUploadingDocumentType] = useState(null);
+  
+  // Define the application progress steps
+  const progressSteps = [
+    { title: "Submitted", icon: <Info className="h-4 w-4" /> },
+    { title: "Processing", icon: <Clock className="h-4 w-4" /> },
+    { title: "Document Review", icon: <FileText className="h-4 w-4" /> },
+    { title: "Decision", icon: <AlertCircle className="h-4 w-4" /> },
+    { title: "Completed", icon: <CheckCircle className="h-4 w-4" /> }
+  ];
 
-  const { data: application, isLoading, isError } = useQuery({
+  // Fetch application data
+  const { data: application, isLoading, error, refetch } = useQuery({
     queryKey: ['application', applicationId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get application data
+      const { data: appData, error: appError } = await supabase
         .from('visa_applications')
         .select(`
           *,
-          countries (name, flag),
-          visa_packages (name, government_fee, service_fee, processing_days)
+          visa_packages (*),
+          countries (id, name, flag),
+          application_documents (
+            id, 
+            document_type,
+            file_url,
+            status,
+            feedback,
+            uploaded_at
+          ),
+          application_timeline (
+            id,
+            event,
+            date,
+            description
+          )
         `)
         .eq('id', applicationId)
         .single();
 
-      if (error) throw error;
-      return data;
+      if (appError) {
+        throw appError;
+      }
+
+      // Sort timeline by date in descending order
+      if (appData.application_timeline) {
+        appData.application_timeline.sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      }
+
+      return appData;
     },
+    enabled: !!applicationId,
   });
 
-  React.useEffect(() => {
-    if (isError) {
+  useEffect(() => {
+    if (error) {
       toast({
         title: "Error loading application",
-        description: "Could not load application details. Please try again later.",
+        description: error.message || "Could not load application details",
         variant: "destructive",
       });
     }
-  }, [isError, toast]);
+  }, [error, toast]);
 
-  // Mock data for demonstration
-  const mockTimeline = [
-    { date: '2023-05-10', event: 'Application Submitted', description: 'Your application has been received.' },
-    { date: '2023-05-12', event: 'Processing Started', description: 'Your application is now being processed.' },
-    { date: '2023-05-15', event: 'Document Review', description: 'Your documents are being reviewed.' },
-    { date: '2023-05-20', event: 'Additional Documents Requested', description: 'Please upload the required financial documents.' },
-  ];
+  // Handle document upload completion
+  const handleUploadComplete = () => {
+    setUploadingDocumentType(null);
+    refetch();
+    toast({
+      title: "Document uploaded",
+      description: "Your document has been successfully uploaded and is pending review.",
+    });
+  };
 
-  const mockDocuments = [
-    { name: 'Passport', uploaded: true, verified: true, date: '2023-05-10' },
-    { name: 'Photo', uploaded: true, verified: true, date: '2023-05-10' },
-    { name: 'Bank Statement', uploaded: true, verified: false, date: '2023-05-15' },
-    { name: 'Accommodation Proof', uploaded: false, verified: false, required: true },
-    { name: 'Travel Insurance', uploaded: false, verified: false, required: true },
-  ];
-
-  const mockAppointments = [
-    {
-      id: 'APT5678',
-      type: 'Visa Interview',
-      date: '2023-06-10',
-      time: '10:30 AM',
-      location: 'US Embassy, London',
-      confirmationCode: 'INT-USEM-78965',
-      instructions: 'Bring original documents and arrive 30 minutes early',
-    },
-  ];
-
-  // Status badge component
-  const StatusBadge = ({ status }: { status: string }) => {
-    const statusConfig: Record<string, { bg: string, text: string, icon: React.ReactNode }> = {
-      'Pending': { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: <Clock className="h-3 w-3 mr-1" aria-label="Pending" /> },
-      'In Progress': { bg: 'bg-blue-100', text: 'text-blue-800', icon: <CircleDashed className="h-3 w-3 mr-1" aria-label="In Progress" /> },
-      'Document Review': { bg: 'bg-purple-100', text: 'text-purple-800', icon: <FileText className="h-3 w-3 mr-1" aria-label="Document Review" /> },
-      'Additional Documents Required': { bg: 'bg-orange-100', text: 'text-orange-800', icon: <AlertCircle className="h-3 w-3 mr-1" aria-label="Additional Documents Required" /> },
-      'Approved': { bg: 'bg-green-100', text: 'text-green-800', icon: <CheckCircle className="h-3 w-3 mr-1" aria-label="Approved" /> },
-      'Rejected': { bg: 'bg-red-100', text: 'text-red-800', icon: <XCircle className="h-3 w-3 mr-1" aria-label="Rejected" /> },
-      'Ready for Interview': { bg: 'bg-indigo-100', text: 'text-indigo-800', icon: <User className="h-3 w-3 mr-1" aria-label="Ready for Interview" /> }
+  // Calculate current step based on application status
+  const getCurrentStep = (status) => {
+    const stepMap = {
+      'pending': 0,
+      'in_progress': 1,
+      'document_review': 2,
+      'documents_required': 2,
+      'interview_scheduled': 3,
+      'approved': 4,
+      'rejected': 4
     };
-    
-    const config = statusConfig[status] || statusConfig['Pending'];
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-        {config.icon}
-        {status}
-      </span>
-    );
+
+    return stepMap[status] || 0;
+  };
+
+  // Application progress as percentage
+  const getProgressPercentage = (currentStep) => {
+    return (currentStep / (progressSteps.length - 1)) * 100;
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin h-8 w-8 border-4 border-teal border-t-transparent rounded-full" />
+      <div className="flex justify-center my-12">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
+  if (!application) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>
+          Application not found or you don't have permission to view it.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const currentStep = getCurrentStep(application.status);
+  const progress = getProgressPercentage(currentStep);
+  const countryName = application.countries ? application.countries.name : "Unknown Country";
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle>Application Status</CardTitle>
-            <StatusBadge status={application?.status || 'Pending'} />
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">
+              Visa Application: {applicationId}
+            </h1>
+            <p className="text-gray-600">
+              {countryName} - {application.visa_packages?.name || "Visa Application"}
+            </p>
           </div>
+          <StatusBadge status={application.status} />
+        </div>
+      </div>
+
+      {application.status === 'documents_required' && (
+        <Alert className="mb-6 bg-orange-50 border-orange-200">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800">
+            Please upload the required documents to continue processing your application.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Progress tracker */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Application Progress</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm font-medium">Application ID</p>
-                <p className="text-sm text-gray-500">{applicationId}</p>
+          <div className="mb-4">
+            <Progress value={progress} className="h-2" />
+          </div>
+          <div className="grid grid-cols-5 gap-1 text-xs text-center">
+            {progressSteps.map((step, index) => (
+              <div 
+                key={index} 
+                className={`flex flex-col items-center ${index <= currentStep ? 'text-blue-600' : 'text-gray-400'}`}
+              >
+                <div className={`rounded-full p-1 ${index <= currentStep ? 'bg-blue-100' : 'bg-gray-100'} mb-1`}>
+                  {React.cloneElement(step.icon, { 
+                    className: `h-4 w-4 ${index <= currentStep ? 'text-blue-600' : 'text-gray-400'}`
+                  })}
+                </div>
+                <span>{step.title}</span>
               </div>
-              <div>
-                <p className="text-sm font-medium">Submitted Date</p>
-                <p className="text-sm text-gray-500">{application?.submitted_date || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Next Step</p>
-                <p className="text-sm text-gray-500">{application?.next_step || 'Processing'}</p>
-              </div>
-            </div>
-            
-            <div className="mt-2">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Progress</span>
-                <span>60%</span>
-              </div>
-              <Progress value={60} className="h-2" />
-            </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="appointments">Appointments</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview">
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Country</p>
-                    <p className="text-sm text-gray-500">{application?.countries?.name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Visa Type</p>
-                    <p className="text-sm text-gray-500">{application?.visa_packages?.name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Processing Time</p>
-                    <p className="text-sm text-gray-500">
-                      {application?.visa_packages?.processing_days 
-                        ? `${application.visa_packages.processing_days} days` 
-                        : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Total Fee</p>
-                    <p className="text-sm text-gray-500">
-                      {application?.visa_packages?.government_fee !== undefined && 
-                       application?.visa_packages?.service_fee !== undefined
-                        ? `$${(application.visa_packages.government_fee + application.visa_packages.service_fee).toFixed(2)}`
-                        : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <p className="text-sm font-medium mb-2">Recent Updates</p>
-                  <div className="space-y-2">
-                    {mockTimeline.slice(0, 2).map((item, index) => (
-                      <div key={index} className="bg-gray-50 p-3 rounded-md">
-                        <div className="flex justify-between">
-                          <p className="text-sm font-medium">{item.event}</p>
-                          <p className="text-xs text-gray-500">{item.date}</p>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <p className="text-sm font-medium mb-2">Required Actions</p>
-                  {application?.status === 'Additional Documents Required' ? (
-                    <div className="bg-orange-50 border border-orange-200 p-3 rounded-md">
-                      <div className="flex items-start">
-                        <AlertCircle className="h-5 w-5 text-orange-500 mr-2 flex-shrink-0" aria-label="Alert" />
-                        <div>
-                          <p className="text-sm font-medium text-orange-800">Additional Documents Required</p>
-                          <p className="text-xs text-orange-700 mt-1">
-                            Please upload the requested documents to proceed with your application.
-                          </p>
-                          <Button size="sm" className="mt-2 bg-orange-500 hover:bg-orange-600">
-                            Upload Documents
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">No actions required at this time.</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="documents">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Documents section */}
+        <div className="md:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Required Documents</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {mockDocuments.map((doc, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 border rounded-md">
-                    <div className="flex items-center">
-                      <FileText className="h-5 w-5 text-gray-400 mr-3" aria-label="Document" />
-                      <div>
-                        <p className="text-sm font-medium">{doc.name}</p>
-                        {doc.uploaded && (
-                          <p className="text-xs text-gray-500">Uploaded on {doc.date}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      {doc.uploaded ? (
-                        doc.verified ? (
-                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                            <CheckCircle className="h-3 w-3 mr-1" aria-label="Verified" /> Verified
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                            <Clock className="h-3 w-3 mr-1" aria-label="Pending Verification" /> Pending Verification
-                          </Badge>
-                        )
-                      ) : (
-                        <Button size="sm" variant="outline" className="text-blue-600">
-                          <Upload className="h-3 w-3 mr-1" aria-label="Upload" /> Upload
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="timeline">
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative pl-6 border-l border-gray-200">
-                {mockTimeline.map((item, index) => (
-                  <div key={index} className="mb-6 relative">
-                    <div className="absolute -left-[25px] mt-1.5 h-4 w-4 rounded-full border border-white bg-gray-200">
-                      {index === 0 && <div className="absolute inset-0 rounded-full bg-blue-500"></div>}
-                    </div>
-                    <div className="mb-1">
-                      <span className="text-xs text-gray-500">{item.date}</span>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-md">
-                      <p className="text-sm font-medium">{item.event}</p>
-                      <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="appointments">
-          <Card>
-            <CardHeader>
-              <CardTitle>Scheduled Appointments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {mockAppointments.length > 0 ? (
+              {application.application_documents?.length > 0 ? (
                 <div className="space-y-4">
-                  {mockAppointments.map((appointment, index) => (
-                    <div key={index} className="border rounded-md p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="text-sm font-medium">{appointment.type}</h4>
-                          <div className="mt-1 space-y-1">
-                            <p className="text-xs flex items-center text-gray-500">
-                              <Calendar className="h-3 w-3 mr-1" aria-label="Date" /> {appointment.date} at {appointment.time}
+                  {application.application_documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        <DocumentStatus status={doc.status} />
+                        <div className="ml-3">
+                          <p className="font-medium">{doc.document_type}</p>
+                          {doc.status === 'rejected' && doc.feedback && (
+                            <p className="text-sm text-red-600 mt-1">{doc.feedback}</p>
+                          )}
+                          {doc.status !== 'rejected' && doc.status !== 'none' && (
+                            <p className="text-xs text-gray-500">
+                              Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}
                             </p>
-                            <p className="text-xs flex items-center text-gray-500">
-                              <MapPin className="h-3 w-3 mr-1" aria-label="Location" /> {appointment.location}
-                            </p>
-                            <p className="text-xs flex items-center text-gray-500">
-                              <Info className="h-3 w-3 mr-1" aria-label="Confirmation Code" /> Confirmation: {appointment.confirmationCode}
-                            </p>
-                          </div>
+                          )}
                         </div>
-                        <Button size="sm" variant="outline">
-                          Add to Calendar
-                        </Button>
                       </div>
                       
-                      <div className="mt-3 bg-blue-50 p-3 rounded-md">
-                        <p className="text-xs text-blue-700">
-                          <Info className="h-3 w-3 mr-1 inline" aria-label="Instructions" />
-                          {appointment.instructions}
-                        </p>
+                      <div>
+                        {doc.status === 'none' || doc.status === 'rejected' ? (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setUploadingDocumentType(doc.document_type)}
+                          >
+                            <UploadCloud className="h-4 w-4 mr-2" />
+                            Upload
+                          </Button>
+                        ) : doc.file_url ? (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            asChild
+                          >
+                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-4 w-4 mr-2" />
+                              View
+                            </a>
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="h-8 w-8 mx-auto mb-2 text-gray-400" aria-label="No Appointments" />
-                  <p>No appointments scheduled yet.</p>
-                </div>
+                <p className="text-gray-500 italic">No documents required at this time.</p>
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+
+          {/* Application details */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Application Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-2">Personal Details</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-500">Full Name</p>
+                      <p>{application.applicant_name || "Not provided"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p>{application.email || "Not provided"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Phone</p>
+                      <p>{application.phone || "Not provided"}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-2">Travel Details</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-500">Purpose of Travel</p>
+                      <p>{application.purpose_of_travel || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Planned Travel Dates</p>
+                      <p>{application.travel_date_from ? (
+                        <>
+                          {new Date(application.travel_date_from).toLocaleDateString()} 
+                          {application.travel_date_to && (
+                            <> to {new Date(application.travel_date_to).toLocaleDateString()}</>
+                          )}
+                        </>
+                      ) : "Not specified"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="my-4" />
+              
+              <div>
+                <h3 className="font-medium text-gray-700 mb-2">Visa Package</h3>
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    {application.countries?.flag && (
+                      <img 
+                        src={application.countries.flag} 
+                        alt={`${countryName} flag`}
+                        className="w-8 h-6 object-cover rounded-sm"
+                      />
+                    )}
+                    <div>
+                      <p className="font-medium">{application.visa_packages?.name || "Standard Visa"}</p>
+                      <div className="flex text-sm text-gray-600 mt-1">
+                        <div className="flex items-center mr-4">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {application.visa_packages?.processing_days || "?"} days processing
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Timeline section */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Application Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Timeline events={application.application_timeline || []} />
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Actions */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Next Steps</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {application.status === 'documents_required' ? (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <h3 className="font-medium text-orange-800 flex items-center">
+                    <UploadCloud className="h-4 w-4 mr-2" />
+                    Upload Required Documents
+                  </h3>
+                  <p className="text-sm text-orange-700 mt-2">
+                    Please upload all required documents to continue processing your application.
+                  </p>
+                </div>
+              ) : application.status === 'interview_scheduled' ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-medium text-blue-800 flex items-center">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Prepare for Your Interview
+                  </h3>
+                  <p className="text-sm text-blue-700 mt-2">
+                    Your interview is scheduled for {application.interview_date ? 
+                      new Date(application.interview_date).toLocaleDateString() : "the scheduled date"}.
+                  </p>
+                </div>
+              ) : application.status === 'approved' ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h3 className="font-medium text-green-800 flex items-center">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Visa Approved
+                  </h3>
+                  <p className="text-sm text-green-700 mt-2">
+                    Your visa has been approved. You will receive further instructions shortly.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">
+                  Your application is being processed. Check back later for updates.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Document upload dialog */}
+      {uploadingDocumentType && (
+        <UploadDocumentDialog
+          open={!!uploadingDocumentType}
+          onClose={() => setUploadingDocumentType(null)}
+          onUploadComplete={handleUploadComplete}
+          documentType={uploadingDocumentType}
+          applicationId={applicationId}
+        />
+      )}
     </div>
   );
 };

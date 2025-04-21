@@ -1,71 +1,93 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ServiceCard } from '@/components/services/ServiceCard';
-import { getAddonServices, AddonService } from '@/models/addon_services';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import Hero from '@/components/Hero';
-import { Features } from '@/components/Features';
-import { Testimonials } from '@/components/Testimonials';
-import { Contact } from '@/components/Contact';
+import HowItWorks from '@/components/HowItWorks';
+import Testimonials from '@/components/Testimonials';
+import CountryGrid from '@/components/CountryGrid';
+import FAQ from '@/components/FAQ';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
-export const Home = () => {
-  const [services, setServices] = useState<AddonService[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const data = await getAddonServices();
-        setServices(data);
-      } catch (error) {
-        console.error('Error fetching services:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchServices();
-  }, []);
-
+const Home = () => {
   return (
-    <div className="min-h-screen">
-      <Hero />
-      <Features />
-      
-      {/* Additional Services Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Additional Services</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Explore our range of additional services to support your travel and documentation needs
-            </p>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <Hero />
+        
+        {/* How It Works Section */}
+        <HowItWorks />
+        
+        {/* Popular Destinations */}
+        <section className="py-16 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Popular Destinations</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Explore our most popular visa destinations and start your journey today
+              </p>
+            </div>
+            
+            <CountryGrid limit={6} />
+            
+            <div className="mt-12 text-center">
+              <Link to="/countries">
+                <Button variant="outline" size="lg" className="group">
+                  View All Destinations
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </div>
           </div>
-
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </section>
+        
+        {/* Testimonials */}
+        <Testimonials />
+        
+        {/* FAQ Section */}
+        <section className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Find answers to common questions about our visa services
+              </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {services.map((service) => (
-                <ServiceCard key={service.id} service={service} />
-              ))}
+            
+            <div className="max-w-3xl mx-auto">
+              <FAQ />
             </div>
-          )}
-
-          <div className="text-center mt-12">
-            <Link to="/services">
-              <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
-                View All Services
+            
+            <div className="mt-12 text-center">
+              <p className="text-gray-600 mb-4">Still have questions?</p>
+              <Link to="/contact">
+                <Button>Contact Us</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+        
+        {/* CTA Section */}
+        <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-4">Ready to Start Your Journey?</h2>
+            <p className="text-xl opacity-90 max-w-2xl mx-auto mb-8">
+              Let us handle your visa application process so you can focus on planning your trip.
+            </p>
+            <Link to="/countries">
+              <Button size="lg" variant="secondary" className="bg-white text-blue-700 hover:bg-gray-100">
+                Get Started Now
               </Button>
             </Link>
           </div>
-        </div>
-      </section>
-
-      <Testimonials />
-      <Contact />
+        </section>
+      </main>
+      <Footer />
     </div>
   );
-}; 
+};
+
+export default Home;
