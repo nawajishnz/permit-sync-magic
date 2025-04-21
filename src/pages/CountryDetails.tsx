@@ -33,7 +33,7 @@ import { format, addDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCountryData } from '@/hooks/useCountryData';
-import VisaDocument from '@/components/VisaDocument';
+import VisaDocument from '@/components/country/VisaDocument';
 import ProcessStep from '@/components/country/ProcessStep';
 import FAQItem from '@/components/country/FAQItem';
 import PricingTier from '@/components/country/PricingTier';
