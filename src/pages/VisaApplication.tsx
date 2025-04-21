@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ApplicationForm from '@/components/visa-application/ApplicationForm';
 import { useCountryData, CountryData, VisaPackage } from '@/hooks/useCountryData';
-import { Breadcrumbs, BreadcrumbsItem } from "@/components/ui/breadcrumbs"
+import { Breadcrumbs, BreadcrumbsItem } from "@/components/ui/breadcrumbs";
 
 const VisaApplication = () => {
   const { countryId, packageId } = useParams<{ countryId?: string; packageId?: string }>();

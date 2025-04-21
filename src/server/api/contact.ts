@@ -1,5 +1,5 @@
 
-// Simple placeholder for contact API without Next.js dependency
+// Simple placeholder for contact API
 import { supabase } from '@/integrations/supabase/client';
 
 export async function handleContactForm(data: {
