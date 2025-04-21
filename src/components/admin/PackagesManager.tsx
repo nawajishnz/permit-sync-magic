@@ -12,10 +12,32 @@ import { Label } from '@/components/ui/label';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+// Updated type for visa packages with new schema
+interface VisaPackage {
+  id: string;
+  country_id: string;
+  name: string;
+  government_fee: number;
+  service_fee: number;
+  processing_days: number;
+  total_price?: number;
+  countries?: { name: string };
+  features?: Array<{ feature_text: string }>;
+}
+
+interface PackageFormData {
+  name: string;
+  country_id: string;
+  government_fee: string;
+  service_fee: string;
+  processing_days: string;
+  features: string[];
+}
+
 const PackagesManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [currentPackage, setCurrentPackage] = useState<any>(null);
+  const [currentPackage, setCurrentPackage] = useState<VisaPackage | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,11 +48,13 @@ const PackagesManager = () => {
   const countryId = searchParams.get('countryId');
   const countryName = searchParams.get('countryName') || 'All Countries';
   
-  const [formData, setFormData] = useState({
+  // Initialize form data with the updated schema
+  const [formData, setFormData] = useState<PackageFormData>({
     name: '',
     country_id: countryId || '',
-    price: '',
-    processing_time: '',
+    government_fee: '',
+    service_fee: '',
+    processing_days: '',
     features: ['']
   });
 
@@ -75,10 +99,10 @@ const PackagesManager = () => {
           };
         }));
         
-        return packagesWithFeatures;
+        return packagesWithFeatures as VisaPackage[];
       }
       
-      return [];
+      return [] as VisaPackage[];
     }
   });
 
@@ -120,22 +144,24 @@ const PackagesManager = () => {
     setFormData({
       name: '',
       country_id: countryId || '',
-      price: '',
-      processing_time: '',
+      government_fee: '',
+      service_fee: '',
+      processing_days: '',
       features: ['']
     });
     setIsEditMode(false);
     setIsDialogOpen(true);
   };
 
-  const handleEdit = async (pkg: any) => {
+  const handleEdit = async (pkg: VisaPackage) => {
     setFormData({
       name: pkg.name || '',
       country_id: pkg.country_id || '',
-      price: pkg.price || '',
-      processing_time: pkg.processing_time || '',
-      features: pkg.features.length > 0 
-        ? pkg.features.map((f: any) => f.feature_text) 
+      government_fee: String(pkg.government_fee) || '0',
+      service_fee: String(pkg.service_fee) || '0',
+      processing_days: String(pkg.processing_days) || '0',
+      features: pkg.features && pkg.features.length > 0 
+        ? pkg.features.map(f => f.feature_text) 
         : ['']
     });
     setCurrentPackage(pkg);
@@ -181,7 +207,7 @@ const PackagesManager = () => {
   const handleSubmit = async () => {
     try {
       // Validate required fields
-      if (!formData.name || !formData.country_id || !formData.price) {
+      if (!formData.name || !formData.country_id) {
         toast({
           title: "Missing required fields",
           description: "Please fill in all required fields",
@@ -195,16 +221,19 @@ const PackagesManager = () => {
       
       let packageId;
       
+      const packageData = {
+        name: formData.name,
+        country_id: formData.country_id,
+        government_fee: parseFloat(formData.government_fee) || 0,
+        service_fee: parseFloat(formData.service_fee) || 0,
+        processing_days: parseInt(formData.processing_days) || 0
+      };
+      
       if (isEditMode && currentPackage) {
         // Update existing package
         const { data, error } = await supabase
           .from('visa_packages')
-          .update({
-            name: formData.name,
-            country_id: formData.country_id,
-            price: formData.price,
-            processing_time: formData.processing_time
-          })
+          .update(packageData)
           .eq('id', currentPackage.id)
           .select();
           
@@ -223,12 +252,7 @@ const PackagesManager = () => {
         // Create new package
         const { data, error } = await supabase
           .from('visa_packages')
-          .insert([{
-            name: formData.name,
-            country_id: formData.country_id,
-            price: formData.price,
-            processing_time: formData.processing_time
-          }])
+          .insert(packageData)
           .select();
           
         if (error) throw error;
@@ -270,6 +294,15 @@ const PackagesManager = () => {
 
   const goBackToCountries = () => {
     navigate('/admin/countries');
+  };
+
+  const formatPrice = (government_fee: number, service_fee: number) => {
+    const total = government_fee + service_fee;
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total);
+  };
+
+  const formatProcessingDays = (days: number) => {
+    return `${days} ${days === 1 ? 'day' : 'days'}`;
   };
 
   return (
@@ -315,10 +348,12 @@ const PackagesManager = () => {
                     <TableRow key={pkg.id}>
                       <TableCell className="font-medium">{pkg.name}</TableCell>
                       <TableCell>{pkg.countries?.name}</TableCell>
-                      <TableCell>{pkg.price}</TableCell>
-                      <TableCell>{pkg.processing_time}</TableCell>
                       <TableCell>
-                        {pkg.features.length > 0 ? (
+                        {formatPrice(pkg.government_fee, pkg.service_fee)}
+                      </TableCell>
+                      <TableCell>{formatProcessingDays(pkg.processing_days)}</TableCell>
+                      <TableCell>
+                        {pkg.features && pkg.features.length > 0 ? (
                           <ul className="list-disc list-inside text-sm">
                             {pkg.features.map((feature: any, index: number) => (
                               <li key={index}>{feature.feature_text}</li>
@@ -379,23 +414,36 @@ const PackagesManager = () => {
               value={formData.country_id} 
             />
             <div className="grid gap-2">
-              <Label htmlFor="price">Price *</Label>
+              <Label htmlFor="government_fee">Government Fee *</Label>
               <Input
-                id="price"
-                name="price"
-                value={formData.price}
+                id="government_fee"
+                name="government_fee"
+                value={formData.government_fee}
                 onChange={handleInputChange}
-                placeholder="e.g. $100"
+                placeholder="e.g. 75"
+                type="number"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="processing_time">Processing Time</Label>
+              <Label htmlFor="service_fee">Service Fee *</Label>
               <Input
-                id="processing_time"
-                name="processing_time"
-                value={formData.processing_time}
+                id="service_fee"
+                name="service_fee"
+                value={formData.service_fee}
                 onChange={handleInputChange}
-                placeholder="e.g. 5-7 business days"
+                placeholder="e.g. 25"
+                type="number"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="processing_days">Processing Days</Label>
+              <Input
+                id="processing_days"
+                name="processing_days"
+                value={formData.processing_days}
+                onChange={handleInputChange}
+                placeholder="e.g. 5"
+                type="number"
               />
             </div>
             <div className="grid gap-2">

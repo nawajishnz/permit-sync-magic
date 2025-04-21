@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,14 +17,14 @@ type MutationConfig<T> = {
 };
 
 // Create a reusable hook for data insertion
-export const useSupabaseInsert = <T, I extends Record<string, any>>(config: MutationConfig<T>) => {
+export const useSupabaseInsert = <T>(config: MutationConfig<T>) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   const { table, queryKey, onSuccess, onError, successMessage, errorMessage } = config;
   
   return useMutation({
-    mutationFn: async (insertData: I) => {
+    mutationFn: async (insertData: any) => {
       const { data, error } = await supabase
         .from(table)
         .insert(insertData)
@@ -71,14 +72,14 @@ export const useSupabaseInsert = <T, I extends Record<string, any>>(config: Muta
 };
 
 // Create a reusable hook for data updates
-export const useSupabaseUpdate = <T, U extends Record<string, any>>(config: MutationConfig<T>) => {
+export const useSupabaseUpdate = <T>(config: MutationConfig<T>) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   const { table, queryKey, onSuccess, onError, successMessage, errorMessage } = config;
   
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string, data: U }) => {
+    mutationFn: async ({ id, data }: { id: string, data: any }) => {
       const { data: responseData, error } = await supabase
         .from(table)
         .update(data)

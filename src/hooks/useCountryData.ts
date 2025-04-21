@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,8 +32,10 @@ export interface EmbassyDetails {
 export interface VisaPackage {
   id: string;
   name: string;
-  price: string;
-  processing_time: string;
+  government_fee: number;
+  service_fee: number;
+  processing_days: number;
+  total_price?: number;
   country_id: string;
 }
 
@@ -96,9 +99,8 @@ export const useCountryData = (countryId: string | undefined) => {
         console.log(`[useCountryData] Querying visa_packages for country_id: ${countryId}`);
         const { data: visaPackages, error: packageError } = await supabase
           .from('visa_packages')
-          .select('id, name, price, processing_time, country_id')
-          .eq('country_id', countryId)
-          ;
+          .select('id, name, government_fee, service_fee, total_price, processing_days, country_id')
+          .eq('country_id', countryId);
 
         // Log the package query result immediately
         console.log(`[useCountryData] Result from visa_packages query:`, { visaPackages, packageError });

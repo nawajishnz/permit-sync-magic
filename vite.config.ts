@@ -2,7 +2,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
@@ -14,8 +13,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      mode === 'development' && componentTagger(),
-    ].filter(Boolean),
+      // Remove componentTagger that's causing ESM import issues
+    ],
     base: './', // Use relative paths for assets
     resolve: {
       alias: {

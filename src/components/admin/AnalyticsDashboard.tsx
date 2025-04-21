@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -8,9 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 interface Application {
   id: string;
   submitted_date: string;
-  status?: string; // Added status property
+  status?: string; 
   visa_packages?: {
-    price: string | number;
+    total_price?: number;
+    government_fee?: number;
+    service_fee?: number;
   } | null;
 }
 
@@ -27,7 +30,9 @@ const AnalyticsDashboard = () => {
           submitted_date,
           status,
           visa_packages (
-            price
+            government_fee,
+            service_fee,
+            total_price
           )
         `);
 
@@ -48,7 +53,9 @@ const AnalyticsDashboard = () => {
           id,
           submitted_date,
           visa_packages (
-            price
+            government_fee,
+            service_fee,
+            total_price
           )
         `);
 
@@ -131,13 +138,12 @@ const AnalyticsDashboard = () => {
       const date = new Date(app.submitted_date);
       const monthName = months[date.getMonth()];
       
-      // Extract price and convert to number
+      // Use total_price if available, otherwise calculate from government_fee and service_fee
       let price = 0;
-      if (app.visa_packages?.price) {
-        // Convert to string first to ensure we can use string methods
-        const priceString = String(app.visa_packages.price);
-        // Remove currency symbol and convert to number
-        price = parseFloat(priceString.replace(/[^0-9.-]+/g, '')) || 0;
+      if (app.visa_packages?.total_price !== undefined) {
+        price = app.visa_packages.total_price;
+      } else if (app.visa_packages?.government_fee !== undefined && app.visa_packages?.service_fee !== undefined) {
+        price = app.visa_packages.government_fee + app.visa_packages.service_fee;
       }
       
       if (monthlyRevenue[monthName]) {
