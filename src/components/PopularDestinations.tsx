@@ -8,60 +8,102 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import type { Database } from '@/integrations/supabase/types';
+
+type CountryWithPackages = Database['public']['Tables']['countries']['Row'] & {
+  visa_packages: Array<Database['public']['Tables']['visa_packages']['Row']>
+};
+
+type Destination = {
+  id: string;
+  name: string;
+  imageUrl: string;
+  startingPrice: string;
+  visaCount: string;
+  date: string;
+  directFlights: string;
+  hasSpecialVisa: boolean;
+};
 
 const PopularDestinations = () => {
   const { toast } = useToast();
 
-  // Use react-query to fetch destinations with improved caching
   const { 
     data: destinations = [],
     isLoading, 
     error,
-  } = useQuery({
+  } = useQuery<Destination[], Error>({
     queryKey: ['popularDestinations'],
     queryFn: async () => {
-      console.log('Fetching popular destinations from Supabase...');
-      const { data, error } = await supabase
-        .from('countries')
-        .select('*')
-        .order('name')
-        .limit(8);
+      console.log('Fetching popular destinations using simplified approach...');
       
-      if (error) {
-        console.error('Error fetching destinations:', error);
-        throw error;
+      try {
+        // Simple direct query - no RPC, no complex joins
+        const { data, error } = await supabase
+          .from('countries')
+          .select('id, name, banner')
+          .order('name')
+          .limit(8);
+        
+        if (error) {
+          console.error('Countries query error:', error);
+          throw new Error(`Failed to fetch destinations: ${error.message}`);
+        }
+        
+        if (!data || data.length === 0) {
+          console.log('No countries found in database');
+          return [];
+        }
+        
+        console.log('Successfully fetched countries:', data);
+        
+        // Now fetch visa packages separately for each country
+        const destinationsWithPricing = await Promise.all(
+          data.map(async (country) => {
+            // Try to fetch visa package for this country
+            const { data: packageData, error: packageError } = await supabase
+              .from('visa_packages')
+              .select('government_fee, service_fee, processing_days')
+              .eq('country_id', country.id)
+              .limit(1);
+              
+            if (packageError) {
+              console.warn(`Could not fetch packages for country ${country.id}:`, packageError);
+            }
+            
+            // Set default pricing if no package found
+            const visaPackage = packageData && packageData.length > 0 ? packageData[0] : null;
+            const governmentFee = visaPackage?.government_fee ?? 0;
+            const serviceFee = visaPackage?.service_fee ?? 0;
+            const totalPrice = governmentFee + serviceFee || 1999;
+            
+            return {
+              id: country.id,
+              name: country.name || 'Unknown Country',
+              imageUrl: country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
+              startingPrice: `₹${totalPrice.toLocaleString('en-IN')}`,
+              visaCount: '15K+',
+              date: `Get on ${new Date().getDate() + Math.floor(Math.random() * 90)} ${new Date().toLocaleString('en-US', { month: 'short' })}`,
+              directFlights: '5 direct flights from ₹60k',
+              hasSpecialVisa: country.name === 'Japan'
+            };
+          })
+        );
+        
+        return destinationsWithPricing;
+      } catch (err) {
+        console.error('Error in data fetch:', err);
+        toast({
+          title: "Error loading destinations",
+          description: err instanceof Error ? err.message : "Failed to load destinations",
+          variant: "destructive",
+        });
+        throw err;
       }
-      
-      console.log('Destinations fetched:', data?.length);
-      
-      // Transform the data to match the expected format with INR prices
-      return data.map(country => ({
-        id: country.id,
-        name: country.name,
-        imageUrl: country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
-        processingTime: country.processing_time || '2-4 weeks',
-        startingPrice: country.name === 'United States' ? '₹11,950' :
-                      country.name === 'Japan' ? '₹2,340' :
-                      country.name === 'Singapore' ? '₹3,200' : 
-                      country.name === 'Australia' ? '₹10,500' : '₹1,999',
-        visaCount: country.name === 'United States' ? '25K+' :
-                  country.name === 'Japan' ? '21K+' :
-                  country.name === 'Singapore' ? '11K+' : 
-                  country.name === 'Australia' ? '7K+' : '15K+',
-        date: country.name === 'United States' ? 'Get on 29 Jun, 11:48 PM' :
-              country.name === 'Japan' ? 'Get on 08 May, 09:52 PM' :
-              country.name === 'Singapore' ? 'Get on 14 Apr, 10:08 PM' :
-              country.name === 'Australia' ? 'Get on 28 Apr, 11:14 PM' :
-              `Get on ${new Date().getDate() + Math.floor(Math.random() * 90)} ${new Date().toLocaleString('en-US', { month: 'short' })}, ${Math.floor(Math.random() * 12 + 1)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')} ${Math.random() > 0.5 ? 'AM' : 'PM'}`,
-        directFlights: country.name === 'United States' ? '2 direct flights from ₹90k' :
-                      country.name === 'Japan' ? '2 direct flights from ₹56k' :
-                      country.name === 'Singapore' ? '10 direct flights from ₹44k' : 
-                      country.name === 'Australia' ? '1 direct flight from ₹99k' : '5 direct flights from ₹60k',
-        hasSpecialVisa: country.name === 'Japan'
-      }));
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   // Show toast if error occurs

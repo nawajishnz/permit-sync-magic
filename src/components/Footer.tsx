@@ -4,8 +4,8 @@ import { Facebook, Instagram, Twitter, Phone, Mail, MapPin, Linkedin, Lock } fro
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-50 text-gray-800 pt-16 pb-8">
-      <div className="container mx-auto px-4">
+    <footer className="bg-gray-50 text-gray-800 pt-16 pb-8 w-full overflow-hidden">
+      <div className="container mx-auto px-4 max-w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Company info */}
           <div>
@@ -103,10 +103,6 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-sm font-medium mb-4">Contact Us</h3>
             <ul className="space-y-3">
-              <li className="flex items-center text-sm">
-                <Phone size={16} className="mr-3 text-gray-400" />
-                <span className="text-gray-500">+91 7975208649</span>
-              </li>
               <li className="flex items-center text-sm">
                 <Mail size={16} className="mr-3 text-gray-400" />
                 <a href="mailto:info@permitsy.com" className="text-gray-500 hover:text-gray-800 transition-colors">

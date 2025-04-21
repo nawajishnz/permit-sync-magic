@@ -64,20 +64,6 @@ const Contact = () => {
                     transition={{ duration: 0.2 }}
                   >
                     <div className="bg-navy/5 group-hover:bg-navy/10 p-4 rounded-xl mr-4 transition-colors">
-                      <Phone className="h-6 w-6 text-navy" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium mb-1 text-gray-900">Phone Support</h3>
-                      <p className="text-gray-600 group-hover:text-navy transition-colors">+91 7975208649</p>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    className="flex items-start group"
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="bg-navy/5 group-hover:bg-navy/10 p-4 rounded-xl mr-4 transition-colors">
                       <Mail className="h-6 w-6 text-navy" />
                     </div>
                     <div>

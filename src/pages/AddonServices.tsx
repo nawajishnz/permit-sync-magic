@@ -84,14 +84,14 @@ const AddonServices = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
       <Header />
-      <main className="flex-grow pt-20 md:pt-24">
+      <main className="flex-grow pt-20 md:pt-24 w-full">
         {/* Hero Section */}
-        <section className="bg-indigo-600 py-16 md:py-24 relative overflow-hidden">
+        <section className="bg-indigo-600 py-16 md:py-24 relative w-full overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-indigo-800 opacity-90"></div>
           <div className="absolute inset-0 bg-[url('/placeholder.svg')] bg-cover bg-center opacity-10"></div>
-          <div className="container mx-auto px-4 relative z-10">
+          <div className="container mx-auto px-4 relative z-10 max-w-full">
             <div className="max-w-3xl mx-auto text-center">
               <motion.h1 
                 className="text-4xl md:text-5xl font-bold text-white mb-6"
@@ -111,12 +111,12 @@ const AddonServices = () => {
               </motion.p>
               
               <motion.div
-                className="relative max-w-xl mx-auto"
+                className="relative max-w-xl mx-auto w-full px-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
                   placeholder="Search for services..."
@@ -130,21 +130,23 @@ const AddonServices = () => {
         </section>
         
         {/* Services Section */}
-        <section className="py-16 md:py-24">
-          <div className="container mx-auto px-4">
-            <div className="mb-12">
+        <section className="py-16 md:py-24 w-full">
+          <div className="container mx-auto px-4 max-w-full">
+            <div className="mb-12 overflow-x-auto">
               <Tabs defaultValue="all" onValueChange={setActiveCategory}>
-                <TabsList className="w-full md:w-auto mx-auto flex justify-center mb-8 bg-gray-100 p-1 rounded-full">
-                  {categories.map(category => (
-                    <TabsTrigger 
-                      key={category.id} 
-                      value={category.id}
-                      className="rounded-full px-6 py-2 text-sm font-medium"
-                    >
-                      {category.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+                <div className="w-full overflow-x-auto pb-2 styled-scrollbar">
+                  <TabsList className="w-full md:w-auto mx-auto flex justify-center mb-8 bg-gray-100 p-1 rounded-full min-w-max">
+                    {categories.map(category => (
+                      <TabsTrigger 
+                        key={category.id} 
+                        value={category.id}
+                        className="rounded-full px-4 md:px-6 py-2 text-sm font-medium whitespace-nowrap flex-shrink-0"
+                      >
+                        {category.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
                 
                 {categories.map(category => (
                   <TabsContent key={category.id} value={category.id} className="mt-0">
@@ -179,7 +181,7 @@ const AddonServices = () => {
                                 y: -5,
                                 boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
                               }}
-                              className="h-full"
+                              className="h-full w-full"
                             >
                               <div className="bg-white rounded-xl overflow-hidden h-full flex flex-col border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 relative">
                                 {/* Top section with image and discount badge */}
@@ -248,26 +250,43 @@ const AddonServices = () => {
                                   <p className="text-gray-600 mb-6 text-sm flex-grow line-clamp-3">{service.description}</p>
                                   
                                   {/* Features list */}
-                                  <div className="mt-auto space-y-2.5 mb-5">
-                                    <div className="flex items-center text-sm text-gray-700">
-                                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mr-2.5 flex-shrink-0">
-                                        <Check className="h-3 w-3 text-green-600" />
+                                  <div className="space-y-2 mb-5">
+                                    {service.requirements?.slice(0, 3).map((feature, index) => (
+                                      <div key={index} className="flex items-start">
+                                        <div className="flex-shrink-0 mt-0.5">
+                                          <Check className="h-4 w-4 text-green-500" />
+                                        </div>
+                                        <p className="ml-2 text-sm text-gray-600 break-words">{feature}</p>
                                       </div>
-                                      <span>Embassy approved documentation</span>
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-700">
-                                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mr-2.5 flex-shrink-0">
-                                        <Check className="h-3 w-3 text-green-600" />
-                                      </div>
-                                      <span>Secure online processing</span>
-                                    </div>
+                                    ))}
+                                    {(!service.requirements || service.requirements.length === 0) && (
+                                      <>
+                                        <div className="flex items-start">
+                                          <div className="flex-shrink-0 mt-0.5">
+                                            <Check className="h-4 w-4 text-green-500" />
+                                          </div>
+                                          <p className="ml-2 text-sm text-gray-600 break-words">Embassy approved documentation</p>
+                                        </div>
+                                        <div className="flex items-start">
+                                          <div className="flex-shrink-0 mt-0.5">
+                                            <Check className="h-4 w-4 text-green-500" />
+                                          </div>
+                                          <p className="ml-2 text-sm text-gray-600 break-words">Secure online processing</p>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                   
-                                  {/* Button */}
-                                  <Link to={`/addon-services/${service.id}`} className="block">
-                                    <Button className="w-full bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white shadow-md group flex items-center justify-center h-11 border-0">
-                                      View Details 
-                                      <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                  {/* Action button */}
+                                  <Link 
+                                    to={`/addon-services/${service.id}`} 
+                                    className="mt-auto"
+                                  >
+                                    <Button 
+                                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center justify-center py-2.5"
+                                    >
+                                      View Details
+                                      <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
                                   </Link>
                                 </div>

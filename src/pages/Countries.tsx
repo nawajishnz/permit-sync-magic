@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Filter, Loader2, Sparkles, Globe, X, Bookmark } from 'lucide-react';
+import { Search, Filter, Loader2, Sparkles, Globe, X, Bookmark, RefreshCw, Grid, List } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,55 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import CountryFilters from '@/components/countries/CountryFilters';
 import CountryCard from '@/components/countries/CountryCard';
 import EmptyState from '@/components/countries/EmptyState';
+
+// Add visa package type
+type VisaPackage = {
+  id: string;
+  country_id: string;
+  name: string;
+  government_fee: number;
+  service_fee: number;
+  processing_days: number;
+  total_price: number;
+  created_at: string;
+  updated_at: string;
+};
+
+const SAMPLE_COUNTRIES = [
+  {
+    id: '1',
+    name: 'United States',
+    flag: 'https://www.countryflagicons.com/FLAT/64/US.png',
+    banner: 'https://images.unsplash.com/photo-1485738422979-f5c462d49f74?auto=format&fit=crop&w=1200&h=600&q=80',
+    description: 'The United States is a diverse country with attractions ranging from the skyscrapers of New York and Chicago, to the natural wonders of Yellowstone and Alaska, to the warm beaches of Florida and Hawaii.',
+    entry_type: 'Visa Required',
+    validity: '10 years',
+    processing_time: '3-5 business days',
+    length_of_stay: 'Up to 180 days per entry'
+  },
+  {
+    id: '2',
+    name: 'United Kingdom',
+    flag: 'https://www.countryflagicons.com/FLAT/64/GB.png',
+    banner: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&h=600&q=80',
+    description: 'The United Kingdom offers a rich history, vibrant cities, and beautiful countryside. Visit historic landmarks in London, explore the rolling hills of the Lake District, or discover the scenic coastlines of Scotland and Wales.',
+    entry_type: 'Visa Required',
+    validity: '6 months',
+    processing_time: '15 working days',
+    length_of_stay: 'Up to 180 days'
+  },
+  {
+    id: '3',
+    name: 'Canada',
+    flag: 'https://www.countryflagicons.com/FLAT/64/CA.png',
+    banner: 'https://images.unsplash.com/photo-1503614472-8c93d56e92ce?auto=format&fit=crop&w=1200&h=600&q=80',
+    description: 'Canada is known for its stunning natural landscapes, from the Rocky Mountains to Niagara Falls. The country offers vibrant cities like Toronto and Vancouver, as well as opportunities for outdoor adventures in its many national parks.',
+    entry_type: 'eTA',
+    validity: '5 years',
+    processing_time: '72 hours',
+    length_of_stay: 'Up to 6 months'
+  }
+];
 
 const CountriesPage = () => {
   const [continent, setContinent] = useState('');
@@ -51,23 +100,76 @@ const CountriesPage = () => {
     queryFn: async () => {
       console.log('Fetching countries from the database...');
       try {
+        console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+        console.log('Supabase key available:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+        
+        // Use the anon role explicitly, avoid any potential admin role usage
         const { data, error } = await supabase
           .from('countries')
           .select('*')
           .order('name');
             
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error fetching countries:', error);
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
           
-        console.log('Countries fetched:', data?.length);
-        return data || [];
+          // Return fallback data if database is not accessible
+          console.log('Using fallback sample data instead');
+          return SAMPLE_COUNTRIES;
+        }
+          
+        console.log('Countries fetched successfully:', data?.length, data);
+        return data?.length ? data : SAMPLE_COUNTRIES;
       } catch (err) {
         console.error('Error in countries query:', err);
+        if (err instanceof Error) {
+          console.error('Error stack:', err.stack);
+        }
+        
+        // Return fallback data on error
+        console.log('Using fallback sample data instead');
+        return SAMPLE_COUNTRIES;
+      }
+    },
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't keep the data in cache
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000 // Refetch every 5 seconds while the component is mounted
+  });
+
+  // Fetch visa packages to associate with countries
+  const { data: visaPackages = [] } = useQuery({
+    queryKey: ['visa-packages'],
+    queryFn: async () => {
+      try {
+        console.log('Fetching visa packages...');
+        
+        const { data, error } = await supabase
+          .from('visa_packages')
+          .select('*');
+            
+        if (error) {
+          console.error('Supabase error fetching visa packages:', error);
+          return [];
+        }
+          
+        console.log('Visa packages fetched successfully:', data?.length);
+        return data || [];
+      } catch (err) {
+        console.error('Error in visa packages query:', err);
         return [];
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minute cache
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches
-    refetchOnMount: true, // Ensure fresh data on component mount
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Show error toast if query fails
@@ -154,8 +256,17 @@ const CountriesPage = () => {
 
   // Update filtered countries when computed value changes
   useEffect(() => {
-    setFilteredCountries(filteredAndSortedCountries);
-  }, [filteredAndSortedCountries]);
+    // Enhance countries with visa package data
+    const countriesWithPackages = filteredAndSortedCountries.map(country => {
+      const visaPackage = visaPackages.find(pkg => pkg.country_id === country.id);
+      return {
+        ...country,
+        visaPackage
+      };
+    });
+    
+    setFilteredCountries(countriesWithPackages);
+  }, [filteredAndSortedCountries, visaPackages]);
 
   // Get visa types for a country (placeholder function)
   const getVisaTypes = (country) => {
@@ -215,18 +326,54 @@ const CountriesPage = () => {
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
         <Header />
         <div className="container mx-auto px-4 py-12 text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
-          <p className="mb-6">We encountered an error while loading the countries data.</p>
-          <Button onClick={() => refetch()}>Try Again</Button>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error loading countries</h2>
+          <p className="mb-6">Something went wrong while loading countries</p>
+          
+          {/* Debug error information */}
+          <div className="bg-red-50 p-4 rounded-md mb-6 text-left mx-auto max-w-lg">
+            <p className="text-sm text-red-700 mb-2">Error details:</p>
+            <pre className="text-xs overflow-auto p-2 bg-red-100 rounded">
+              {error instanceof Error 
+                ? `${error.name}: ${error.message}\n${error.stack}` 
+                : JSON.stringify(error, null, 2)}
+            </pre>
+          </div>
+          
+          <div className="flex gap-4 justify-center">
+            <Button onClick={() => refetch()} className="bg-indigo-600 hover:bg-indigo-700">
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Reload Page
+            </Button>
+          </div>
         </div>
         <Footer />
       </div>
     );
   }
 
+  // Add a fallback data notice if we are using sample data
+  const usingSampleData = countries.length > 0 && countries[0].id === '1' && countries[0].name === 'United States' && countries.length === SAMPLE_COUNTRIES.length;
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white overflow-x-hidden">
       <Header />
+      
+      {usingSampleData && (
+        <div className="container mx-auto px-4 py-3 mt-16">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+            <p className="text-amber-800">
+              <strong>Note:</strong> Unable to connect to the database. Showing sample data instead.
+              {" "}
+              <Button variant="link" className="text-amber-600 underline p-0 h-auto" onClick={() => refetch()}>
+                Try connecting again
+              </Button>
+            </p>
+          </div>
+        </div>
+      )}
+      
       <main className="flex-grow pt-20 md:pt-24">
         {/* Hero section - more modern and professional */}
         <div className="bg-gradient-to-br from-indigo-700 via-blue-600 to-purple-700 text-white relative overflow-hidden">
@@ -342,6 +489,40 @@ const CountriesPage = () => {
         <div className="container mx-auto px-4 -mt-12 md:-mt-20 mb-8 md:mb-16 relative z-10">
           <div className="bg-white rounded-xl md:rounded-2xl shadow-lg md:shadow-xl p-4 md:p-6 lg:p-8">
             <div className="flex flex-col space-y-4">
+              <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <h1 className="text-3xl font-bold text-navy-800">Explore Countries</h1>
+                
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={() => refetch()}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh
+                  </Button>
+                  
+                  {!isMobile && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => setViewMode('grid')}
+                        variant={viewMode === 'grid' ? 'default' : 'outline'}
+                        className="p-2"
+                      >
+                        <Grid className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => setViewMode('list')}
+                        variant={viewMode === 'list' ? 'default' : 'outline'}
+                        className="p-2"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
               <Tabs defaultValue="all" className="w-full">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
                   <TabsList className="bg-gray-100 p-1 rounded-lg h-auto">
@@ -354,24 +535,6 @@ const CountriesPage = () => {
                   </TabsList>
                   
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setViewMode('grid')}
-                    >
-                      <div className={`p-1 ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : ''}`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
-                      </div>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setViewMode('list')}
-                    >
-                      <div className={`p-1 ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : ''}`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></svg>
-                      </div>
-                    </Button>
                     <Button 
                       variant="outline" 
                       className="flex gap-2 md:w-auto"
@@ -553,3 +716,4 @@ const CountriesPage = () => {
 };
 
 export default CountriesPage;
+

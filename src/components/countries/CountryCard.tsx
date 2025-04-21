@@ -1,11 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plane, BadgeCheck, MapPin, Heart, ChevronRight, Check, Clock, Globe } from 'lucide-react';
+import { Calendar, Plane, BadgeCheck, MapPin, Heart, ChevronRight, Check, Clock, Globe, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+
+// Add visa package type definition
+type VisaPackage = {
+  id: string;
+  country_id: string;
+  name: string;
+  government_fee: number;
+  service_fee: number;
+  processing_days: number;
+  total_price: number;
+  created_at: string;
+  updated_at: string;
+};
 
 type CountryCardProps = {
   country: any;
@@ -16,6 +30,39 @@ type CountryCardProps = {
 };
 
 const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }: CountryCardProps) => {
+  const [visaPackage, setVisaPackage] = useState<VisaPackage | null>(null);
+  const [isLoadingPackage, setIsLoadingPackage] = useState(false);
+
+  // Fetch visa package for this country
+  useEffect(() => {
+    const fetchVisaPackage = async () => {
+      if (!country.id) return;
+      
+      setIsLoadingPackage(true);
+      try {
+        const { data, error } = await supabase
+          .from('visa_packages')
+          .select('*')
+          .eq('country_id', country.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching visa package:', error);
+          setVisaPackage(null);
+        } else {
+          setVisaPackage(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch visa package:', err);
+        setVisaPackage(null);
+      } finally {
+        setIsLoadingPackage(false);
+      }
+    };
+
+    fetchVisaPackage();
+  }, [country.id]);
+  
   // Helper function to get correct flag URL format based on country name
   const getCountryFlagUrl = (country: any) => {
     // If there's already a valid flag URL stored, use that
@@ -44,78 +91,36 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
     return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
   };
 
-  // Generate faux prices and visa numbers for display
-  const getCountryDetails = (country: any) => {
-    // Create realistic looking but fictional price based on country
-    let price = '';
-    let visaCount = '';
-    let entryDate = '';
-    let flightInfo = '';
-    let processingTime = '';
-    
-    switch(country.name) {
-      case 'United States':
-        price = '₹11,950';
-        visaCount = '25K+';
-        entryDate = 'Get on 29 Jun, 11:48 PM';
-        flightInfo = '2 direct flights from ₹90k';
-        processingTime = '7-10 business days';
-        break;
-      case 'Japan':
-        price = '₹2,340';
-        visaCount = '21K+';
-        entryDate = 'Get on 08 May, 09:52 PM';
-        flightInfo = '2 direct flights from ₹56k';
-        processingTime = '5-7 business days';
-        break;
-      case 'Singapore':
-        price = '₹3,200';
-        visaCount = '11K+';
-        entryDate = 'Get on 14 Apr, 10:08 PM';
-        flightInfo = '10 direct flights from ₹44k';
-        processingTime = '3-5 business days';
-        break;
-      case 'Australia':
-        price = '₹10,500';
-        visaCount = '7K+';
-        entryDate = 'Get on 28 Apr, 11:14 PM';
-        flightInfo = '1 direct flight from ₹99k';
-        processingTime = '15-20 business days';
-        break;
-      default:
-        // Generate some plausible values for other countries
-        const priceBase = Math.floor(Math.random() * 5 + 1) * 1000;
-        price = `₹${priceBase.toLocaleString('en-IN')}`;
-        const visaBase = Math.floor(Math.random() * 20 + 5);
-        visaCount = `${visaBase}K+`;
-        
-        // Random date within next 3 months
-        const date = new Date();
-        date.setDate(date.getDate() + Math.floor(Math.random() * 90));
-        const month = date.toLocaleString('en-US', { month: 'short' });
-        const day = date.getDate();
-        const hours = Math.floor(Math.random() * 12 + 1);
-        const minutes = Math.floor(Math.random() * 60);
-        const ampm = Math.random() > 0.5 ? 'AM' : 'PM';
-        entryDate = `Get on ${day} ${month}, ${hours}:${minutes < 10 ? '0' + minutes : minutes} ${ampm}`;
-        
-        // Random flight info
-        const flightCount = Math.floor(Math.random() * 8 + 1);
-        const flightPrice = Math.floor(Math.random() * 50 + 20);
-        flightInfo = `${flightCount} direct flight${flightCount > 1 ? 's' : ''} from ₹${flightPrice}k`;
-        
-        // Random processing time
-        const minDays = Math.floor(Math.random() * 7 + 3);
-        const maxDays = minDays + Math.floor(Math.random() * 10 + 5);
-        processingTime = `${minDays}-${maxDays} business days`;
-    }
-    
-    return { price, visaCount, entryDate, flightInfo, processingTime };
-  };
-
-  // Get visa types for a country (placeholder function)
+  // Get visa types for a country 
   const getVisaTypes = (country: any) => {
     return ['Tourist Visa']; // Only show Tourist Visa
+  };
+
+  // Generate pricing and details
+  const getCountryDetails = (country: any) => {
+    // Use visa package data if available
+    const visaPackage = country.visa_packages?.[0];
+    if (visaPackage) {
+      const totalPrice = visaPackage.total_price || 
+        (visaPackage.government_fee || 0) + (visaPackage.service_fee || 0);
+      
+      return {
+        price: `₹${totalPrice.toLocaleString('en-IN')}`,
+        visaCount: '25K+', // Keep a default high count for now
+        entryDate: `Get in ${visaPackage.processing_days || 7} days`,
+        flightInfo: '2 direct flights from ₹60k',
+        processingTime: `${visaPackage.processing_days || 7} business days`
+      };
+    }
+    
+    // Fallback values if no visa package is available
+    return {
+      price: '₹1,999',
+      visaCount: '15K+',
+      entryDate: 'Get in 7 days',
+      flightInfo: '5 direct flights from ₹60k',
+      processingTime: '7-10 business days'
+    };
   };
 
   const { price, visaCount, entryDate, flightInfo, processingTime } = getCountryDetails(country);
@@ -202,7 +207,14 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
                 <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
                 <span className="truncate">{processingTime}</span>
               </div>
-              <span className="font-bold text-indigo-600">{price}</span>
+              {isLoadingPackage ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 text-gray-400" />
+                  <span className="text-gray-400">Loading...</span>
+                </div>
+              ) : (
+                <span className="font-bold text-indigo-600">{price}</span>
+              )}
             </div>
             
             <div className="flex items-center text-xs text-gray-500 mb-3">
@@ -318,7 +330,14 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
             </div>
             
             <div className="mt-4 md:mt-0 flex items-center justify-between md:w-1/4 md:justify-end">
-              <span className="font-bold text-lg text-indigo-600">{price}</span>
+              {isLoadingPackage ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 text-gray-400" />
+                  <span className="text-gray-400">Loading...</span>
+                </div>
+              ) : (
+                <span className="font-bold text-lg text-indigo-600">{price}</span>
+              )}
               <Button 
                 size="sm" 
                 className="rounded-full bg-indigo-600 hover:bg-indigo-700 text-white ml-4"

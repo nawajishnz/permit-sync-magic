@@ -19,6 +19,7 @@ import VisaDocumentChecklist from '@/components/VisaDocumentChecklist';
 import AddonServicesSection from '@/components/countries/AddonServicesSection';
 import { getAddonServices, AddonService } from '@/models/addon_services';
 import ApprovedVisas from '@/components/ApprovedVisas';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const isMobile = useIsMobile();

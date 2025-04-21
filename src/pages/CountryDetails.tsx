@@ -25,7 +25,9 @@ import {
   BarChart,
   FileCheck,
   BadgeCheck,
-  Award
+  Award,
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -37,169 +39,153 @@ import FAQItem from '@/components/country/FAQItem';
 import PricingTier from '@/components/country/PricingTier';
 import VisaIncludesCard from '@/components/country/VisaIncludesCard';
 import EmbassyCard from '@/components/country/EmbassyCard';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+// Restore helper function to get flag emoji from country code
+const getCountryEmoji = (countryName: string): string => {
+  const emojiMap: {[key: string]: string} = {
+    'United States': '🇺🇸',
+    'Canada': '🇨🇦',
+    'United Kingdom': '🇬🇧',
+    'Australia': '🇦🇺',
+    'Japan': '🇯🇵',
+    'Germany': '🇩🇪',
+    'France': '🇫🇷',
+    'Singapore': '🇸🇬',
+    'UAE': '🇦🇪',
+    'Dubai': '🇦🇪',
+    'India': '🇮🇳',
+    'China': '🇨🇳',
+    'Italy': '🇮🇹',
+    'Spain': '🇪🇸'
+    // Add more as needed
+  };
+  return emojiMap[countryName] || '🏳️';
+};
+
+// Define a type for visa packages
+type VisaPackage = {
+  id: string;
+  country_id: string;
+  name: string;
+  government_fee: number;
+  service_fee: number;
+  processing_days: number;
+  total_price: number;
+  created_at: string;
+  updated_at: string;
+};
 
 const CountryDetails = () => {
   const { id: countryId } = useParams<{ id: string }>();
   const [travellers, setTravellers] = useState(1);
-  const [selectedPackageIndex, setSelectedPackageIndex] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Use our new hook to fetch all country data
+  // Main country data query
   const { 
     data: country, 
-    isLoading, 
-    isError,
-    error
+    isLoading: isLoadingCountry, 
+    isError: isCountryError, 
+    error: countryError 
   } = useCountryData(countryId);
 
-  // Handle loading and error states
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center px-4">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-            <h1 className="text-xl md:text-2xl font-bold text-navy mb-2">Loading Country Details</h1>
-            <p className="text-gray-600">Please wait while we fetch the latest information</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  // Dedicated visa package query
+  const { 
+    data: visaPackage, 
+    isLoading: isLoadingPackage,
+    isError: isPackageError,
+    error: packageError
+  } = useQuery({
+    queryKey: ['visa-package', countryId],
+    queryFn: async () => {
+      if (!countryId) return null;
+      
+      try {
+        console.log("Fetching visa package for country ID:", countryId);
+        const { data, error } = await supabase
+          .from('visa_packages')
+          .select(`
+            id,
+            country_id,
+            name,
+            government_fee,
+            service_fee,
+            processing_days,
+            total_price,
+            created_at,
+            updated_at,
+            countries (
+              id,
+              name
+            )
+          `)
+          .eq('country_id', countryId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching visa package:', error);
+          return null;
+        }
+        
+        console.log("Visa package data:", data);
+        return data;
+      } catch (err) {
+        console.error('Failed to fetch visa package:', err);
+        return null;
+      }
+    },
+    enabled: !!countryId,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true
+  });
 
-  if (isError) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center px-4">
-            <h1 className="text-xl md:text-2xl font-bold text-navy mb-4">Error Loading Country</h1>
-            <p className="text-gray-600 mb-6">{error instanceof Error ? error.message : "Failed to load country information"}</p>
-            <Link to="/countries">
-              <Button>Browse All Countries</Button>
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-  
-  if (!country) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center px-4">
-            <h1 className="text-xl md:text-2xl font-bold text-navy mb-4">Country not found</h1>
-            <p className="text-gray-600 mb-6">The country you're looking for doesn't exist or has been removed.</p>
-            <Link to="/countries">
-              <Button>Browse All Countries</Button>
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  // State for active tab and travelers
+  const [activeTab, setActiveTab] = useState("details");
+  const [numberOfTravelers, setNumberOfTravelers] = useState(1);
 
-  // Helper function to get country emoji flag based on name
-  const getCountryEmoji = (countryName: string) => {
-    const emojiMap: {[key: string]: string} = {
-      'United States': '🇺🇸',
-      'Canada': '🇨🇦',
-      'United Kingdom': '🇬🇧',
-      'Australia': '🇦🇺',
-      'Japan': '🇯🇵',
-      'Germany': '🇩🇪',
-      'France': '🇫🇷',
-      'Singapore': '🇸🇬',
-      'UAE': '🇦🇪',
-      'Dubai': '🇦🇪',
-      'India': '🇮🇳',
-      'China': '🇨🇳',
-      'Italy': '🇮🇹',
-      'Spain': '🇪🇸'
-    };
-    
-    return emojiMap[countryName] || '🏳️';
-  };
-
-  const handleDecreaseTravellers = () => {
-    if (travellers > 1) {
-      setTravellers(travellers - 1);
+  // Calculate pricing based on package data
+  const getBasePrice = (): number => {
+    if (visaPackage) {
+      return visaPackage.total_price || 
+            (visaPackage.government_fee || 0) + (visaPackage.service_fee || 0);
     }
-  };
-  
-  const handleIncreaseTravellers = () => {
-    setTravellers(travellers + 1);
+    return parsePrice(country?.packageDetails?.price);
   };
 
-  // Get the selected package or use default if none available
-  const selectedPackage = country.pricingTiers.length > 0 && country.pricingTiers[selectedPackageIndex] 
-    ? country.pricingTiers[selectedPackageIndex] 
-    : { name: 'Standard', price: '₹3,999', processing_time: '3-5 days', features: [] };
+  const parsePrice = (priceString: string | undefined | null): number => {
+    if (!priceString) return 0;
+    const numericString = priceString.replace(/[₹$,]/g, '');
+    const price = parseFloat(numericString);
+    return isNaN(price) ? 0 : price;
+  };
 
-  // Extract price for calculation (remove currency symbol and commas)
-  const priceString = selectedPackage.price ? selectedPackage.price.replace(/[₹,]/g, '') : '3999';
-  const basePrice = parseInt(priceString) || 3999;
-  const totalAmount = basePrice * travellers;
+  const numericBasePrice = getBasePrice();
+  const totalAmount = numericBasePrice * numberOfTravelers;
 
-  // Calculate processing dates based on the selected package
-  const today = new Date();
-  const processingText = selectedPackage.processing_time || '3-5 days';
-  let processingDays = 3; // default
-
-  if (processingText.includes('24-48 hours')) {
-    processingDays = 2;
-  } else if (processingText.includes('Same day')) {
-    processingDays = 1;
-  } else if (processingText.includes('3-5')) {
-    processingDays = 5;
-  }
-
-  const estimatedDate = addDays(today, processingDays);
-  const formattedEstimatedDate = format(estimatedDate, "d MMMM yyyy");
-
-  // Get image URLs for the country
-  const getImageUrlsForCountry = () => {
-    const mainImage = country.banner || 'https://images.unsplash.com/photo-1565967511849-76a60a516170?q=80&w=1000';
-    
-    if (country.name === 'Singapore') {
-      return [
-        mainImage,
-        'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000', // Marina Bay Sands
-        'https://images.unsplash.com/photo-1565538810643-b5bdb714032a?q=80&w=1000', // Gardens by the Bay
-        'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000', // City skyline
-      ];
-    } 
-    else if (country.name === 'Dubai' || country.name === 'UAE') {
-      return [
-        mainImage,
-        'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1000', // Burj Khalifa
-        'https://images.unsplash.com/photo-1580674684089-5c8b0a83e6a7?q=80&w=1000', // Dubai Mall
-        'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1000', // Desert safari
-      ];
+  // Get processing time from visa package or fallback
+  const getProcessingTime = (): string => {
+    if (visaPackage?.processing_days) {
+      return `${visaPackage.processing_days} business days`;
     }
-    else {
-      // For other countries, use a mix of travel-related images
-      return [
-        mainImage,
-        'https://images.unsplash.com/photo-1488085061387-422e29b40080',
-        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1',
-        'https://images.unsplash.com/photo-1504150558240-0b4fd8946624',
-      ];
-    }
+    return country?.packageDetails?.processing_time || 'N/A';
   };
 
-  // Handle applying for a visa
+  // Delivery date calculation
+  const getEstimatedDate = (): string => {
+    const processingDays = visaPackage?.processing_days || 15;
+    const today = new Date();
+    const deliveryDate = addDays(today, processingDays + 2); // Add buffer days
+    return format(deliveryDate, 'PP'); // Format to localized date
+  };
+
+  // Handle apply button click
   const handleApplyNow = () => {
     if (countryId) {
-      navigate(`/visa-application/${countryId}/${selectedPackageIndex}`);
+      navigate(`/visa-application/${countryId}`);
     } else {
       toast({
         title: "Error",
@@ -208,85 +194,70 @@ const CountryDetails = () => {
       });
     }
   };
-  
-  const images = getImageUrlsForCountry();
-  
+
+  // Loading state
+  if (isLoadingCountry) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-indigo-600 mx-auto mb-4" />
+            <h2 className="text-xl font-medium text-gray-700">Loading country information...</h2>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Error state  
+  if (isCountryError || !country) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow py-20">
+          <div className="container mx-auto px-4 text-center">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-8 max-w-lg mx-auto">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Country Not Found</h2>
+              <p className="text-gray-600 mb-6">
+                We couldn't find the country you're looking for. It may have been removed or the URL might be incorrect.
+              </p>
+              <Button 
+                onClick={() => navigate('/countries')}
+                className="rounded-full px-8"
+              >
+                Browse All Countries
+              </Button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <Header />
       <main className="flex-grow pt-20 md:pt-24 bg-white">
       
-      {/* Enhanced Banner with multiple images */}
+      {/* Country Banner */}
       <div className="relative bg-gradient-to-r from-indigo-600 to-blue-500">
         <div className="absolute inset-0 bg-black/30 z-10"></div>
         
-        {/* Image Grid - simplified for mobile */}
+        {/* Featured Image */}
         <div className="relative h-64 md:h-96">
-          {!isMobile && images.length > 1 ? (
-            <div className="grid grid-cols-3 grid-rows-2 h-full">
-              {/* Main large image */}
-              <div className="col-span-2 row-span-2 relative">
-                <img 
-                  src={images[0]}
-                  alt={country.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000';
-                  }}
-                />
-              </div>
-              
-              {/* Smaller image grid */}
-              <div className="col-span-1 row-span-1">
-                <img 
-                  src={images[1] || images[0]}
-                  alt={`${country.name} attraction`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'https://images.unsplash.com/photo-1488085061387-422e29b40080';
-                  }}
-                />
-              </div>
-              <div className="col-span-1 row-span-1">
-                <div className="grid grid-cols-1 grid-rows-2 h-full">
-                  <div>
-                    <img 
-                      src={images[2] || images[0]}
-                      alt={`${country.name} attraction`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1';
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <img 
-                      src={images[3] || images[0]}
-                      alt={`${country.name} attraction`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://images.unsplash.com/photo-1504150558240-0b4fd8946624';
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <img 
-              src={country.banner || 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000'}
-              alt={country.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000';
-              }}
-            />
-          )}
+          <img 
+            src={country.banner || 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000'}
+            alt={country.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000';
+            }}
+          />
         </div>
 
         {/* Banner Content Overlay */}
@@ -300,11 +271,7 @@ const CountryDetails = () => {
 
               <div className="flex items-center mb-1">
                 <span className="text-4xl md:text-5xl mr-3 md:mr-4">
-                  {country.flag && country.flag.includes('http') ? (
-                    <img src={country.flag} alt={country.name} className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover" />
-                  ) : (
-                    <span>{getCountryEmoji(country.name)}</span>
-                  )}
+                  {getCountryEmoji(country.name || '')}
                 </span>
                 <div>
                   <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight">{country.name} Tourist Visa</h1>
@@ -329,7 +296,7 @@ const CountryDetails = () => {
                 </div>
                 <div className="flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
                   <Clock className="h-3.5 w-3.5 mr-1.5 text-white/70" />
-                  <span>Processing: <strong>{country.processing_time || '3-5 days'}</strong></span>
+                  <span>Processing: <strong>{getProcessingTime()}</strong></span>
                 </div>
                 <div className="flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
                   <Globe className="h-3.5 w-3.5 mr-1.5 text-white/70" />
@@ -387,6 +354,48 @@ const CountryDetails = () => {
                 </div>
               </div>
               
+              {/* Visa Package Details Section */}
+              {visaPackage && (
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+                  <h3 className="font-medium text-gray-800 mb-3 flex items-center">
+                    <Info className="h-4 w-4 mr-2 text-blue-600" />
+                    Visa Package Details
+                  </h3>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                      <div className="mb-2">
+                        <span className="text-sm text-gray-500">Government Fee</span>
+                        <p className="text-lg font-bold text-gray-800">${visaPackage.government_fee?.toFixed(2)}</p>
+                      </div>
+                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full" 
+                          style={{ width: `${(visaPackage.government_fee / (visaPackage.total_price || 1)) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="mb-2">
+                        <span className="text-sm text-gray-500">Service Fee</span>
+                        <p className="text-lg font-bold text-gray-800">${visaPackage.service_fee?.toFixed(2)}</p>
+                      </div>
+                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-green-500 rounded-full" 
+                          style={{ width: `${(visaPackage.service_fee / (visaPackage.total_price || 1)) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="mb-2">
+                        <span className="text-sm text-gray-500">Processing Time</span>
+                        <p className="text-lg font-bold text-gray-800">{visaPackage.processing_days} days</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="prose max-w-none text-sm md:text-base">
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                   <p className="text-gray-700 leading-relaxed">{country.description}</p>
@@ -394,101 +403,38 @@ const CountryDetails = () => {
               </div>
             </section>
             
-            {/* What's Included */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="bg-gradient-to-br from-teal-50 to-white p-6 rounded-xl border border-teal-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <BadgeCheck className="h-5 w-5 text-teal-600" />
-                  <h3 className="font-semibold text-lg text-navy">What's Included</h3>
-                </div>
-                <ul className="space-y-3">
-                  {country.visa_includes.map((item, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-teal-600 mt-1 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <Users className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-lg text-navy">Visa Assistance</h3>
-                </div>
-                <ul className="space-y-3">
-                  {country.visa_assistance.map((item, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            
-            {/* Simplified Tab Navigation - More Clean and Compact */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <Tabs defaultValue="requirements" className="w-full">
-                {/* Simplified tab headers with better spacing and hover effects */}
-                <div className="sticky top-20 bg-white z-20 border-b px-2">
-                  <TabsList className="w-full h-14 bg-transparent gap-1 p-1">
-                    <TabsTrigger 
-                      value="requirements" 
-                      className="flex-1 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 data-[state=active]:shadow-none rounded-md"
-                    >
-                      <div className="flex items-center justify-center gap-1.5">
-                        <FileCheck className="h-4 w-4" />
-                        <span className="text-sm">Documents</span>
-                      </div>
+            {/* Visa Information Tabs */}
+            <div className="bg-white rounded-xl md:rounded-2xl shadow-sm overflow-hidden">
+              <Tabs defaultValue="details" className="w-full" onValueChange={setActiveTab}>
+                <div className="border-b border-gray-100">
+                  <TabsList className="w-full bg-transparent h-auto overflow-x-auto justify-start p-0 gap-4 pl-4 pr-4 pt-4 space-x-2">
+                    <TabsTrigger value="details" className="rounded-md data-[state=active]:shadow-none data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 text-sm py-2 px-4">
+                      Requirements
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="process" 
-                      className="flex-1 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-none rounded-md"
-                    >
-                      <div className="flex items-center justify-center gap-1.5">
-                        <BarChart className="h-4 w-4" />
-                        <span className="text-sm">Process</span>
-                      </div>
+                    <TabsTrigger value="process" className="rounded-md data-[state=active]:shadow-none data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 text-sm py-2 px-4">
+                      Process
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="faq" 
-                      className="flex-1 data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 data-[state=active]:shadow-none rounded-md"
-                    >
-                      <div className="flex items-center justify-center gap-1.5">
-                        <MessageSquare className="h-4 w-4" />
-                        <span className="text-sm">FAQ</span>
-                      </div>
+                    <TabsTrigger value="faq" className="rounded-md data-[state=active]:shadow-none data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 text-sm py-2 px-4">
+                      FAQ
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="travel" 
-                      className="flex-1 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none rounded-md"
-                    >
-                      <div className="flex items-center justify-center gap-1.5">
-                        <Globe className="h-4 w-4" />
-                        <span className="text-sm">Travel</span>
-                      </div>
+                    <TabsTrigger value="travel" className="rounded-md data-[state=active]:shadow-none data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 text-sm py-2 px-4">
+                      Travel Info
                     </TabsTrigger>
                   </TabsList>
                 </div>
                 
-                {/* Tab content with improved spacing and organization */}
-                <TabsContent value="requirements" className="p-5 md:p-6 focus:outline-none">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Document Requirements</h3>
-                  <p className="text-gray-600 text-sm mb-5">{country.requirements_description}</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {country.documents.map((doc) => (
-                      <VisaDocument 
-                        key={doc.id}
-                        name={doc.document_name}
-                        description={doc.document_description}
-                        required={doc.required}
+                <TabsContent value="details" className="p-5 md:p-6 focus:outline-none">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Required Documents</h3>
+                  <div className="space-y-4">
+                    {country?.required_documents?.map((doc, index) => (
+                      <VisaDocument
+                        key={index}
+                        title={doc.title}
+                        description={doc.description}
+                        isRequired={doc.required}
                       />
                     ))}
-                  </div>
-
-                  {/* Additional Requirements Info */}
-                  <div className="mt-6 space-y-4">
+                    
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-navy mb-2">Important Notes</h4>
                       <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
@@ -504,7 +450,7 @@ const CountryDetails = () => {
                 <TabsContent value="process" className="p-5 md:p-6 focus:outline-none">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Application Process</h3>
                   <div className="space-y-0">
-                    {country.processing_steps.map((step, index) => (
+                    {country?.processing_steps.map((step, index) => (
                       <ProcessStep
                         key={index}
                         step={step.step}
@@ -519,7 +465,7 @@ const CountryDetails = () => {
                 <TabsContent value="faq" className="p-5 md:p-6 focus:outline-none">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Frequently Asked Questions</h3>
                   <div className="space-y-2">
-                    {country.faq.map((item, index) => (
+                    {country?.faq.map((item, index) => (
                       <FAQItem 
                         key={index}
                         question={item.question}
@@ -604,150 +550,87 @@ const CountryDetails = () => {
             </section>
           </div>
           
-          {/* Right column - truly sticky booking form */}
+          {/* Right column - sticky booking form */}
           <div className="w-full lg:w-1/3 mt-6 lg:mt-0">
-            <div className="sticky-sidebar">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-5">
-                  {/* Header with vertical bar */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className="w-1 h-6 bg-indigo-600 rounded mr-2"></div>
-                      <h2 className="text-lg font-bold text-gray-800">Apply Now</h2>
-                    </div>
-                    <Badge className="bg-teal-500">Fast Process</Badge>
-                  </div>
-                  
-                  {/* Pricing Selection */}
-                  <div className="mb-5">
-                    <div className="flex items-center mb-2 text-sm text-gray-600">
-                      <Clock className="h-4 w-4 mr-1.5 text-teal-600" />
-                      Select Processing Speed
+            <div className="sticky top-24">
+              <Card className="shadow-md border-0">
+                <CardContent className="p-5 md:p-6">
+                  <div className="mb-5 flex flex-col">
+                    <div className="flex justify-between items-baseline mb-3">
+                      <h3 className="text-2xl font-bold text-gray-900">
+                        ${visaPackage ? visaPackage.total_price?.toFixed(2) : numericBasePrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      </h3>
+                      <span className="text-sm text-gray-500">per person</span>
                     </div>
                     
-                    {/* Single pricing option card to match the image */}
-                    <div className="border rounded-lg p-4 mb-2">
-                      <h3 className="font-semibold text-lg">Standard</h3>
-                      <div className="text-xl font-bold text-teal-600 mb-1">₹{selectedPackage.price}</div>
-                      <div className="text-sm text-gray-500 mb-3">Processing: {selectedPackage.processing_time || '3-5 business days'}</div>
-                      
-                      <div className="space-y-1">
-                        {selectedPackage.features && selectedPackage.features.slice(0, 3).map((feature, idx) => (
-                          <div key={idx} className="flex items-start text-sm">
-                            <Check className="h-4 w-4 text-teal-600 mr-2 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600">{feature}</span>
-                          </div>
-                        ))}
+                    {visaPackage && (
+                      <div className="flex items-center mb-2 text-sm text-gray-500">
+                        <Info className="h-4 w-4 mr-1.5 text-blue-500" />
+                        <span>Gov. Fee: ${visaPackage.government_fee?.toFixed(2)} + Service: ${visaPackage.service_fee?.toFixed(2)}</span>
                       </div>
+                    )}
+                    
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Clock className="h-4 w-4 mr-1.5 text-indigo-500" />
+                      <span>{getProcessingTime()}</span>
                     </div>
                   </div>
-                  
-                  {/* Estimated delivery box - matching design in image */}
-                  <div className="bg-teal-50 rounded-lg p-4 mb-5 flex items-center">
-                    <Clock className="h-5 w-5 text-teal-600 mr-3" />
-                    <div>
-                      <div className="text-sm font-medium">Estimated Delivery</div>
-                      <div className="text-sm font-semibold text-teal-700">{formattedEstimatedDate}</div>
-                    </div>
-                  </div>
-                  
-                  {/* Number of travelers - matching design */}
-                  <div className="mb-5">
-                    <div className="flex items-center mb-2 text-sm text-gray-600">
-                      <Users className="h-4 w-4 mr-1.5 text-teal-600" />
-                      Number of Travelers
-                    </div>
-                    <div className="flex border rounded-lg overflow-hidden">
-                      <button 
-                        className="px-4 py-2 bg-gray-50 text-gray-500 hover:bg-gray-100"
-                        onClick={handleDecreaseTravellers}
-                        disabled={travellers <= 1}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <div className="flex-1 flex items-center justify-center font-medium">{travellers}</div>
-                      <button 
-                        className="px-4 py-2 bg-gray-50 text-gray-500 hover:bg-gray-100"
-                        onClick={handleIncreaseTravellers}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Summary - simple style as shown in image */}
-                  <div className="border-t border-b py-3 mb-5 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm">Base price</span>
-                      <span className="font-medium">₹{basePrice.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm">Travelers</span>
-                      <span className="font-medium">{travellers}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="font-bold">Total Amount</span>
-                      <span className="text-xl font-bold text-teal-600">₹{totalAmount.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Apply button - matching image style */}
-                  <Button 
-                    className="w-full py-2 bg-gradient-to-r from-teal-500 to-indigo-500 text-white mb-3"
-                    onClick={handleApplyNow}
-                  >
-                    Apply Now
-                  </Button>
-                  
-                  {/* Secure payment */}
-                  <div className="flex items-center justify-center text-xs text-gray-500 mb-5">
-                    <ShieldCheck className="h-3.5 w-3.5 mr-1 text-teal-600" />
-                    <span>Secure payment • Money-back guarantee</span>
-                  </div>
-                  
-                  {/* Trust reviews */}
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Trusted by thousands</span>
-                      <div className="flex">
-                        {Array(5).fill(0).map((_, i) => (
-                          <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                        ))}
+
+                  {/* Booking Details Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-gray-700 border-t pt-4">Booking Details</h3>
+                    
+                    {/* Number of Travelers */}
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="travellers" className="text-sm text-gray-600 flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-gray-400" /> Number of Travelers
+                      </label>
+                      <div className="flex items-center border rounded-md">
+                         <Button variant="ghost" size="sm" className="px-2 h-8" onClick={() => setNumberOfTravelers(prev => Math.max(1, prev - 1))} disabled={numberOfTravelers <= 1}>
+                           <Minus className="h-3 w-3" />
+                         </Button>
+                         <span className="px-3 text-sm font-medium">{numberOfTravelers}</span>
+                         <Button variant="ghost" size="sm" className="px-2 h-8" onClick={() => setNumberOfTravelers(prev => prev + 1)}>
+                           <Plus className="h-3 w-3" />
+                         </Button>
                       </div>
                     </div>
                     
-                    <div className="text-sm italic text-gray-600 mb-3">
-                      "The visa process was incredibly smooth. Permitsy handled everything efficiently and my {country.name} visa was approved in just 2 days!"
+                    {/* Estimated Date */}
+                    <div className="flex items-center justify-between text-sm">
+                       <div className="text-gray-600 flex items-center">
+                         <Calendar className="h-4 w-4 mr-2 text-gray-400" /> Estimated Delivery
+                       </div>
+                       <span className="font-medium text-gray-800">{getEstimatedDate()}</span>
                     </div>
                     
-                    <div className="flex items-center text-xs">
-                      <div className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-1.5">
-                        <span className="font-medium text-teal-700">AP</span>
-                      </div>
-                      <span className="font-medium">Amit P.</span>
-                      <span className="mx-1">•</span>
-                      <span className="text-teal-600">Verified customer</span>
+                    {/* Total Amount */}
+                    <div className="border-t pt-4">
+                       <div className="flex justify-between items-center mb-1">
+                         <span className="text-sm text-gray-600">Total Amount</span>
+                         <span className="text-xl font-bold text-indigo-600">${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                       </div>
+                       <p className="text-xs text-gray-400 text-right">Inclusive of all taxes</p>
                     </div>
-                  </div>
-                  
-                  {/* Need help section */}
-                  <div className="bg-blue-50 p-4 rounded-lg mt-5">
-                    <div className="flex items-center mb-2">
-                      <MessageSquare className="h-4 w-4 text-blue-600 mr-2" />
-                      <span className="font-medium text-sm">Need help with your visa?</span>
-                    </div>
-                    <p className="text-xs text-blue-700 mb-3">Our visa experts are here to assist you with any questions.</p>
-                    <Button variant="outline" size="sm" className="w-full bg-white text-blue-700 border-blue-200">
-                      Contact Support
+                    
+                    {/* Call to action */}
+                    <Button
+                      onClick={handleApplyNow}
+                      className="w-full py-6 text-base rounded-lg mt-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition-all duration-300"
+                    >
+                      Apply Now
                     </Button>
+                    
+                    <p className="text-xs text-center text-gray-500 mt-2">
+                      By proceeding, you agree to our <Link to="/terms" className="text-indigo-600 hover:underline">Terms</Link> and <Link to="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
+                    </p>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
       </div>
-      
       </main>
       <Footer />
     </div>

@@ -11,6 +11,7 @@ import {
   setupAuthDebugger 
 } from '@/utils/supabaseHelpers';
 
+// Define the type for our context
 type AuthContextType = {
   session: Session | null;
   user: User | null;
@@ -21,16 +22,19 @@ type AuthContextType = {
   loading: boolean;
 };
 
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  userRole: null,
-  signIn: async () => {},
-  signUp: async () => {},
-  signOut: async () => {},
-  loading: true,
-});
+// Create and export the context
+export const AuthContext = createContext<AuthContextType | null>(null);
 
+// Main hook export
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+// Auth Provider Component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -45,28 +49,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initial session check
     const initializeAuth = async () => {
       try {
-        // Get the current session
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        console.log('AuthContext: Starting initialization process');
         
-        if (error) {
-          console.error('Error getting initial session:', error);
+        // Standard session check with a timeout
+        const checkAuthSession = async () => {
+          try {
+            console.log('Checking auth session...');
+            const { data, error } = await supabase.auth.getSession();
+            
+            if (error) {
+              console.error('Error getting session:', error);
+              return null;
+            }
+            
+            return data.session;
+          } catch (err) {
+            console.error('Unexpected error during session check:', err);
+            return null;
+          }
+        };
+        
+        // Set a timeout to prevent hanging
+        const sessionTimeout = setTimeout(() => {
+          console.warn('Session check timed out after 10 seconds');
           setLoading(false);
-          return;
-        }
+        }, 10000);
+        
+        // Get the current session
+        const currentSession = await checkAuthSession();
+        clearTimeout(sessionTimeout);
         
         if (currentSession) {
-          console.log('Found existing session, setting up user state');
+          console.log('Found existing session:', currentSession.user?.id);
+          console.log('Session expires at:', new Date(currentSession.expires_at! * 1000).toLocaleString());
+          
           setSession(currentSession);
           setUser(currentSession.user);
           
           // If we have a user, get their role from profiles
           if (currentSession.user) {
+            console.log('Fetching role for authenticated user');
             await fetchUserRole(currentSession.user.id);
           }
+        } else {
+          console.log('No session found during initialization');
         }
       } catch (error) {
         console.error('Unexpected error during initialization:', error);
       } finally {
+        console.log('Auth initialization complete, loading state set to false');
         setLoading(false);
       }
     };
@@ -83,7 +114,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Fetching user role for ID:', userId);
       
+      // Set a timeout for role fetch
+      const roleTimeout = setTimeout(() => {
+        console.warn('Role fetch timed out, defaulting to user role');
+        setUserRole('user');
+      }, 8000);
+      
+      // Try to get the user profile
       const profile = await getUserProfile(userId);
+      clearTimeout(roleTimeout);
       
       if (!profile) {
         console.log('No profile found, creating default profile');
@@ -97,6 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
         
+        console.log('New profile created with role:', newProfile?.role);
         setUserRole(newProfile?.role || 'user');
         return;
       }
@@ -174,10 +214,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRole(newProfile?.role || 'user');
         }
         
-        // Redirect to dashboard
-        setTimeout(() => {
-          window.location.replace('/dashboard');
-        }, 300);
+        console.log('AuthContext: Redirecting new user to dashboard');
+        // Force the navigation to happen after state is settled
+        setTimeout(() => navigate('/dashboard'), 100);
         return;
       }
       
@@ -187,23 +226,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUserRole(roleValue || 'user');
       
-      // Redirect based on role
+      // Redirect based on role using navigate with a slight delay
       if (roleValue === 'admin') {
         toast({
           title: "Welcome Admin",
           description: "You have successfully signed in as an administrator.",
         });
-        setTimeout(() => {
-          window.location.replace('/admin');
-        }, 300);
+        console.log('AuthContext: Redirecting admin to admin dashboard');
+        setTimeout(() => navigate('/admin'), 100);
       } else {
         toast({
           title: "Welcome",
           description: "You have successfully signed in.",
         });
-        setTimeout(() => {
-          window.location.replace('/dashboard');
-        }, 300);
+        console.log('AuthContext: Redirecting user to dashboard');
+        setTimeout(() => navigate('/dashboard'), 100);
       }
     } catch (error: any) {
       console.error('AuthContext: Unexpected error during sign in:', error);
@@ -251,63 +288,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Creating profile for new user:', data.user.id);
           const { error: profileError } = await createUserProfile(
             data.user.id,
-            { full_name: fullName, role: 'user' }
+            {
+              full_name: fullName,
+              role: 'user'
+            }
           );
-            
+          
           if (profileError) {
-            console.error('Error creating profile:', profileError);
-          } else {
-            console.log('Profile created successfully');
+            console.error('Error creating user profile:', profileError);
           }
-        } catch (profileErr) {
-          console.error('Unexpected error creating profile:', profileErr);
+        } catch (error) {
+          console.error('Error in profile creation:', error);
         }
       }
       
       toast({
-        title: "Account created!",
-        description: "You have successfully created an account. Please sign in.",
+        title: "Account Created",
+        description: "Your account has been created successfully!",
       });
     } catch (error: any) {
       console.error('Unexpected error during sign up:', error);
       toast({
         title: "Error signing up",
-        description: "An unexpected error occurred. Please try again later.",
+        description: error.message || "An unexpected error occurred during sign up.",
         variant: "destructive",
       });
-      throw error;
     }
   };
-
+  
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      
-      // Clear state
-      setSession(null);
       setUser(null);
+      setSession(null);
       setUserRole(null);
-      
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out.",
-      });
-      navigate('/auth');
-    } catch (error: any) {
-      console.error('Sign out error:', error);
-      toast({
-        title: "Error signing out",
-        description: error.message || "An error occurred during sign out.",
-        variant: "destructive",
-      });
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
+  
+  const value = {
+    session,
+    user,
+    userRole,
+    signIn,
+    signUp,
+    signOut,
+    loading,
+  };
+  
+  console.log('AuthContext state update:', { 
+    hasUser: !!user, 
+    userRole, 
+    loading 
+  });
 
   return (
-    <AuthContext.Provider value={{ session, user, userRole, signIn, signUp, signOut, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

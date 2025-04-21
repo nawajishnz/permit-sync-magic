@@ -370,6 +370,56 @@ export type Database = {
           updated_at: string
           user_id: string
           visa_type_id: string
+          form_data: {
+            personalInfo: {
+              firstName: string
+              lastName: string
+              email: string
+              phoneNumber: string
+              dateOfBirth: string
+              nationality: string
+              gender: string
+              maritalStatus: string
+              address: {
+                street: string
+                city: string
+                state: string
+                postalCode: string
+                country: string
+              }
+            }
+            travelInfo: {
+              purposeOfTravel: string
+              departureDate: string
+              returnDate: string
+              bookingOption: string
+              accommodation: {
+                type: string
+                name: string
+                address: string
+                bookingReference: string
+              }
+              previousVisits: boolean
+              previousVisitDetails: string
+            }
+            passportInfo: {
+              passportNumber: string
+              issuingCountry: string
+              issueDate: string
+              expiryDate: string
+              hasOtherPassports: boolean
+              otherPassportDetails: string
+            }
+            documents: {
+              passport: any
+              photo: any
+              financialProof: any
+              itinerary: any
+              accommodation: any
+              insurance: any
+              additionalDocuments: any[]
+            }
+          } | null
         }
         Insert: {
           created_at?: string
@@ -381,6 +431,56 @@ export type Database = {
           updated_at?: string
           user_id: string
           visa_type_id: string
+          form_data?: {
+            personalInfo: {
+              firstName: string
+              lastName: string
+              email: string
+              phoneNumber: string
+              dateOfBirth: string
+              nationality: string
+              gender: string
+              maritalStatus: string
+              address: {
+                street: string
+                city: string
+                state: string
+                postalCode: string
+                country: string
+              }
+            }
+            travelInfo: {
+              purposeOfTravel: string
+              departureDate: string
+              returnDate: string
+              bookingOption: string
+              accommodation: {
+                type: string
+                name: string
+                address: string
+                bookingReference: string
+              }
+              previousVisits: boolean
+              previousVisitDetails: string
+            }
+            passportInfo: {
+              passportNumber: string
+              issuingCountry: string
+              issueDate: string
+              expiryDate: string
+              hasOtherPassports: boolean
+              otherPassportDetails: string
+            }
+            documents: {
+              passport: any
+              photo: any
+              financialProof: any
+              itinerary: any
+              accommodation: any
+              insurance: any
+              additionalDocuments: any[]
+            }
+          } | null
         }
         Update: {
           created_at?: string
@@ -392,6 +492,56 @@ export type Database = {
           updated_at?: string
           user_id?: string
           visa_type_id?: string
+          form_data?: {
+            personalInfo: {
+              firstName: string
+              lastName: string
+              email: string
+              phoneNumber: string
+              dateOfBirth: string
+              nationality: string
+              gender: string
+              maritalStatus: string
+              address: {
+                street: string
+                city: string
+                state: string
+                postalCode: string
+                country: string
+              }
+            }
+            travelInfo: {
+              purposeOfTravel: string
+              departureDate: string
+              returnDate: string
+              bookingOption: string
+              accommodation: {
+                type: string
+                name: string
+                address: string
+                bookingReference: string
+              }
+              previousVisits: boolean
+              previousVisitDetails: string
+            }
+            passportInfo: {
+              passportNumber: string
+              issuingCountry: string
+              issueDate: string
+              expiryDate: string
+              hasOtherPassports: boolean
+              otherPassportDetails: string
+            }
+            documents: {
+              passport: any
+              photo: any
+              financialProof: any
+              itinerary: any
+              accommodation: any
+              insurance: any
+              additionalDocuments: any[]
+            }
+          } | null
         }
         Relationships: [
           {
@@ -416,8 +566,10 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          price: string
-          processing_time: string
+          government_fee: number
+          service_fee: number
+          total_price: number
+          processing_days: number
           updated_at: string
         }
         Insert: {
@@ -425,8 +577,9 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
-          price: string
-          processing_time: string
+          government_fee: number
+          service_fee: number
+          processing_days: number
           updated_at?: string
         }
         Update: {
@@ -434,8 +587,9 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          price?: string
-          processing_time?: string
+          government_fee?: number
+          service_fee?: number
+          processing_days?: number
           updated_at?: string
         }
         Relationships: [
@@ -445,7 +599,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "countries"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       visa_pricing_tiers: {

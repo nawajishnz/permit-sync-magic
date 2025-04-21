@@ -114,7 +114,6 @@ const Refunds = () => {
                     </p>
                     <ul className="list-disc pl-5 text-gray-700 space-y-2">
                       <li>Email: <a href="mailto:refunds@permitsy.com" className="text-navy hover:underline">refunds@permitsy.com</a></li>
-                      <li>Phone: +91 7975208649</li>
                       <li>Hours: Monday-Friday, 9am-6pm IST</li>
                     </ul>
                   </section>

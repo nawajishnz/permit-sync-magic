@@ -15,6 +15,21 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
+// Helper function to get flag emoji from country code
+const getFlagEmoji = (countryCode: string): string => {
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  // Handle UK/GB inconsistency
+  if (countryCode.toLowerCase() === 'uk') {
+    return '🇬🇧';
+  }
+  // Basic check for 2 letters
+  if (codePoints.length !== 2) return countryCode.toUpperCase(); 
+  return String.fromCodePoint(...codePoints);
+};
+
 // Mock expert data
 const experts = [
   { 
@@ -226,18 +241,17 @@ const Hero: React.FC = () => {
               </motion.p>
             </div>
             
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 mb-3 sm:mb-4 leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 mb-3 sm:mb-4 leading-tight text-center lg:text-left">
               <div className="flex flex-wrap items-baseline justify-center lg:justify-start">
                 <span className="whitespace-nowrap mr-2">From application to approval,</span>
                 <span className="mr-2">our</span> 
                 <span className="text-blue-600">visa experts got you</span>
               </div>
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: '67%' }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="h-1 bg-blue-500 mt-2 mx-auto lg:mx-0"
-              />
+              <div className="mt-1 h-3 flex justify-center lg:justify-start">
+                <svg viewBox="0 0 200 10" xmlns="http://www.w3.org/2000/svg" className="w-2/3 lg:w-3/4 h-full text-blue-500">
+                  <path d="M 5 5 Q 50 10 100 5 T 195 5" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+                </svg>
+              </div>
             </h1>
             
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 max-w-lg mx-auto lg:mx-0 leading-relaxed">
@@ -281,8 +295,8 @@ const Hero: React.FC = () => {
               </div>
             </div>
 
-            {/* Features */}
-            <div className="grid grid-cols-2 gap-y-3 gap-x-4 md:gap-x-6 max-w-md mx-auto lg:mx-0 mb-5">
+            {/* Features - Force 2 columns, adjust gap */}
+            <div className="grid grid-cols-2 gap-y-3 gap-x-6 max-w-md mx-auto lg:mx-0 mb-5">
               {[
                 { icon: Shield, text: '190+ countries covered' },
                 { icon: CalendarClock, text: 'Fast 3-5 day processing' },
@@ -291,7 +305,7 @@ const Hero: React.FC = () => {
               ].map((feature, i) => (
                 <motion.div 
                   key={i} 
-                  className="flex items-center"
+                  className="flex items-center text-left"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: 0.1 * i }}
@@ -346,15 +360,15 @@ const Hero: React.FC = () => {
                       index === currentClient && (
                         <motion.div
                           key={client.id}
-                          className="bg-white rounded-xl overflow-hidden"
+                          className="bg-white rounded-xl overflow-hidden shadow-lg"
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -20 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <div className="p-5 px-7 flex">
-                            {/* Expert Image */}
-                            <div className="w-20 h-20 rounded-full overflow-hidden mr-6 flex-shrink-0 border-2 border-gray-100 shadow-md">
+                          <div className="p-4 px-5 sm:p-5 sm:px-7 flex items-start">
+                            {/* Expert Image - Apply responsive size and margin */}
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden mr-4 sm:mr-6 flex-shrink-0 border-2 border-gray-100 shadow-md">
                               <img 
                                 src={client.image} 
                                 alt={client.name} 
@@ -362,33 +376,40 @@ const Hero: React.FC = () => {
                               />
                             </div>
                             
-                            {/* Expert Info */}
-                            <div className="flex flex-col justify-center pl-3">
-                              <h3 className="text-xl font-bold text-gray-800 mb-2">{client.name.split(' ')[0]}</h3>
-                              <div className="flex items-center gap-1 mb-2">
-                                <span className="text-blue-600 bg-blue-50 p-0.5 rounded-full"><Check className="h-3.5 w-3.5" /></span>
-                                <span className="text-sm text-gray-600">Approved for {client.journey.includes('Euro') ? 'Schengen' : client.destination} visa {client.dateReceived}</span>
+                            {/* Expert Info - Adjust padding to sm:pl-3 */}
+                            <div className="flex flex-col justify-center text-left sm:pl-3">
+                              {/* Apply responsive font size */}
+                              <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2">{client.name.split(' ')[0]}</h3>
+                              <div className="flex items-center gap-1 mb-1 sm:mb-2">
+                                <span className="text-blue-600 bg-blue-50 p-0.5 rounded-full"><Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></span>
+                                {/* Apply responsive font size */}
+                                <span className="text-xs sm:text-sm text-gray-600 line-clamp-1">Approved for {client.journey.includes('Euro') ? 'Schengen' : client.destination} visa {client.dateReceived}</span>
                           </div>
                               
-                              <div className="mb-3 text-sm italic text-gray-600">"{client.feedback}"</div>
+                              {/* Apply responsive font size and margin */}
+                              <div className="mb-2 sm:mb-3 text-xs sm:text-sm italic text-gray-600 line-clamp-2">"{client.feedback}"</div>
                               
                               {/* Countries Expertise */}
                               <div className="mt-1">
-                                <div className="text-xs font-medium text-blue-700 mb-1">VISA ISSUED FOR</div>
-                                <div className="flex items-center gap-1">
+                                {/* Apply responsive font size */}
+                                <div className="text-[9px] sm:text-xs font-medium text-blue-700 mb-1">VISA ISSUED FOR</div>
+                                {/* Increase gap and flag sizes */}
+                                <div className="flex items-center gap-1.5">
                                   {client.flags.map((flag, i) => (
+                                    /* Apply responsive size - increased */
                                     <div 
                                       key={i}
-                                      className="w-6 h-4 rounded-sm overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50"
+                                      className="w-6 h-4 sm:w-7 sm:h-5 rounded-sm overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-100"
                                     >
-                                      <span className="text-[8px] font-bold text-gray-700">{flag.toUpperCase()}</span>
+                                      {/* Use helper function for emoji, adjust styling */}
+                                      <span className="text-sm leading-none">{getFlagEmoji(flag)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                      </div>
-                    </div>
-                  </motion.div>
+                        </motion.div>
                       )
                     ))}
                   </AnimatePresence>

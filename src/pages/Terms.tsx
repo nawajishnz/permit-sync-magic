@@ -124,7 +124,6 @@ const Terms = () => {
                     </p>
                     <ul className="list-disc pl-5 text-gray-700 space-y-2">
                       <li>By email: <a href="mailto:support@permitsy.com" className="text-navy hover:underline">support@permitsy.com</a></li>
-                      <li>By phone: +91 7975208649</li>
                     </ul>
                   </section>
                 </div>

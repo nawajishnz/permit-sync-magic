@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,15 +42,31 @@ const ApplicationReview: React.FC<ApplicationReviewProps> = ({ formData }) => {
   };
   
   const checkTravelInfoComplete = () => {
-    const requiredFields = [
+    const travelInfo = formData.travelInfo;
+    if (!travelInfo) return false;
+    
+    const requiredBaseFields = [
       'purposeOfTravel',
       'departureDate',
-      'returnDate'
+      'returnDate',
+      'bookingOption'
     ];
     
-    return requiredFields.every(field => 
-      formData.travelInfo && formData.travelInfo[field]
-    );
+    const baseComplete = requiredBaseFields.every(field => travelInfo[field]);
+    if (!baseComplete) return false;
+    
+    if (travelInfo.bookingOption === 'provided') {
+      const requiredAccommodationFields = [
+        'type',
+        'name',
+        'address',
+        'bookingReference'
+      ];
+      if (!travelInfo.accommodation) return false;
+      return requiredAccommodationFields.every(field => travelInfo.accommodation[field]);
+    }
+    
+    return true; 
   };
   
   const checkPassportInfoComplete = () => {
@@ -68,10 +83,24 @@ const ApplicationReview: React.FC<ApplicationReviewProps> = ({ formData }) => {
   };
   
   const checkDocumentsComplete = () => {
-    const requiredDocs = ['passport', 'photo', 'financialProof'];
-    return requiredDocs.every(doc => 
-      formData.documents && formData.documents[doc]
-    );
+    const documents = formData.documents;
+    if (!documents) return false;
+    
+    const needsBookingAssistance = formData?.travelInfo?.bookingOption === 'assist';
+
+    const alwaysRequiredDocs = ['passport', 'photo', 'financialProof', 'insurance'];
+    if (!alwaysRequiredDocs.every(doc => documents[doc])) {
+        return false;
+    }
+    
+    if (!needsBookingAssistance) {
+      const conditionallyRequiredDocs = ['itinerary', 'accommodation'];
+      if (!conditionallyRequiredDocs.every(doc => documents[doc])) {
+        return false;
+      }
+    }
+    
+    return true;
   };
 
   return (
@@ -187,27 +216,31 @@ const ApplicationReview: React.FC<ApplicationReviewProps> = ({ formData }) => {
           
           <div className="mt-4">
             <p className="text-gray-500">Accommodation</p>
-            <div className="mt-1 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-500">Type</p>
-                <p className="font-medium">{formData.travelInfo?.accommodation?.type || 'Not provided'}</p>
+            {formData.travelInfo?.bookingOption === 'assist' ? (
+              <p className="font-medium text-blue-600 mt-1">Booking assistance requested. Details will be handled later.</p>
+            ) : (
+              <div className="mt-1 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Type</p>
+                  <p className="font-medium">{formData.travelInfo?.accommodation?.type || 'Not provided'}</p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-500">Name</p>
+                  <p className="font-medium">{formData.travelInfo?.accommodation?.name || 'Not provided'}</p>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <p className="text-gray-500">Address</p>
+                  <p className="font-medium">{formData.travelInfo?.accommodation?.address || 'Not provided'}</p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-500">Booking Reference</p>
+                  <p className="font-medium">{formData.travelInfo?.accommodation?.bookingReference || 'Not provided'}</p>
+                </div>
               </div>
-              
-              <div>
-                <p className="text-gray-500">Name</p>
-                <p className="font-medium">{formData.travelInfo?.accommodation?.name || 'Not provided'}</p>
-              </div>
-              
-              <div className="md:col-span-2">
-                <p className="text-gray-500">Address</p>
-                <p className="font-medium">{formData.travelInfo?.accommodation?.address || 'Not provided'}</p>
-              </div>
-              
-              <div>
-                <p className="text-gray-500">Booking Reference</p>
-                <p className="font-medium">{formData.travelInfo?.accommodation?.bookingReference || 'Not provided'}</p>
-              </div>
-            </div>
+            )}
           </div>
           
           <div className="mt-4">
@@ -274,7 +307,7 @@ const ApplicationReview: React.FC<ApplicationReviewProps> = ({ formData }) => {
       <Card>
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Supporting Documents</h3>
+            <h3 className="text-lg font-semibold">Uploaded Documents</h3>
             {checkDocumentsComplete() ? (
               <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
                 <Check className="h-3 w-3 mr-1" /> Complete
@@ -286,133 +319,36 @@ const ApplicationReview: React.FC<ApplicationReviewProps> = ({ formData }) => {
             )}
           </div>
           
-          <div className="space-y-3">
-            <div className="flex items-start">
-              <div className="h-5 w-5 mr-2 mt-0.5">
-                {formData.documents?.passport ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium">Passport Copy</p>
-                {formData.documents?.passport && (
-                  <div className="text-sm text-gray-500 flex items-center mt-1">
-                    <FileUp className="h-3 w-3 mr-1" />
-                    <span>{formData.documents.passport.name}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="h-5 w-5 mr-2 mt-0.5">
-                {formData.documents?.photo ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium">Passport Size Photo</p>
-                {formData.documents?.photo && (
-                  <div className="text-sm text-gray-500 flex items-center mt-1">
-                    <FileUp className="h-3 w-3 mr-1" />
-                    <span>{formData.documents.photo.name}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="h-5 w-5 mr-2 mt-0.5">
-                {formData.documents?.financialProof ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium">Financial Proof</p>
-                {formData.documents?.financialProof && (
-                  <div className="text-sm text-gray-500 flex items-center mt-1">
-                    <FileUp className="h-3 w-3 mr-1" />
-                    <span>{formData.documents.financialProof.name}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="h-5 w-5 mr-2 mt-0.5">
-                {formData.documents?.itinerary ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-gray-300" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium">Travel Itinerary</p>
-                {formData.documents?.itinerary && (
-                  <div className="text-sm text-gray-500 flex items-center mt-1">
-                    <FileUp className="h-3 w-3 mr-1" />
-                    <span>{formData.documents.itinerary.name}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="h-5 w-5 mr-2 mt-0.5">
-                {formData.documents?.accommodation ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-gray-300" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium">Accommodation Proof</p>
-                {formData.documents?.accommodation && (
-                  <div className="text-sm text-gray-500 flex items-center mt-1">
-                    <FileUp className="h-3 w-3 mr-1" />
-                    <span>{formData.documents.accommodation.name}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="h-5 w-5 mr-2 mt-0.5">
-                {formData.documents?.insurance ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-gray-300" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium">Travel Insurance</p>
-                {formData.documents?.insurance && (
-                  <div className="text-sm text-gray-500 flex items-center mt-1">
-                    <FileUp className="h-3 w-3 mr-1" />
-                    <span>{formData.documents.insurance.name}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {formData.documents?.additionalDocuments && formData.documents.additionalDocuments.length > 0 && (
-              <>
-                <h4 className="font-medium mt-4">Additional Documents</h4>
-                {formData.documents.additionalDocuments.map((doc: File, index: number) => (
-                  <div key={index} className="flex items-start ml-6">
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            {Object.entries(formData.documents || {}).map(([key, value]) => {
+              if (!value) return null;
+              
+              const isOptional = formData.travelInfo?.bookingOption === 'assist' && 
+                                 ['itinerary', 'accommodation'].includes(key);
+              
+              return (
+                <li key={key} className="flex items-center">
+                  <FileUp className="h-4 w-4 mr-2 text-gray-500" />
+                  <span className="capitalize font-medium">{key.replace(/([A-Z])/g, ' $1')}</span>
+                  {isOptional && <span className="ml-2 text-xs text-green-600">(Optional - Assistance)</span>}
+                </li>
+              );
+            })}
+          </ul>
+          
+          {formData.documents?.additionalDocuments && formData.documents.additionalDocuments.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-md font-semibold mb-2">Additional Documents</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                {formData.documents.additionalDocuments.map((file: File, index: number) => (
+                  <li key={index} className="flex items-center">
                     <FileUp className="h-4 w-4 mr-2 text-gray-500" />
-                    <p className="text-sm">{doc.name}</p>
-                  </div>
+                    <span>{file.name}</span>
+                  </li>
                 ))}
-              </>
-            )}
-          </div>
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
       

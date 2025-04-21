@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Upload, Plus, Trash, Save } from 'lucide-react';
+import { AlertCircle, Upload, Plus, Trash, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 
-interface CountryFormData {
+export interface CountryFormData {
+  id?: string;
   name: string;
   flag: string;
   banner: string;
@@ -19,11 +21,22 @@ interface CountryFormData {
   processing_time: string;
   length_of_stay: string;
   requirements_description?: string;
-  visa_includes?: string[];
-  visa_assistance?: string[];
-  processing_steps?: any[];
-  faq?: any[];
-  embassy_details?: any;
+  visa_includes: string[];
+  visa_assistance: string[];
+  processing_steps: Array<{ step: number; title: string; description: string }>;
+  faq: Array<{ question: string; answer: string }>;
+  embassy_details: { address: string; phone: string; email: string; hours: string };
+  documents?: Array<{ document_name: string; document_description: string; required: boolean; isNew?: boolean }>;
+  pricing?: { 
+    government_fee: string; 
+    service_fee: string; 
+    processing_days: string 
+  };
+}
+
+export interface CountrySubmitData extends CountryFormData {
+  flagFile?: File | null;
+  bannerFile?: File | null;
 }
 
 interface CountryDialogProps {
@@ -31,9 +44,9 @@ interface CountryDialogProps {
   onOpenChange: (open: boolean) => void;
   isEditMode: boolean;
   formData: CountryFormData;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSubmit: () => void;
-  setFormData: (formData: CountryFormData) => void;
+  onFormChange: (updatedData: CountryFormData) => void;
+  onSubmit: (submitData: CountrySubmitData) => void;
+  isLoading: boolean;
 }
 
 const CountryDialog: React.FC<CountryDialogProps> = ({
@@ -41,246 +54,151 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
   onOpenChange,
   isEditMode,
   formData,
-  onInputChange,
+  onFormChange,
   onSubmit,
-  setFormData
+  isLoading
 }) => {
   const [flagFile, setFlagFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [visaIncludes, setVisaIncludes] = useState<string[]>(formData.visa_includes || []);
-  const [visaAssistance, setVisaAssistance] = useState<string[]>(formData.visa_assistance || []);
-  const [processingSteps, setProcessingSteps] = useState<any[]>(
-    formData.processing_steps && formData.processing_steps.length > 0 
-      ? formData.processing_steps 
-      : [
-        { step: 1, title: 'Document Collection', description: 'Gather all required documents for your tourist visa application' },
-        { step: 2, title: 'Application Review', description: 'Our experts review your tourist visa application for accuracy' },
-        { step: 3, title: 'Embassy Submission', description: 'Submit your tourist visa application to the embassy' },
-        { step: 4, title: 'Visa Processing', description: 'Track your tourist visa application status' }
-      ]
-  );
-  const [faqItems, setFaqItems] = useState<any[]>(
-    formData.faq || [
-      { question: 'What documents are required for a tourist visa?', answer: 'Required documents typically include a valid passport, completed application form, photographs, travel itinerary, and proof of financial means.' },
-      { question: 'How long does tourist visa processing take?', answer: 'Tourist visa processing times vary by country, but typically take between 5-15 business days.' },
-      { question: 'Can I extend my tourist visa?', answer: 'Tourist visa extension policies vary by country. Please check specific country regulations.' }
-    ]
-  );
-  const [embassyDetails, setEmbassyDetails] = useState<any>(
-    formData.embassy_details || {
-      address: '',
-      phone: '',
-      email: '',
-      hours: ''
-    }
-  );
   const [activeTab, setActiveTab] = useState("basic-info");
   const { toast } = useToast();
 
-  // Update state when formData changes (e.g., when switching between countries)
-  useEffect(() => {
-    setVisaIncludes(formData.visa_includes || [
-      'Tourist visa application processing',
-      'Document verification',
-      'Embassy appointment scheduling',
-      'Travel insurance assistance'
-    ]);
-    
-    setVisaAssistance(formData.visa_assistance || [
-      '24/7 tourist visa application support',
-      'Document translation services',
-      'Pre-travel consultation',
-      'Emergency assistance'
-    ]);
-    
-    // Make sure processing steps are properly initialized
-    if (formData.processing_steps && Array.isArray(formData.processing_steps) && formData.processing_steps.length > 0) {
-      setProcessingSteps(formData.processing_steps);
-    } else {
-      setProcessingSteps([
-        { step: 1, title: 'Document Collection', description: 'Gather all required documents for your tourist visa application' },
-        { step: 2, title: 'Application Review', description: 'Our experts review your tourist visa application for accuracy' },
-        { step: 3, title: 'Embassy Submission', description: 'Submit your tourist visa application to the embassy' },
-        { step: 4, title: 'Visa Processing', description: 'Track your tourist visa application status' }
-      ]);
-    }
-    
-    setFaqItems(formData.faq || [
-      { question: 'What documents are required for a tourist visa?', answer: 'Required documents typically include a valid passport, completed application form, photographs, travel itinerary, and proof of financial means.' },
-      { question: 'How long does tourist visa processing take?', answer: 'Tourist visa processing times vary by country, but typically take between 5-15 business days.' },
-      { question: 'Can I extend my tourist visa?', answer: 'Tourist visa extension policies vary by country. Please check specific country regulations.' }
-    ]);
-    setEmbassyDetails(formData.embassy_details || {
-      address: '',
-      phone: '',
-      email: '',
-      hours: ''
-    });
-  }, [formData]);
+  const updateFormData = (field: keyof CountryFormData, value: any) => {
+    onFormChange({ ...formData, [field]: value });
+  };
 
-  // Sync form data with local state whenever local state changes
-  useEffect(() => {
-    const updatedFormData = {
-      ...formData,
-      visa_includes: visaIncludes,
-      visa_assistance: visaAssistance,
-      processing_steps: processingSteps,
-      faq: faqItems,
-      embassy_details: embassyDetails
-    };
-    setFormData(updatedFormData);
-  }, [visaIncludes, visaAssistance, processingSteps, faqItems, embassyDetails]);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    updateFormData(name as keyof CountryFormData, value);
+  };
 
   const handleFlagFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFlagFile(e.target.files[0]);
-    }
+    const file = e.target.files?.[0] || null;
+    setFlagFile(file);
+    if (file) updateFormData('flag', '');
   };
 
   const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setBannerFile(e.target.files[0]);
-    }
+    const file = e.target.files?.[0] || null;
+    setBannerFile(file);
+    if (file) updateFormData('banner', '');
   };
 
-  // Array item handlers
   const handleAddVisaInclude = () => {
-    setVisaIncludes([...visaIncludes, '']);
+    updateFormData('visa_includes', [...(formData.visa_includes || []), '']);
   };
 
   const handleRemoveVisaInclude = (index: number) => {
-    const newIncludes = [...visaIncludes];
+    const newIncludes = [...(formData.visa_includes || [])];
     newIncludes.splice(index, 1);
-    setVisaIncludes(newIncludes);
+    updateFormData('visa_includes', newIncludes);
   };
 
   const handleVisaIncludeChange = (index: number, value: string) => {
-    const newIncludes = [...visaIncludes];
+    const newIncludes = [...(formData.visa_includes || [])];
     newIncludes[index] = value;
-    setVisaIncludes(newIncludes);
+    updateFormData('visa_includes', newIncludes);
   };
 
   const handleAddVisaAssistance = () => {
-    setVisaAssistance([...visaAssistance, '']);
+    updateFormData('visa_assistance', [...(formData.visa_assistance || []), '']);
   };
 
   const handleRemoveVisaAssistance = (index: number) => {
-    const newAssistance = [...visaAssistance];
+    const newAssistance = [...(formData.visa_assistance || [])];
     newAssistance.splice(index, 1);
-    setVisaAssistance(newAssistance);
+    updateFormData('visa_assistance', newAssistance);
   };
 
   const handleVisaAssistanceChange = (index: number, value: string) => {
-    const newAssistance = [...visaAssistance];
+    const newAssistance = [...(formData.visa_assistance || [])];
     newAssistance[index] = value;
-    setVisaAssistance(newAssistance);
+    updateFormData('visa_assistance', newAssistance);
   };
 
-  // Processing steps handlers
-  const handleProcessingStepChange = (index: number, field: string, value: string) => {
-    const newSteps = [...processingSteps];
-    newSteps[index] = { ...newSteps[index], [field]: field === 'step' ? parseInt(value) : value };
-    setProcessingSteps(newSteps);
+  const handleProcessingStepChange = (index: number, field: 'title' | 'description', value: string) => {
+    const newSteps = [...(formData.processing_steps || [])];
+    newSteps[index] = { ...newSteps[index], [field]: value };
+    updateFormData('processing_steps', newSteps);
   };
 
   const handleAddProcessingStep = () => {
-    const nextStep = processingSteps.length + 1;
-    setProcessingSteps([...processingSteps, { step: nextStep, title: '', description: '' }]);
+    const nextStep = (formData.processing_steps?.length || 0) + 1;
+    updateFormData('processing_steps', [
+      ...(formData.processing_steps || []),
+      { step: nextStep, title: '', description: '' },
+    ]);
   };
 
   const handleRemoveProcessingStep = (index: number) => {
-    if (processingSteps.length > 1) {
-      const newSteps = [...processingSteps];
+    if ((formData.processing_steps?.length || 0) > 1) {
+      const newSteps = [...(formData.processing_steps || [])];
       newSteps.splice(index, 1);
-      // Reorder steps after removal
-      newSteps.forEach((step, idx) => {
-        step.step = idx + 1;
-      });
-      setProcessingSteps(newSteps);
+      newSteps.forEach((step, idx) => { step.step = idx + 1; });
+      updateFormData('processing_steps', newSteps);
     }
   };
 
-  // FAQ handlers
   const handleAddFaq = () => {
-    setFaqItems([...faqItems, { question: '', answer: '' }]);
+    updateFormData('faq', [...(formData.faq || []), { question: '', answer: '' }]);
   };
 
   const handleRemoveFaq = (index: number) => {
-    const newFaqs = [...faqItems];
+    const newFaqs = [...(formData.faq || [])];
     newFaqs.splice(index, 1);
-    setFaqItems(newFaqs);
+    updateFormData('faq', newFaqs);
   };
 
-  const handleFaqChange = (index: number, field: string, value: string) => {
-    const newFaqs = [...faqItems];
+  const handleFaqChange = (index: number, field: 'question' | 'answer', value: string) => {
+    const newFaqs = [...(formData.faq || [])];
     newFaqs[index] = { ...newFaqs[index], [field]: value };
-    setFaqItems(newFaqs);
+    updateFormData('faq', newFaqs);
   };
 
-  // Embassy details handlers
-  const handleEmbassyChange = (field: string, value: string) => {
-    setEmbassyDetails({ ...embassyDetails, [field]: value });
+  const handleAddDocument = () => {
+    updateFormData('documents', [
+      ...(formData.documents || []),
+      { document_name: '', document_description: '', required: false, isNew: true }
+    ]);
   };
 
-  const handleFormSubmit = async () => {
-    try {
-      setIsUploading(true);
-      
-      // Upload flag image if selected
-      if (flagFile) {
-        const flagFilename = `flag-${Date.now()}-${flagFile.name}`;
-        const { data: flagData, error: flagError } = await supabase.storage
-          .from('country-images')
-          .upload(flagFilename, flagFile);
-          
-        if (flagError) throw flagError;
-        
-        const flagUrl = supabase.storage.from('country-images').getPublicUrl(flagFilename).data.publicUrl;
-        formData.flag = flagUrl;
-      }
-      
-      // Upload banner image if selected
-      if (bannerFile) {
-        const bannerFilename = `banner-${Date.now()}-${bannerFile.name}`;
-        const { data: bannerData, error: bannerError } = await supabase.storage
-          .from('country-images')
-          .upload(bannerFilename, bannerFile);
-          
-        if (bannerError) throw bannerError;
-        
-        const bannerUrl = supabase.storage.from('country-images').getPublicUrl(bannerFilename).data.publicUrl;
-        formData.banner = bannerUrl;
-      }
-      
-      // Update formData with the final values from all the arrays and objects
-      const updatedFormData = {
-        ...formData,
-        visa_includes: visaIncludes.filter(item => item.trim() !== ''),
-        visa_assistance: visaAssistance.filter(item => item.trim() !== ''),
-        processing_steps: processingSteps.filter(step => step.title.trim() !== ''),
-        faq: faqItems.filter(faq => faq.question.trim() !== ''),
-        embassy_details: embassyDetails
-      };
-      
-      setFormData(updatedFormData);
-      setIsUploading(false);
+  const handleRemoveDocument = (index: number) => {
+    const newDocs = [...(formData.documents || [])];
+    newDocs.splice(index, 1);
+    updateFormData('documents', newDocs);
+  };
 
-      // Call the onSubmit prop with the final data
-      onSubmit();
-      
-      toast({
-        title: isEditMode ? "Country updated" : "Country created",
-        description: `${formData.name} has been successfully ${isEditMode ? 'updated' : 'added'}`,
-      });
-    } catch (error: any) {
-      setIsUploading(false);
-      toast({
-        title: "Error uploading images",
-        description: error.message || "Failed to upload one or more images",
-        variant: "destructive",
-      });
-    }
+  const handleDocumentChange = (index: number, field: string, value: string | boolean) => {
+    const newDocs = [...(formData.documents || [])];
+    newDocs[index] = { ...newDocs[index], [field]: value };
+    updateFormData('documents', newDocs);
+  };
+
+  const handleEmbassyChange = (field: keyof CountryFormData['embassy_details'], value: string) => {
+    updateFormData('embassy_details', { 
+      ...(formData.embassy_details),
+      [field]: value 
+    });
+  };
+
+  const handlePricingChange = (field: keyof NonNullable<CountryFormData['pricing']>, value: string) => {
+    updateFormData('pricing', {
+      ...(formData.pricing),
+      [field]: value
+    });
+  };
+
+  const handleFormSubmit = () => {
+    const submitData: CountrySubmitData = {
+      ...formData,
+      flagFile: flagFile,
+      bannerFile: bannerFile,
+      visa_includes: (formData.visa_includes || []).filter(item => item?.trim()),
+      visa_assistance: (formData.visa_assistance || []).filter(item => item?.trim()),
+      processing_steps: (formData.processing_steps || []).filter(step => step?.title?.trim()),
+      faq: (formData.faq || []).filter(item => item?.question?.trim())
+    };
+    onSubmit(submitData);
   };
 
   return (
@@ -296,46 +214,81 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
         </DialogHeader>
         
         <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
-            <TabsTrigger value="includes">Tourist Visa Includes</TabsTrigger>
-            <TabsTrigger value="assistance">Tourist Visa Assistance</TabsTrigger>
+            <TabsTrigger value="includes">Includes</TabsTrigger>
+            <TabsTrigger value="assistance">Assistance</TabsTrigger>
             <TabsTrigger value="process">Process</TabsTrigger>
-            <TabsTrigger value="additional">Additional</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            <TabsTrigger value="embassy">Embassy</TabsTrigger>
           </TabsList>
           
-          {/* Basic Info Tab */}
-          <TabsContent value="basic-info" className="space-y-4">
+          <TabsContent value="basic-info" className="space-y-4 pt-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="name" className="font-medium">Country Name *</Label>
                 <Input
                   id="name"
                   name="name"
-                  value={formData.name}
-                  onChange={onInputChange}
+                  value={formData.name || ''}
+                  onChange={handleInputChange}
                   placeholder="e.g. United States"
                   className="border-gray-300 focus:border-teal-500"
                 />
               </div>
-              
               <div className="grid gap-2">
-                <Label htmlFor="flag" className="font-medium">Flag Image *</Label>
+                <Label htmlFor="validity">Validity</Label>
+                <Input
+                  id="validity"
+                  name="validity"
+                  value={formData.validity || ''}
+                  onChange={handleInputChange}
+                  placeholder="e.g. 6 months"
+                />
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="length_of_stay" className="font-medium">Length of Stay</Label>
+                <Input
+                  id="length_of_stay"
+                  name="length_of_stay"
+                  value={formData.length_of_stay || ''}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Up to 90 days"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="processing_time">Processing Time (Display)</Label>
+                <Input
+                  id="processing_time"
+                  name="processing_time"
+                  value={formData.processing_time || ''}
+                  onChange={handleInputChange}
+                  placeholder="e.g. 3-5 business days"
+                />
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="flag" className="font-medium">
+                  Flag Image *
+                </Label>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Input
                       id="flag-file"
                       type="file"
-                      accept="image/*"
+                      accept="image/png,image/jpeg,image/jpg,image/svg+xml"
                       onChange={handleFlagFileChange}
                       className="flex-1 border-gray-300"
                     />
                     {flagFile && (
-                      <span className="text-xs text-green-600 font-medium">Selected</span>
+                      <span className="text-xs text-green-600 font-medium">New file selected</span>
                     )}
                   </div>
-                  
-                  {formData.flag && (
+                  {formData.flag && !flagFile && (
                     <div className="flex items-center gap-2">
                       <img src={formData.flag} alt="Current flag" className="h-8 w-auto object-contain border rounded" />
                       <span className="text-xs text-gray-500">Current image</span>
@@ -343,426 +296,269 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
                   )}
                 </div>
               </div>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="banner" className="font-medium">Banner Image *</Label>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="banner-file"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleBannerFileChange}
-                    className="flex-1 border-gray-300"
-                  />
-                  {bannerFile && (
-                    <span className="text-xs text-green-600 font-medium">Selected</span>
+              <div className="grid gap-2">
+                <Label htmlFor="banner" className="font-medium">
+                  Banner Image *
+                </Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="banner-file"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png"
+                      onChange={handleBannerFileChange}
+                      className="flex-1 border-gray-300"
+                    />
+                    {bannerFile && (
+                      <span className="text-xs text-green-600 font-medium">New file selected</span>
+                    )}
+                  </div>
+                  {formData.banner && !bannerFile && (
+                    <div className="flex items-center gap-2">
+                      <img src={formData.banner} alt="Current banner" className="h-12 w-auto object-contain border rounded" />
+                      <span className="text-xs text-gray-500">Current image</span>
+                    </div>
                   )}
                 </div>
-                
-                {formData.banner && (
-                  <div className="flex items-center gap-2">
-                    <img src={formData.banner} alt="Current banner" className="h-12 w-auto object-contain border rounded" />
-                    <span className="text-xs text-gray-500">Current image</span>
-                  </div>
-                )}
               </div>
             </div>
-            
             <div className="grid gap-2">
               <Label htmlFor="description" className="font-medium">Description *</Label>
               <Textarea
                 id="description"
                 name="description"
-                value={formData.description}
-                onChange={onInputChange}
+                value={formData.description || ''}
+                onChange={handleInputChange}
                 placeholder="Country description"
                 rows={3}
                 className="border-gray-300 focus:border-teal-500"
               />
             </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="entry_type">Entry Type</Label>
-                <Input
-                  id="entry_type"
-                  name="entry_type"
-                  value="Tourist Visa"
-                  readOnly
-                  className="bg-gray-100"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="validity">Validity</Label>
-                <Input
-                  id="validity"
-                  name="validity"
-                  value={formData.validity}
-                  onChange={onInputChange}
-                  placeholder="e.g. 6 months"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="processing_time" className="font-medium">Processing Time</Label>
-                <Input
-                  id="processing_time"
-                  name="processing_time"
-                  value={formData.processing_time}
-                  onChange={onInputChange}
-                  placeholder="e.g. 5-7 business days"
-                  className="border-gray-300 focus:border-teal-500"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="length_of_stay" className="font-medium">Length of Stay</Label>
-                <Input
-                  id="length_of_stay"
-                  name="length_of_stay"
-                  value={formData.length_of_stay}
-                  onChange={onInputChange}
-                  placeholder="e.g. Up to 90 days"
-                  className="border-gray-300 focus:border-teal-500"
-                />
-              </div>
-            </div>
-
             <div className="grid gap-2">
-              <Label htmlFor="requirements_description" className="font-medium">Requirements Description</Label>
+              <Label htmlFor="requirements_description">Requirements Overview</Label>
               <Textarea
                 id="requirements_description"
                 name="requirements_description"
                 value={formData.requirements_description || ''}
-                onChange={onInputChange}
-                placeholder="Describe the visa requirements for this country"
-                rows={2}
-                className="border-gray-300 focus:border-teal-500"
+                onChange={handleInputChange}
+                placeholder="Brief description of general visa requirements"
+                rows={3}
               />
             </div>
           </TabsContent>
-          
-          {/* Visa Includes Tab */}
-          <TabsContent value="includes">
-            <div className="border p-4 rounded-md bg-gray-50">
-              <div className="flex justify-between items-center mb-3">
-                <Label className="text-lg font-medium text-navy-800">What's Included in Tourist Visa</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleAddVisaInclude}
-                  className="h-8 border-teal-500 text-teal-600 hover:bg-teal-50"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
-              </div>
-              {visaIncludes.length === 0 ? (
-                <div className="text-center py-6 text-gray-500">
-                  <p>No items added yet. Click the Add button to include what comes with the visa.</p>
-                </div>
-              ) : (
-                visaIncludes.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 mb-2">
-                    <Input
-                      value={item}
-                      onChange={(e) => handleVisaIncludeChange(index, e.target.value)}
-                      placeholder="e.g. Entry to Country"
-                      className="border-gray-300 focus:border-teal-500"
-                    />
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveVisaInclude(index)}
-                      className="text-red-500 h-8 w-8 p-0 hover:bg-red-50 hover:text-red-700"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Permitsy Assistance Tab */}
-          <TabsContent value="assistance">
-            <div className="border p-4 rounded-md bg-gray-50">
-              <div className="flex justify-between items-center mb-3">
-                <Label className="text-lg font-medium text-navy-800">Tourist Visa Assistance</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleAddVisaAssistance}
-                  className="h-8 border-teal-500 text-teal-600 hover:bg-teal-50"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
-              </div>
-              {visaAssistance.length === 0 ? (
-                <div className="text-center py-6 text-gray-500">
-                  <p>No assistance items added yet. Click the Add button to include support services.</p>
-                </div>
-              ) : (
-                visaAssistance.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 mb-2">
-                    <Input
-                      value={item}
-                      onChange={(e) => handleVisaAssistanceChange(index, e.target.value)}
-                      placeholder="e.g. 24/7 customer support"
-                      className="border-gray-300 focus:border-teal-500"
-                    />
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveVisaAssistance(index)}
-                      className="text-red-500 h-8 w-8 p-0 hover:bg-red-50 hover:text-red-700"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Processing Steps Tab */}
-          <TabsContent value="process">
-            <div className="border p-4 rounded-md bg-gray-50">
-              <div className="flex justify-between items-center mb-3">
-                <Label className="text-lg font-medium text-navy-800">Processing Steps</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleAddProcessingStep}
-                  className="h-8 border-teal-500 text-teal-600 hover:bg-teal-50"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add Step
-                </Button>
-              </div>
-              
-              {processingSteps.length === 0 ? (
-                <div className="text-center py-6 text-gray-500">
-                  <p>No steps added yet. Click the Add Step button to create a step-by-step process.</p>
-                </div>
-              ) : (
-                processingSteps.map((step, index) => (
-                  <div key={index} className="grid md:grid-cols-8 gap-2 mb-4 items-start p-3 border rounded-md bg-white">
-                    <div className="md:col-span-1">
-                      <Label className="text-xs mb-1 block">Step #</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={step.step}
-                        onChange={(e) => handleProcessingStepChange(index, 'step', e.target.value)}
-                        placeholder="Step"
-                        className="border-gray-300 focus:border-teal-500"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label className="text-xs mb-1 block">Title</Label>
-                      <Input
-                        value={step.title}
-                        onChange={(e) => handleProcessingStepChange(index, 'title', e.target.value)}
-                        placeholder="Title"
-                        className="border-gray-300 focus:border-teal-500"
-                      />
-                    </div>
-                    <div className="md:col-span-4">
-                      <Label className="text-xs mb-1 block">Description</Label>
-                      <Textarea
-                        value={step.description}
-                        onChange={(e) => handleProcessingStepChange(index, 'description', e.target.value)}
-                        placeholder="Description"
-                        rows={2}
-                        className="border-gray-300 focus:border-teal-500"
-                      />
-                    </div>
-                    <div className="md:col-span-1 flex items-end justify-center h-full pb-1">
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleRemoveProcessingStep(index)}
-                        className="text-red-500 h-8 w-8 p-0 hover:bg-red-50 hover:text-red-700"
-                        disabled={processingSteps.length <= 1}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Additional Info Tab */}
-          <TabsContent value="additional" className="space-y-6">
-            {/* FAQ Section */}
-            <div className="border p-4 rounded-md bg-gray-50">
-              <div className="flex justify-between items-center mb-3">
-                <Label className="text-lg font-medium text-navy-800">Frequently Asked Questions</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleAddFaq}
-                  className="h-8 border-teal-500 text-teal-600 hover:bg-teal-50"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add FAQ
-                </Button>
-              </div>
-              {faqItems.length === 0 ? (
-                <div className="text-center py-6 text-gray-500">
-                  <p>No FAQs added yet. Click the Add FAQ button to add questions and answers.</p>
-                </div>
-              ) : (
-                faqItems.map((faq, index) => (
-                  <div key={index} className="grid gap-2 mb-4 border-b pb-4 last:border-0 last:pb-0 bg-white p-3 rounded-md my-2">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-sm font-medium">FAQ #{index + 1}</Label>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleRemoveFaq(index)}
-                        className="text-red-500 h-8 hover:bg-red-50 hover:text-red-700"
-                      >
-                        <Trash className="h-4 w-4 mr-1" /> Remove
-                      </Button>
-                    </div>
-                    <Label className="text-xs">Question</Label>
-                    <Input
-                      value={faq.question}
-                      onChange={(e) => handleFaqChange(index, 'question', e.target.value)}
-                      placeholder="Question"
-                      className="border-gray-300 focus:border-teal-500"
-                    />
-                    <Label className="text-xs">Answer</Label>
-                    <Textarea
-                      value={faq.answer}
-                      onChange={(e) => handleFaqChange(index, 'answer', e.target.value)}
-                      placeholder="Answer"
-                      rows={2}
-                      className="border-gray-300 focus:border-teal-500"
-                    />
-                  </div>
-                ))
-              )}
-            </div>
 
-            {/* Embassy Details Section */}
-            <div className="border p-4 rounded-md bg-gray-50">
-              <div className="flex justify-between items-center mb-3">
-                <Label className="text-lg font-medium text-navy-800">Embassy Details</Label>
+          <TabsContent value="includes" className="space-y-4 pt-4">
+            <Label className="font-medium">Visa Includes</Label>
+            {(formData.visa_includes || []).map((item, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <Input
+                  value={item}
+                  onChange={(e) => handleVisaIncludeChange(index, e.target.value)}
+                  placeholder={`Included feature ${index + 1}`}
+                  className="flex-1"
+                />
+                <Button variant="ghost" size="icon" onClick={() => handleRemoveVisaInclude(index)}>
+                  <Trash className="h-4 w-4 text-red-500" />
+                </Button>
               </div>
-              <div className="grid gap-3 bg-white p-4 rounded-md">
-                <div className="grid">
-                  <Label className="text-sm mb-1">Address</Label>
+            ))}
+            <Button variant="outline" size="sm" onClick={handleAddVisaInclude}>
+              <Plus className="h-4 w-4 mr-1" /> Add Include
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="assistance" className="space-y-4 pt-4">
+            <Label className="font-medium">Visa Assistance</Label>
+            {(formData.visa_assistance || []).map((item, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <Input
+                  value={item}
+                  onChange={(e) => handleVisaAssistanceChange(index, e.target.value)}
+                  placeholder={`Assistance feature ${index + 1}`}
+                  className="flex-1"
+                />
+                <Button variant="ghost" size="icon" onClick={() => handleRemoveVisaAssistance(index)}>
+                  <Trash className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={handleAddVisaAssistance}>
+              <Plus className="h-4 w-4 mr-1" /> Add Assistance
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="process" className="space-y-4 pt-4">
+            <Label className="font-medium">Processing Steps</Label>
+            {(formData.processing_steps || []).map((step, index) => (
+              <div key={index} className="p-3 border rounded space-y-2">
+                <Label>Step {step.step}</Label>
+                <Input
+                  value={step.title}
+                  onChange={(e) => handleProcessingStepChange(index, 'title', e.target.value)}
+                  placeholder={`Step ${step.step} Title`}
+                  className="mb-1"
+                />
+                <Textarea
+                  value={step.description}
+                  onChange={(e) => handleProcessingStepChange(index, 'description', e.target.value)}
+                  placeholder={`Step ${step.step} Description`}
+                  rows={2}
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleRemoveProcessingStep(index)} 
+                  disabled={(formData.processing_steps?.length || 0) <= 1}
+                  className="text-red-500 hover:text-red-700 float-right"
+                >
+                  <Trash className="h-4 w-4 mr-1" /> Remove Step
+                </Button>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={handleAddProcessingStep}>
+              <Plus className="h-4 w-4 mr-1" /> Add Step
+            </Button>
+          </TabsContent>
+          
+          <TabsContent value="documents" className="space-y-4 pt-4">
+            <Label className="font-medium">Required Documents Checklist</Label>
+            {(formData.documents || []).map((doc, index) => (
+              <div key={index} className="p-3 border rounded space-y-2 relative">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <Input
-                    value={embassyDetails.address}
-                    onChange={(e) => handleEmbassyChange('address', e.target.value)}
-                    placeholder="Embassy address"
-                    className="border-gray-300 focus:border-teal-500"
+                    value={doc.document_name}
+                    onChange={(e) => handleDocumentChange(index, 'document_name', e.target.value)}
+                    placeholder={`Document ${index + 1} Name`}
+                  />
+                  <Textarea
+                    value={doc.document_description}
+                    onChange={(e) => handleDocumentChange(index, 'document_description', e.target.value)}
+                    placeholder={`Document ${index + 1} Description`}
+                    rows={1}
                   />
                 </div>
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="grid">
-                    <Label className="text-sm mb-1">Phone</Label>
-                    <Input
-                      value={embassyDetails.phone}
-                      onChange={(e) => handleEmbassyChange('phone', e.target.value)}
-                      placeholder="Embassy phone"
-                      className="border-gray-300 focus:border-teal-500"
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`required-${index}`}
+                      checked={doc.required}
+                      onCheckedChange={(checked) => handleDocumentChange(index, 'required', !!checked)}
                     />
+                    <label htmlFor={`required-${index}`} className="text-sm font-medium">Required</label>
                   </div>
-                  <div className="grid">
-                    <Label className="text-sm mb-1">Email</Label>
-                    <Input
-                      value={embassyDetails.email}
-                      onChange={(e) => handleEmbassyChange('email', e.target.value)}
-                      placeholder="Embassy email"
-                      className="border-gray-300 focus:border-teal-500"
-                    />
-                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => handleRemoveDocument(index)}>
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
                 </div>
-                <div className="grid">
-                  <Label className="text-sm mb-1">Working Hours</Label>
-                  <Input
-                    value={embassyDetails.hours}
-                    onChange={(e) => handleEmbassyChange('hours', e.target.value)}
-                    placeholder="e.g. Monday to Friday, 9:00 AM to 5:00 PM"
-                    className="border-gray-300 focus:border-teal-500"
-                  />
-                </div>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={handleAddDocument}>
+              <Plus className="h-4 w-4 mr-1" /> Add Document Item
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-4 pt-4">
+            <Label className="font-medium">Default Visa Package Pricing</Label>
+            <div className="grid md:grid-cols-3 gap-4 p-4 border rounded">
+              <div className="grid gap-1.5">
+                <Label htmlFor="government_fee">Government Fee *</Label>
+                <Input
+                  id="government_fee"
+                  name="government_fee"
+                  type="number"
+                  value={formData.pricing?.government_fee || ''}
+                  onChange={(e) => handlePricingChange('government_fee', e.target.value)}
+                  placeholder="e.g., 150"
+                  min="0"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="service_fee">Service Fee *</Label>
+                <Input
+                  id="service_fee"
+                  name="service_fee"
+                  type="number"
+                  value={formData.pricing?.service_fee || ''}
+                  onChange={(e) => handlePricingChange('service_fee', e.target.value)}
+                  placeholder="e.g., 50"
+                  min="0"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="processing_days">Processing Days *</Label>
+                <Input
+                  id="processing_days"
+                  name="processing_days"
+                  type="number"
+                  value={formData.pricing?.processing_days || ''}
+                  onChange={(e) => handlePricingChange('processing_days', e.target.value)}
+                  placeholder="e.g., 10"
+                  min="1"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">This sets the initial pricing for the default visa package when a country is created. You can manage more complex pricing tiers separately.</p>
+          </TabsContent>
+          
+          <TabsContent value="embassy" className="space-y-4 pt-4">
+            <Label className="font-medium">Embassy Details</Label>
+            <div className="grid md:grid-cols-2 gap-4 p-4 border rounded">
+              <div className="grid gap-1.5">
+                <Label htmlFor="embassy_address">Address</Label>
+                <Input
+                  id="embassy_address"
+                  value={formData.embassy_details?.address || ''}
+                  onChange={(e) => handleEmbassyChange('address', e.target.value)}
+                  placeholder="Embassy Address"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="embassy_phone">Phone</Label>
+                <Input
+                  id="embassy_phone"
+                  value={formData.embassy_details?.phone || ''}
+                  onChange={(e) => handleEmbassyChange('phone', e.target.value)}
+                  placeholder="Embassy Phone Number"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="embassy_email">Email</Label>
+                <Input
+                  id="embassy_email"
+                  type="email"
+                  value={formData.embassy_details?.email || ''}
+                  onChange={(e) => handleEmbassyChange('email', e.target.value)}
+                  placeholder="Embassy Email Address"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="embassy_hours">Working Hours</Label>
+                <Input
+                  id="embassy_hours"
+                  value={formData.embassy_details?.hours || ''}
+                  onChange={(e) => handleEmbassyChange('hours', e.target.value)}
+                  placeholder="e.g., Mon-Fri 9am-5pm"
+                />
               </div>
             </div>
           </TabsContent>
-        </Tabs>
-        
-        <DialogFooter className="flex items-center justify-between pt-4 border-t">
-          <div className="flex gap-1">
-            {activeTab !== "basic-info" && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  const tabs = ["basic-info", "includes", "assistance", "process", "additional"];
-                  const currentIndex = tabs.indexOf(activeTab);
-                  if (currentIndex > 0) {
-                    setActiveTab(tabs[currentIndex - 1]);
-                  }
-                }}
-              >
-                Previous
-              </Button>
-            )}
-            
-            {activeTab !== "additional" && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  const tabs = ["basic-info", "includes", "assistance", "process", "additional"];
-                  const currentIndex = tabs.indexOf(activeTab);
-                  if (currentIndex < tabs.length - 1) {
-                    setActiveTab(tabs[currentIndex + 1]);
-                  }
-                }}
-              >
-                Next
-              </Button>
-            )}
-          </div>
           
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleFormSubmit} 
-              className="bg-teal hover:bg-teal-600 gap-2"
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <>
-                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  {isEditMode ? 'Update' : 'Add'} Country
-                </>
-              )}
-            </Button>
-          </div>
+        </Tabs>
+
+        <DialogFooter className="mt-6 pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button 
+            onClick={handleFormSubmit} 
+            disabled={isLoading} 
+            className="bg-teal hover:bg-teal-600 text-white"
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {isEditMode ? 'Update Country' : 'Create Country'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

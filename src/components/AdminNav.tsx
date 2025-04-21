@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Package, Globe, FileText, Users, MessageSquare, BarChart, Puzzle, Briefcase, Award, LogOut, TestTube, FileCheck } from 'lucide-react';
+import { Home, Globe, FileText, Users, MessageSquare, BarChart, Puzzle, Briefcase, Award, LogOut, TestTube, FileCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -39,17 +39,7 @@ const AdminNav = () => {
       label: 'Countries',
     },
     {
-      to: '/admin/visa-types',
-      icon: <FileText className="h-5 w-5" />,
-      label: 'Visa Types',
-    },
-    {
-      to: '/admin/packages',
-      icon: <Package className="h-5 w-5" />,
-      label: 'Packages',
-    },
-    {
-      to: '/admin/addon-services',
+      to: '/admin/addons',
       icon: <Puzzle className="h-5 w-5" />,
       label: 'Addon Services',
     },
@@ -84,7 +74,7 @@ const AdminNav = () => {
       label: 'Analytics',
     },
     {
-      to: '/admin/component-tester',
+      to: '/admin/tester',
       icon: <TestTube className="h-5 w-5" />,
       label: 'Component Tester',
     },

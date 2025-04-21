@@ -6,7 +6,6 @@ import { Menu, AlertTriangle } from 'lucide-react';
 import AdminHome from '@/components/admin/AdminHome';
 import CountriesManager from '@/components/admin/CountriesManager';
 import VisaTypesManager from '@/components/admin/VisaTypesManager';
-import PackagesManager from '@/components/admin/PackagesManager';
 import ApplicationsManager from '@/components/admin/ApplicationsManager';
 import UsersManager from '@/components/admin/UsersManager';
 import FAQsManager from '@/components/admin/FAQsManager';
@@ -248,40 +247,37 @@ const AdminDashboard = () => {
         {/* Main content */}
         <div className="flex-1">
           {/* Top bar - Mobile */}
-          <div className="md:hidden p-4 bg-white border-b border-gray-200 flex items-center">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+          <div className="md:hidden bg-white p-4 border-b flex items-center justify-between">
+            <button 
               onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-md hover:bg-gray-100"
             >
               <Menu className="h-6 w-6" />
-            </Button>
-            <h1 className="ml-4 text-lg font-medium">Admin Dashboard</h1>
+            </button>
+            <div className="font-bold">Admin Dashboard</div>
+            <button 
+              onClick={refreshAllData}
+              className="p-2 rounded-md hover:bg-gray-100 text-blue-600"
+            >
+              Refresh
+            </button>
           </div>
           
-          {/* Admin control bar */}
-          <div className="bg-white border-b border-gray-200 p-4 flex justify-between items-center shadow-sm">
-            <h1 className="text-xl font-semibold text-navy-800">Admin Control Panel</h1>
-            <Button onClick={refreshAllData} variant="outline" className="text-sm">
-              Refresh All Data
-            </Button>
-          </div>
-          
-          {/* Page content with error boundaries for each route */}
+          {/* Content */}
           <div className="p-6">
             <Routes>
               <Route path="/" element={<SafeComponent component={AdminHome} />} />
-              <Route path="/countries" element={<SafeComponent component={CountriesManager} />} />
+              <Route path="/countries" element={<SafeComponent component={() => <CountriesManager queryClient={queryClient} />} />} />
+              <Route path="/packages" element={<Navigate to="/admin/countries" replace />} />
               <Route path="/visa-types" element={<SafeComponent component={VisaTypesManager} />} />
-              <Route path="/packages" element={<SafeComponent component={PackagesManager} />} />
-              <Route path="/addon-services" element={<SafeComponent component={AddonServicesManager} />} />
               <Route path="/applications" element={<SafeComponent component={ApplicationsManager} />} />
               <Route path="/users" element={<SafeComponent component={UsersManager} />} />
               <Route path="/faqs" element={<SafeComponent component={FAQsManager} />} />
               <Route path="/testimonials" element={<SafeComponent component={TestimonialsManager} />} />
+              <Route path="/legal-pages/*" element={<SafeComponent component={AdminLegalPages} />} />
               <Route path="/analytics" element={<SafeComponent component={AnalyticsDashboard} />} />
-              <Route path="/component-tester" element={<AdminComponentTester />} />
-              <Route path="/legal-pages" element={<AdminLegalPages />} />
+              <Route path="/addons" element={<SafeComponent component={AddonServicesManager} />} />
+              <Route path="/tester" element={<SafeComponent component={AdminComponentTester} />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </div>

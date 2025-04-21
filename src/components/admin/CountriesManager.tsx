@@ -1,51 +1,74 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CountryTable from './CountryTable';
-import CountryDialog from './CountryDialog';
+import CountryDialog, { CountryFormData, CountrySubmitData } from './CountryDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DocumentChecklistManager from './DocumentChecklistManager';
 import PricingTierManager from './PricingTierManager';
+import VisaTypesManager from './VisaTypesManager';
+import VisaPackagesManager from './VisaPackagesManager';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { z } from 'zod';
+import { refreshSchemaCache } from '@/integrations/supabase/refresh-schema';
 
-// Define the CountryFormData interface to match the expected type in CountryDialog
-interface CountryFormData {
-  name: string;
-  flag: string;
-  banner: string;
-  description: string;
-  entry_type: string;
-  validity: string;
-  processing_time: string;
-  length_of_stay: string;
-  requirements_description?: string;
-  visa_includes: string[];
-  visa_assistance: string[];
-  processing_steps: any[];
-  faq: any[];
-  embassy_details: {
-    address: string;
-    phone: string;
-    email: string;
-    hours: string;
-  };
-}
+// Initial empty form data structure
+const getInitialFormData = (): CountryFormData => ({
+  name: '',
+  flag: '',
+  banner: '',
+  description: '',
+  entry_type: 'Tourist Visa', // Default entry type
+  validity: '',
+  processing_time: '',
+  length_of_stay: '',
+  requirements_description: '',
+  visa_includes: [],
+  visa_assistance: [],
+  processing_steps: [],
+  faq: [],
+  embassy_details: { address: '', phone: '', email: '', hours: '' },
+  documents: [],
+  pricing: { government_fee: '', service_fee: '', processing_days: '' }
+});
 
 interface CountriesManagerProps {
   queryClient?: any;
 }
 
+// Define a form schema using zod
+const formSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Country name is required"),
+  code: z.string().min(2, "Country code is required").max(2),
+  flag_url: z.string().optional(),
+  description: z.string().optional(),
+  entry_type: z.string().optional(),
+  processing_time: z.string().optional(),
+  is_active: z.boolean().default(true),
+  pricing: z.array(
+    z.object({
+      visa_type: z.string(),
+      government_fee: z.union([z.string(), z.number()]),
+      service_fee: z.union([z.string(), z.number()]),
+      processing_days: z.union([z.string(), z.number()]),
+      length_of_stay: z.union([z.string(), z.number()]),
+    })
+  ).optional()
+});
+
 const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [currentCountry, setCurrentCountry] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentCountryId, setCurrentCountryId] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState('countries');
-  const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
+  const [selectedCountryIdForTabs, setSelectedCountryIdForTabs] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const localQueryClient = useQueryClient();
@@ -53,32 +76,13 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
   // Use the passed queryClient or the local one
   const activeQueryClient = queryClient || localQueryClient;
   
-  const [formData, setFormData] = useState<CountryFormData>({
-    name: '',
-    flag: '',
-    banner: '',
-    description: '',
-    entry_type: '',
-    validity: '',
-    processing_time: '',
-    length_of_stay: '',
-    requirements_description: '',
-    visa_includes: [] as string[],
-    visa_assistance: [] as string[],
-    processing_steps: [] as any[],
-    faq: [] as any[],
-    embassy_details: {
-      address: '',
-      phone: '',
-      email: '',
-      hours: ''
-    }
-  });
+  // Single source of truth for form data
+  const [formData, setFormData] = useState<CountryFormData>(getInitialFormData());
 
   // Fetch countries data with enhanced error handling and debugging
   const { 
     data: countries = [], 
-    isLoading, 
+    isLoading: countriesLoading, 
     isError, 
     error,
     refetch 
@@ -131,6 +135,7 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
     activeQueryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
     activeQueryClient.invalidateQueries({ queryKey: ['heroCountries'] });
     activeQueryClient.invalidateQueries({ queryKey: ['countryDetails'] });
+    activeQueryClient.invalidateQueries({ queryKey: ['visaPackages'] });
     
     // Force refetch after a slight delay to ensure we have fresh data
     setTimeout(() => {
@@ -154,27 +159,8 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
   };
 
   const handleAddNew = () => {
-    setFormData({
-      name: '',
-      flag: '',
-      banner: '',
-      description: '',
-      entry_type: '',
-      validity: '',
-      processing_time: '',
-      length_of_stay: '',
-      requirements_description: '',
-      visa_includes: [],
-      visa_assistance: [],
-      processing_steps: [],
-      faq: [],
-      embassy_details: {
-        address: '',
-        phone: '',
-        email: '',
-        hours: ''
-      }
-    });
+    setFormData(getInitialFormData());
+    setCurrentCountryId(null);
     setIsEditMode(false);
     setIsDialogOpen(true);
   };
@@ -182,11 +168,12 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
   const handleEdit = (country: any) => {
     console.log('Editing country:', country);
     setFormData({
+      id: country.id,
       name: country.name || '',
       flag: country.flag || '',
       banner: country.banner || '',
       description: country.description || '',
-      entry_type: country.entry_type || '',
+      entry_type: country.entry_type || 'Tourist Visa',
       validity: country.validity || '',
       processing_time: country.processing_time || '',
       length_of_stay: country.length_of_stay || '',
@@ -200,9 +187,11 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         phone: '',
         email: '',
         hours: ''
-      }
+      },
+      documents: country.documents || [],
+      pricing: { government_fee: '', service_fee: '', processing_days: '' }
     });
-    setCurrentCountry(country);
+    setCurrentCountryId(country.id);
     setIsEditMode(true);
     setIsDialogOpen(true);
   };
@@ -233,85 +222,133 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (submitData: CountrySubmitData) => {
+    setIsLoading(true);
+    let countryId = isEditMode ? currentCountryId : null;
+    let savedCountryName = submitData.name;
+
     try {
-      // Validate required fields
-      if (!formData.name || !formData.entry_type) {
-        toast({
-          title: "Missing required fields",
-          description: "Please fill in all required fields and upload images",
-          variant: "destructive",
-        });
-        return;
+      let flagUrl = submitData.flag;
+      let bannerUrl = submitData.banner;
+
+      // 1. Handle Image Uploads (if new files provided)
+      if (submitData.flagFile) {
+        const flagFilename = `flag-${Date.now()}-${submitData.flagFile.name}`;
+        const { data, error } = await supabase.storage.from('country-images').upload(flagFilename, submitData.flagFile);
+        if (error) throw new Error(`Flag upload failed: ${error.message}`);
+        flagUrl = supabase.storage.from('country-images').getPublicUrl(flagFilename).data.publicUrl;
+      }
+      if (submitData.bannerFile) {
+        const bannerFilename = `banner-${Date.now()}-${submitData.bannerFile.name}`;
+        const { data, error } = await supabase.storage.from('country-images').upload(bannerFilename, submitData.bannerFile);
+        if (error) throw new Error(`Banner upload failed: ${error.message}`);
+        bannerUrl = supabase.storage.from('country-images').getPublicUrl(bannerFilename).data.publicUrl;
       }
       
-      console.log('Submitting form data:', formData);
+      // 2. Prepare Country Data for Save
+      const { 
+        pricing, 
+        documents, 
+        flagFile, 
+        bannerFile,
+        id, // Exclude id from direct data save object
+        ...countryFields 
+      } = submitData;
       
-      if (isEditMode && currentCountry) {
-        // Update existing country
-        console.log(`Updating country with ID: ${currentCountry.id}`);
-        const { data, error } = await supabase
-          .from('countries')
-          .update(formData)
-          .eq('id', currentCountry.id)
-          .select();
-          
-        console.log('Update response:', { data, error });
-          
-        if (error) throw error;
-        
-        toast({
-          title: "Country updated",
-          description: `${formData.name} has been successfully updated`,
-        });
+      const dataToSave = {
+          ...countryFields,
+          flag: flagUrl,
+          banner: bannerUrl,
+          entry_type: countryFields.entry_type || 'Tourist Visa',
+          processing_time: countryFields.processing_time || 'N/A',
+          updated_at: new Date().toISOString()
+      };
+
+      // 3. Validate (basic example)
+      if (!dataToSave.name || !dataToSave.flag || !dataToSave.banner || !dataToSave.description) {
+        throw new Error("Missing required fields: Name, Flag, Banner, Description.");
+      }
+
+      // 4. Save Country Data (Insert or Update)
+      let countryError = null;
+      if (isEditMode && countryId) {
+        console.log(`Updating country ${countryId} with data:`, dataToSave);
+        const { error } = await supabase.from('countries').update(dataToSave).eq('id', countryId);
+        countryError = error;
       } else {
-        // Create new country
-        console.log('Creating new country');
-        const { data, error } = await supabase
-          .from('countries')
-          .insert([formData])
-          .select();
-          
-        console.log('Insert response:', { data, error });
-          
-        if (error) throw error;
-        
-        toast({
-          title: "Country added",
-          description: `${formData.name} has been successfully added`,
-        });
+        console.log("Creating new country with data:", dataToSave);
+        const { data: newData, error } = await supabase.from('countries').insert(dataToSave).select('id').single();
+        countryError = error;
+        if (!error && newData) {
+          countryId = newData.id;
+        }
+      }
+
+      if (countryError) {
+         console.error("Error saving country:", countryError);
+         throw new Error(`Failed to save country: ${countryError.message}`);
       }
       
-      // Close dialog and refresh countries
-      setIsDialogOpen(false);
+      toast({ title: isEditMode ? "Country Updated" : "Country Created", description: `${savedCountryName} saved successfully.` });
+
+      // 5. Save Pricing Data via RPC (if country save succeeded and pricing exists)
+      if (countryId && pricing && (pricing.government_fee || pricing.service_fee || pricing.processing_days)) {
+          try {
+            // console.log('Attempting to refresh schema cache before saving pricing...');
+            // await refreshSchemaCache(); // <-- Temporarily remove this call
+            // console.log('Schema cache refresh attempted.');
+
+            const govFee = parseFloat(pricing.government_fee) || 0;
+            const serviceFee = parseFloat(pricing.service_fee) || 0;
+            const processingDays = parseInt(pricing.processing_days) || 0;
+            
+            if (govFee > 0 || serviceFee > 0 || processingDays > 0) {
+                console.log(`Calling save_visa_package for country ${countryId} using positional arguments`);
+                const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', 
+                    [countryId, 'Visa Package', govFee, serviceFee, processingDays]
+                );
+
+                if (rpcError) {
+                    console.error("Error saving visa package via RPC:", rpcError);
+                    throw new Error(`Failed to save pricing: ${rpcError.message}`);
+                } else {
+                    console.log("Visa package saved successfully via RPC:", rpcData);
+                    toast({ title: "Pricing Saved", description: `Default pricing for ${savedCountryName} saved.` });
+                }
+            }
+          } catch (pricingError: any) {
+            console.error("Error processing pricing data:", pricingError);
+            toast({ 
+                title: "Warning: Pricing Issue", 
+                description: `Country ${savedCountryName} saved, but pricing failed: ${pricingError.message}`, 
+                variant: "destructive" 
+            });
+          }
+      }
       
-      // Invalidate all queries to ensure fresh data
+      // 6. Handle Documents (Example, can be expanded)
+      if (documents && documents.length > 0 && countryId) {
+          console.log("Document handling logic would go here.");
+      }
+
+      // 7. Close Dialog & Refresh Queries
+      setIsDialogOpen(false);
       invalidateAllCountryQueries();
+
     } catch (error: any) {
-      console.error('Error saving country:', error);
-      toast({
-        title: "Error saving country",
-        description: error.message || "Failed to save country data",
-        variant: "destructive",
+      console.error("Error in handleSubmit:", error);
+      toast({ 
+          title: "Save Failed", 
+          description: error.message || "An unexpected error occurred", 
+          variant: "destructive" 
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const navigateToVisaTypes = (countryId: string, countryName: string) => {
-    navigate(`/admin/visa-types?countryId=${countryId}&countryName=${encodeURIComponent(countryName)}`);
-  };
-
-  const navigateToPackages = (countryId: string, countryName: string) => {
-    navigate(`/admin/packages?countryId=${countryId}&countryName=${encodeURIComponent(countryName)}`);
-  };
-
-  const handleSelectCountry = (countryId: string) => {
-    setSelectedCountryId(countryId);
-  };
-
-  // Create a typed handler for CountryDialog's onInputChange prop
-  const handleFormChange = (newFormData: CountryFormData) => {
-    setFormData(newFormData);
+  const handleSelectCountryForTabs = (countryId: string) => {
+    setSelectedCountryIdForTabs(countryId);
   };
 
   return (
@@ -329,10 +366,11 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
       </div>
       
       <Tabs value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 grid w-full grid-cols-4">
           <TabsTrigger value="countries">Countries</TabsTrigger>
-          <TabsTrigger value="documents">Document Checklist</TabsTrigger>
-          <TabsTrigger value="pricing">Pricing Tiers</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="visatypes">Visa Types</TabsTrigger>
         </TabsList>
         
         <TabsContent value="countries">
@@ -345,12 +383,10 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
                 countries={countries}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                navigateToVisaTypes={navigateToVisaTypes}
-                navigateToPackages={navigateToPackages}
-                isLoading={isLoading}
+                isLoading={countriesLoading}
                 isError={isError}
                 error={error as Error | null}
-                onSelectCountry={handleSelectCountry}
+                onSelectCountry={handleSelectCountryForTabs}
               />
             </CardContent>
           </Card>
@@ -359,8 +395,8 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         <TabsContent value="documents">
           <DocumentChecklistManager
             countries={countries}
-            selectedCountryId={selectedCountryId}
-            onSelectCountry={handleSelectCountry}
+            selectedCountryId={selectedCountryIdForTabs}
+            onSelectCountry={handleSelectCountryForTabs}
             queryClient={activeQueryClient}
           />
         </TabsContent>
@@ -368,22 +404,31 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         <TabsContent value="pricing">
           <PricingTierManager
             countries={countries}
-            selectedCountryId={selectedCountryId}
-            onSelectCountry={handleSelectCountry}
+            selectedCountryId={selectedCountryIdForTabs}
+            onSelectCountry={handleSelectCountryForTabs}
+            queryClient={activeQueryClient}
+          />
+        </TabsContent>
+        
+        <TabsContent value="visatypes">
+          <VisaTypesManager
+            countries={countries}
+            selectedCountryId={selectedCountryIdForTabs}
+            onSelectCountry={handleSelectCountryForTabs}
             queryClient={activeQueryClient}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Add/Edit Country Dialog */}
-      <CountryDialog 
+      {/* Dialog - Pass simplified props */}
+      <CountryDialog
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         isEditMode={isEditMode}
         formData={formData}
-        onInputChange={handleInputChange}
+        onFormChange={setFormData}
         onSubmit={handleSubmit}
-        setFormData={handleFormChange}
+        isLoading={isLoading}
       />
     </div>
   );

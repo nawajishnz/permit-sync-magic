@@ -3,46 +3,52 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash, ArrowLeft, RefreshCw, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 
 interface VisaTypesManagerProps {
+  countries: any[];
+  selectedCountryId: string | null;
+  onSelectCountry: (countryId: string) => void;
   queryClient?: any;
 }
 
-const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
+const VisaTypesManager: React.FC<VisaTypesManagerProps> = ({ 
+  countries, 
+  selectedCountryId, 
+  onSelectCountry, 
+  queryClient 
+}) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentVisaType, setCurrentVisaType] = useState<any>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
   const localQueryClient = useQueryClient();
-  
-  // Use the passed queryClient or the local one
   const activeQueryClient = queryClient || localQueryClient;
   
-  // Get countryId and countryName from URL parameters
-  const searchParams = new URLSearchParams(location.search);
-  const countryId = searchParams.get('countryId');
-  const countryName = searchParams.get('countryName') || 'All Countries';
+  const countryId = selectedCountryId;
+  const selectedCountry = Array.isArray(countries) 
+                            ? countries.find(c => c.id === countryId) 
+                            : undefined;
+  const countryName = selectedCountry?.name || (countryId ? 'Loading...' : 'Selected Country');
   
   const [formData, setFormData] = useState({
-    name: '',
+    name: 'Tourist Visa',
     country_id: countryId || '',
     processing_time: '',
     fee: ''
   });
 
-  // Add debug logging
   useEffect(() => {
-    console.log('URL Parameters:', { countryId, countryName });
-  }, [countryId, countryName]);
+    setFormData(prev => ({ ...prev, country_id: countryId || '' }));
+  }, [countryId]);
 
   const { 
     data: visaTypes = [], 
@@ -53,36 +59,25 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
   } = useQuery({
     queryKey: ['visaTypes', countryId],
     queryFn: async () => {
-      console.log('Fetching visa types with countryId:', countryId);
+      console.log('Fetching visa types with selected countryId:', countryId);
+      if (!countryId) return [];
       
       let query = supabase
         .from('visa_types')
-        .select(`
-          *,
-          countries (name)
-        `)
+        .select(`*`)
+        .eq('country_id', countryId)
         .order('name');
-        
-      if (countryId) {
-        query = query.eq('country_id', countryId);
-      }
-      
+              
       const { data, error } = await query;
       
       console.log('Visa types response:', { data, error, count: data?.length });
-      
-      if (error) {
-        console.error('Error fetching visa types:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       return data || [];
     },
-    // Disable stale time to ensure fresh data
+    enabled: !!countryId,
     staleTime: 0
   });
   
-  // Log visa types when they change
   useEffect(() => {
     console.log('Visa types in component:', visaTypes);
   }, [visaTypes]);
@@ -90,11 +85,9 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
   const handleRefresh = () => {
     console.log('Manually refreshing visa types data...');
     
-    // Invalidate ALL visa type queries
     activeQueryClient.invalidateQueries({ queryKey: ['visaTypes'] });
     activeQueryClient.invalidateQueries({ queryKey: ['countryVisaTypes'] });
     
-    // Force refetch after a slight delay
     setTimeout(() => {
       refetch();
     }, 300);
@@ -121,9 +114,13 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
   };
 
   const handleAddNew = () => {
+    if (!countryId) {
+      toast({ title: "Please select a country first", variant: "destructive" });
+      return;
+    }
     setFormData({
       name: 'Tourist Visa',
-      country_id: countryId || '',
+      country_id: countryId,
       processing_time: '',
       fee: ''
     });
@@ -157,7 +154,6 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
         description: "Visa type has been successfully removed",
       });
       
-      // Refresh the visa types list and other related queries
       activeQueryClient.invalidateQueries({ queryKey: ['visaTypes'] });
       activeQueryClient.invalidateQueries({ queryKey: ['countryVisaTypes'] });
       refetch();
@@ -172,25 +168,15 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
   };
 
   const handleSubmit = async () => {
+    if (!countryId) {
+      toast({ title: "Country not selected", variant: "destructive" });
+      return;
+    }
+    
     try {
-      // Validate required fields
-      if (!formData.country_id) {
-        toast({
-          title: "Missing required fields",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Always set the name to "Tourist Visa"
-      const updatedFormData = {
-        ...formData,
-        name: 'Tourist Visa'
-      };
+      const updatedFormData = { ...formData, name: 'Tourist Visa', country_id: countryId };
       
       if (isEditMode && currentVisaType) {
-        // Update existing visa type
         const { error } = await supabase
           .from('visa_types')
           .update(updatedFormData)
@@ -203,7 +189,6 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
           description: `Tourist Visa has been successfully updated`,
         });
       } else {
-        // Create new visa type
         const { error } = await supabase
           .from('visa_types')
           .insert([updatedFormData]);
@@ -216,18 +201,9 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
         });
       }
       
-      // Close dialog and refresh visa types
       setIsDialogOpen(false);
-      
-      // Invalidate all queries to ensure UI is updated
-      activeQueryClient.invalidateQueries({ queryKey: ['visaTypes'] });
-      activeQueryClient.invalidateQueries({ queryKey: ['countryVisaTypes'] });
-      activeQueryClient.invalidateQueries({ queryKey: ['countryDetails'] });
-      
-      // Force refetch
-      setTimeout(() => {
-        refetch();
-      }, 300);
+      activeQueryClient.invalidateQueries({ queryKey: ['visaTypes', countryId] });
+      refetch();
     } catch (error: any) {
       console.error('Error saving visa type:', error);
       toast({
@@ -238,146 +214,104 @@ const VisaTypesManager = ({ queryClient }: VisaTypesManagerProps) => {
     }
   };
 
-  const goBackToCountries = () => {
-    navigate('/admin/countries');
-  };
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <Button variant="ghost" onClick={goBackToCountries} className="mr-2">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Countries
-          </Button>
-          <h1 className="text-2xl font-bold">
-            Tourist Visa for {countryName ? decodeURIComponent(countryName) : 'All Countries'}
-          </h1>
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <CardTitle>Manage Visa Types</CardTitle>
+          <div className="flex items-center gap-2">
+            <Select 
+              value={selectedCountryId || ''} 
+              onValueChange={onSelectCountry}
+            >
+              <SelectTrigger className="w-full md:w-[250px]">
+                <SelectValue placeholder="Select a country..." />
+              </SelectTrigger>
+              <SelectContent>
+                {countries.map(country => (
+                  <SelectItem key={country.id} value={country.id}>
+                    {country.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleAddNew} disabled={!selectedCountryId}>
+              <Plus className="mr-2 h-4 w-4" /> Add Visa Type
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" /> Refresh
-          </Button>
-          <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
-            <Plus className="mr-2 h-4 w-4" /> Add Tourist Visa
-          </Button>
-        </div>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Tourist Visa</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-teal border-t-transparent rounded-full" />
-            </div>
-          ) : isError ? (
-            <div className="text-center py-8 text-red-500">
-              <p>Error loading visa data. Please try again.</p>
-              <p className="text-sm mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
-            </div>
-          ) : visaTypes.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Visa Type</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Processing Time</TableHead>
-                    <TableHead>Fee</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visaTypes.map((visaType) => (
-                    <TableRow key={visaType.id}>
-                      <TableCell className="font-medium">Tourist Visa</TableCell>
-                      <TableCell>{visaType.countries?.name}</TableCell>
-                      <TableCell>{visaType.processing_time}</TableCell>
-                      <TableCell>{visaType.fee}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(visaType)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDelete(visaType.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>No tourist visa found. Add a tourist visa to get started.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {selectedCountryId && (
+          <p className="text-sm text-gray-600">Managing visa types for: <strong>{countryName}</strong></p>
+        )}
+      </CardHeader>
+      <CardContent>
+        {!selectedCountryId ? (
+          <div className="text-center py-8 text-gray-500">
+            <Info className="h-8 w-8 mx-auto mb-2 text-blue-400"/>
+            Select a country above to manage its visa types.
+          </div>
+        ) : isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : isError ? (
+          <div className="text-center py-8 text-red-500">
+            Error loading visa types for {countryName}.
+          </div>
+        ) : visaTypes.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No visa types found for {countryName}. Add the first one.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Visa Type</TableHead>
+                <TableHead>Processing Time</TableHead>
+                <TableHead>Fee</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visaTypes.map((visaType) => (
+                <TableRow key={visaType.id}>
+                  <TableCell className="font-medium">{visaType.name}</TableCell>
+                  <TableCell>{visaType.processing_time}</TableCell>
+                  <TableCell>{visaType.fee}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(visaType)}><Edit className="h-4 w-4 mr-1" /> Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(visaType.id)} className="text-red-500 hover:text-red-700"><Trash className="h-4 w-4 mr-1" /> Delete</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
 
-      {/* Add/Edit Visa Type Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEditMode ? 'Edit Tourist Visa' : 'Add Tourist Visa'}</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Visa Type' : 'Add Visa Type'}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Visa Type</Label>
-              <Input
-                id="name"
-                name="name"
-                value="Tourist Visa"
-                disabled
-                className="bg-gray-100"
-              />
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-gray-600 p-2 bg-gray-100 rounded">Visa Type Name: <strong>Tourist Visa</strong></p>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="processing_time" className="text-right">Processing Time</Label>
+              <Input id="processing_time" name="processing_time" value={formData.processing_time} onChange={handleInputChange} className="col-span-3" placeholder="e.g., 5-7 business days"/>
             </div>
-            <input 
-              type="hidden" 
-              name="country_id" 
-              value={formData.country_id} 
-            />
-            <div className="grid gap-2">
-              <Label htmlFor="processing_time">Processing Time</Label>
-              <Input
-                id="processing_time"
-                name="processing_time"
-                value={formData.processing_time}
-                onChange={handleInputChange}
-                placeholder="e.g. 5-7 business days"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="fee">Fee</Label>
-              <Input
-                id="fee"
-                name="fee"
-                value={formData.fee}
-                onChange={handleInputChange}
-                placeholder="e.g. $100"
-              />
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="fee" className="text-right">Fee</Label>
+              <Input id="fee" name="fee" value={formData.fee} onChange={handleInputChange} className="col-span-3" placeholder="e.g., $160"/>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} className="bg-teal hover:bg-teal-600">
-              {isEditMode ? 'Update' : 'Add'} Tourist Visa
-            </Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmit}>{isEditMode ? 'Save Changes' : 'Add Visa Type'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   );
 };
 

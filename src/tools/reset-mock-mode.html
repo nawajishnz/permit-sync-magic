@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Mock Mode</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2563eb;
+        }
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background-color: #f9fafb;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .success {
+            color: #059669;
+            font-weight: bold;
+            margin-top: 1rem;
+            display: none;
+        }
+        .warning {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Reset Mock Mode</h1>
+    
+    <div class="warning">
+        <p><strong>Note:</strong> Use this tool after running the database fix script to clear any mock data from your browser.</p>
+    </div>
+    
+    <div class="card">
+        <h2>Current Status</h2>
+        <div id="mockStatus">Checking...</div>
+        
+        <button id="resetBtn" onclick="resetMockMode()">Reset Mock Mode</button>
+        <div id="success" class="success">Mock mode reset successfully!</div>
+    </div>
+    
+    <div class="card">
+        <h2>What this does</h2>
+        <p>This tool will clear the following from your browser's localStorage:</p>
+        <ul>
+            <li><code>using_mock_data</code> - Flag that indicates mock mode is active</li>
+            <li><code>mock_visa_packages</code> - Any visa packages stored locally</li>
+            <li><code>schema_errors</code> - Record of database schema errors</li>
+        </ul>
+        <p>After clearing these, you should refresh your application and try adding visa packages again.</p>
+    </div>
+    
+    <script>
+        // Check current status when page loads
+        document.addEventListener('DOMContentLoaded', checkMockStatus);
+        
+        function checkMockStatus() {
+            const usingMockData = localStorage.getItem('using_mock_data') === 'true';
+            const mockPackages = JSON.parse(localStorage.getItem('mock_visa_packages') || '[]');
+            const schemaErrors = JSON.parse(localStorage.getItem('schema_errors') || '{}');
+            
+            const statusElement = document.getElementById('mockStatus');
+            
+            if (usingMockData) {
+                statusElement.innerHTML = `
+                    <p><strong style="color: #dc2626;">Mock Mode is ACTIVE</strong></p>
+                    <p>You have ${mockPackages.length} mock visa package(s) stored locally.</p>
+                    <p>Schema errors: ${Object.keys(schemaErrors).length > 0 ? JSON.stringify(schemaErrors) : 'None recorded'}</p>
+                `;
+            } else {
+                statusElement.innerHTML = `
+                    <p><strong style="color: #059669;">Mock Mode is NOT active</strong></p>
+                    <p>Local storage: ${mockPackages.length > 0 ? `${mockPackages.length} mock packages found` : 'No mock packages'}</p>
+                    <p>Schema errors: ${Object.keys(schemaErrors).length > 0 ? JSON.stringify(schemaErrors) : 'None recorded'}</p>
+                `;
+            }
+        }
+        
+        function resetMockMode() {
+            // Clear all mock-related localStorage items
+            localStorage.removeItem('using_mock_data');
+            localStorage.removeItem('mock_visa_packages');
+            localStorage.removeItem('schema_errors');
+            
+            // Update status display
+            checkMockStatus();
+            
+            // Show success message
+            document.getElementById('success').style.display = 'block';
+            
+            // Hide success message after 3 seconds
+            setTimeout(() => {
+                document.getElementById('success').style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html> 

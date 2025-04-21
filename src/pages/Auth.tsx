@@ -38,7 +38,7 @@ const testimonials = [
 ];
 
 const Auth = () => {
-  const { signIn, signUp, user, userRole } = useAuth();
+  const { signIn, signUp, user, userRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,17 +57,23 @@ const Auth = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Redirect if already logged in
+  // Redirect if already logged in - only once authLoading is complete
   useEffect(() => {
-    if (user && userRole) {
-      console.log('Auth page - User role:', userRole);
-      if (userRole === 'admin') {
-        window.location.href = '/admin';
-      } else {
-        window.location.href = '/dashboard';
-      }
+    if (!authLoading && user && userRole) {
+      console.log('Auth page - User already logged in as:', userRole);
+      
+      // Use a small delay to ensure state is fully updated before navigation
+      const redirectTimer = setTimeout(() => {
+        if (userRole === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
+      }, 100);
+      
+      return () => clearTimeout(redirectTimer);
     }
-  }, [user, userRole]);
+  }, [user, userRole, authLoading, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,16 +90,15 @@ const Auth = () => {
         return;
       }
       
-      console.log('Attempting to sign in with:', email);
+      console.log('Auth component: Attempting to sign in with:', email);
       
-      // Clear the signIn method from AuthContext
+      // Call the signIn method from AuthContext
+      // The navigation is handled in AuthContext
       await signIn(email, password);
       
-      // Navigation is now handled by AuthContext based on user role
-      // We don't need to handle navigation here
-      console.log('Sign-in handled by AuthContext');
+      console.log('Auth component: Sign-in handled by AuthContext');
     } catch (error: any) {
-      console.error('Sign in error in Auth component:', error);
+      console.error('Auth component: Sign in error:', error);
       
       // Handle specific error cases
       if (error.message?.includes('Invalid login credentials')) {
@@ -152,7 +157,7 @@ const Auth = () => {
         return;
       }
       
-      console.log('Attempting to sign up with:', email);
+      console.log('Auth component: Attempting to sign up with:', email);
       await signUp(email, password, fullName);
       
       // Show success message
@@ -167,7 +172,7 @@ const Auth = () => {
       // Clear form fields
       setPassword('');
     } catch (error: any) {
-      console.error('Sign up error:', error);
+      console.error('Auth component: Sign up error:', error);
       toast({
         title: "Sign-up Error",
         description: error.message || "An error occurred while creating your account.",
@@ -177,6 +182,18 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
+  // If auth is still loading, show a minimal loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <LoaderIcon className="w-10 h-10 text-orange-500 animate-spin" />
+          <p className="text-gray-600">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

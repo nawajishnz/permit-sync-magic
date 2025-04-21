@@ -1,8 +1,7 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileUp, X, Check, AlertCircle, Upload } from 'lucide-react';
+import { FileUp, X, Check, AlertCircle, Upload, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface DocumentUploadProps {
@@ -17,6 +16,8 @@ interface FileStatus {
 }
 
 const DocumentUpload: React.FC<DocumentUploadProps> = ({ formData, updateFormData }) => {
+  const needsBookingAssistance = formData?.travelInfo?.bookingOption === 'assist';
+  
   const [files, setFiles] = useState<Record<string, FileStatus>>({
     passport: { file: null, status: 'pending' },
     photo: { file: null, status: 'pending' },
@@ -28,16 +29,16 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ formData, updateFormDat
   
   const [additionalDocuments, setAdditionalDocuments] = useState<FileStatus[]>([]);
 
-  const requiredDocuments = [
+  const alwaysRequiredDocuments = [
     { id: 'passport', label: 'Passport Copy', description: 'First and last page of your passport (PDF)' },
     { id: 'photo', label: 'Passport Size Photo', description: 'Recent photo with white background (JPG/PNG)' },
-    { id: 'financialProof', label: 'Financial Proof', description: 'Bank statements for the last 3 months (PDF)' },
+    { id: 'financialProof', label: 'Financial Proof', description: 'Bank statements for the last 3 months OR last 3 months payslips (PDF)' },
   ];
   
-  const additionalRequiredDocuments = [
-    { id: 'itinerary', label: 'Travel Itinerary', description: 'Flight bookings and travel plans (PDF)' },
-    { id: 'accommodation', label: 'Accommodation Proof', description: 'Hotel reservations or accommodation details (PDF)' },
-    { id: 'insurance', label: 'Travel Insurance', description: 'Valid travel insurance for your trip (PDF)' },
+  const potentiallyOptionalDocuments = [
+    { id: 'itinerary', label: 'Travel Itinerary', description: 'Flight bookings and travel plans (PDF)', required: !needsBookingAssistance },
+    { id: 'accommodation', label: 'Accommodation Proof', description: 'Hotel reservations or accommodation details (PDF)', required: !needsBookingAssistance },
+    { id: 'insurance', label: 'Travel Insurance', description: 'Valid travel insurance for your trip (PDF)', required: true },
   ];
 
   const handleFileChange = (documentId: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,6 +145,22 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ formData, updateFormDat
     return null;
   };
 
+  useEffect(() => {
+    setFiles({
+      passport: { file: formData.documents?.passport || null, status: formData.documents?.passport ? 'success' : 'pending' },
+      photo: { file: formData.documents?.photo || null, status: formData.documents?.photo ? 'success' : 'pending' },
+      financialProof: { file: formData.documents?.financialProof || null, status: formData.documents?.financialProof ? 'success' : 'pending' },
+      itinerary: { file: formData.documents?.itinerary || null, status: formData.documents?.itinerary ? 'success' : 'pending' },
+      accommodation: { file: formData.documents?.accommodation || null, status: formData.documents?.accommodation ? 'success' : 'pending' },
+      insurance: { file: formData.documents?.insurance || null, status: formData.documents?.insurance ? 'success' : 'pending' },
+    });
+    if (Array.isArray(formData.documents?.additionalDocuments)) {
+      setAdditionalDocuments(
+        formData.documents.additionalDocuments.map((file: File) => ({ file, status: 'success' }))
+      );
+    }
+  }, [formData.documents]);
+
   return (
     <div className="space-y-6">
       <Alert className="bg-blue-50 border-blue-200">
@@ -151,13 +168,29 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ formData, updateFormDat
         <AlertTitle className="text-blue-800">Document Guidelines</AlertTitle>
         <AlertDescription className="text-blue-700">
           All documents must be clear, legible and in PDF, JPG, or PNG format. Maximum file size is 5MB per document.
+          {files.financialProof.file === null && (
+            <div className="mt-2 flex items-center">
+              <Info className="h-4 w-4 mr-2" />
+              <span>For Financial Proof, you can submit either your last 3 months bank statements OR your last 3 months payslips.</span>
+            </div>
+          )}
         </AlertDescription>
       </Alert>
+      
+      {needsBookingAssistance && (
+        <Alert className="bg-green-50 border-green-200">
+          <Info className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Booking Assistance Selected</AlertTitle>
+          <AlertDescription className="text-green-700">
+            Travel Itinerary and Accommodation Proof uploads are optional as you've requested booking assistance.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div>
         <h3 className="text-lg font-semibold mb-4">Required Documents</h3>
         <div className="space-y-4">
-          {requiredDocuments.map((doc) => (
+          {alwaysRequiredDocuments.map((doc) => (
             <Card key={doc.id}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
@@ -212,14 +245,17 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ formData, updateFormDat
       </div>
       
       <div>
-        <h3 className="text-lg font-semibold mb-4">Additional Required Documents</h3>
+        <h3 className="text-lg font-semibold mb-4">Additional Documents</h3>
         <div className="space-y-4">
-          {additionalRequiredDocuments.map((doc) => (
+          {potentiallyOptionalDocuments.map((doc) => (
             <Card key={doc.id}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <h4 className="font-medium">{doc.label}</h4>
+                    <h4 className="font-medium">{doc.label} {doc.required && <span className="text-red-500">*</span>}</h4>
+                    {!doc.required && (
+                      <p className="text-xs text-green-600">(Optional due to booking assistance)</p>
+                    )}
                     <p className="text-sm text-gray-500">{doc.description}</p>
                     {files[doc.id].file && (
                       <div className="text-sm mt-2">

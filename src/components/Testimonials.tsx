@@ -120,9 +120,9 @@ const Testimonials: React.FC = () => {
             <div className="absolute top-4 sm:top-6 right-4 sm:right-8 text-indigo-100 hidden sm:block">
               <Quote className="w-8 h-8 sm:w-20 sm:h-20 rotate-180 opacity-30 sm:opacity-100" />
             </div>
-            <div className="flex flex-row items-start gap-4 sm:gap-6 relative z-10">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 relative z-10">
               {/* Avatar Column */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 mb-4 sm:mb-0">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-100 rounded-full flex items-center justify-center text-lg sm:text-xl overflow-hidden">
                   {currentTestimonial.avatarUrl ? (
                     <img 
@@ -137,7 +137,7 @@ const Testimonials: React.FC = () => {
               </div>
 
               {/* Text Content Column */}
-              <div className="flex-1 flex flex-col items-start">
+              <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left">
                 <span className="text-base sm:text-lg font-semibold text-gray-900 mb-1">{currentTestimonial.name}</span>
                 <div className="flex items-center text-xs text-gray-600 mb-2">
                   <Check className="w-3 h-3 text-blue-600 mr-1.5 flex-shrink-0" />

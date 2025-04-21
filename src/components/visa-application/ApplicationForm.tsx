@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -8,9 +8,10 @@ import TravelInfo from './steps/TravelInfo';
 import PassportInfo from './steps/PassportInfo';
 import DocumentUpload from './steps/DocumentUpload';
 import ApplicationReview from './steps/ApplicationReview';
-import PaymentInfo from './steps/PaymentInfo';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 type Step = {
   id: string;
@@ -25,6 +26,9 @@ interface ApplicationFormProps {
   processingTime: string;
   isServiceOrder?: boolean;
   serviceName?: string;
+  initialData?: any;
+  packageId: string;
+  countryId: string;
 }
 
 const ApplicationForm: React.FC<ApplicationFormProps> = ({ 
@@ -32,60 +36,119 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
   visaType,
   processingTime,
   isServiceOrder = false,
-  serviceName
+  serviceName,
+  initialData,
+  packageId,
+  countryId,
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState({
-    personalInfo: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phoneNumber: '',
-      dateOfBirth: '',
-      nationality: '',
-      gender: '',
-      maritalStatus: '',
-      address: {
-        street: '',
-        city: '',
-        state: '',
-        postalCode: '',
-        country: '',
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState(() => {
+    const defaultFormData = {
+      personalInfo: {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        dateOfBirth: '',
+        nationality: '',
+        gender: '',
+        maritalStatus: '',
+        address: {
+          street: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: '',
+        },
       },
-    },
-    travelInfo: {
-      purposeOfTravel: '',
-      departureDate: '',
-      returnDate: '',
-      accommodation: {
-        type: '',
-        name: '',
-        address: '',
-        bookingReference: '',
+      travelInfo: {
+        purposeOfTravel: '',
+        departureDate: '',
+        returnDate: '',
+        bookingOption: 'provided',
+        accommodation: {
+          type: '',
+          name: '',
+          address: '',
+          bookingReference: '',
+        },
+        previousVisits: false,
+        previousVisitDetails: '',
       },
-      previousVisits: false,
-      previousVisitDetails: '',
-    },
-    passportInfo: {
-      passportNumber: '',
-      issuingCountry: '',
-      issueDate: '',
-      expiryDate: '',
-      hasOtherPassports: false,
-      otherPassportDetails: '',
-    },
-    documents: {
-      passport: null,
-      photo: null,
-      financialProof: null,
-      itinerary: null,
-      accommodation: null,
-      insurance: null,
-      additionalDocuments: [],
-    },
+      passportInfo: {
+        passportNumber: '',
+        issuingCountry: '',
+        issueDate: '',
+        expiryDate: '',
+        hasOtherPassports: false,
+        otherPassportDetails: '',
+      },
+      documents: {
+        passport: null,
+        photo: null,
+        financialProof: null,
+        itinerary: null,
+        accommodation: null,
+        insurance: null,
+        additionalDocuments: [],
+      },
+    };
+
+    if (initialData) {
+      return {
+        ...defaultFormData,
+        personalInfo: {
+          ...defaultFormData.personalInfo,
+          firstName: initialData.firstName || defaultFormData.personalInfo.firstName,
+          lastName: initialData.lastName || defaultFormData.personalInfo.lastName,
+          email: initialData.email || defaultFormData.personalInfo.email,
+        },
+        travelInfo: {
+          ...defaultFormData.travelInfo,
+          purposeOfTravel: initialData.purposeOfTravel || defaultFormData.travelInfo.purposeOfTravel,
+          departureDate: initialData.departureDate || defaultFormData.travelInfo.departureDate,
+          returnDate: initialData.returnDate || defaultFormData.travelInfo.returnDate,
+          bookingOption: initialData.bookingOption || defaultFormData.travelInfo.bookingOption,
+        },
+        passportInfo: {
+          ...defaultFormData.passportInfo,
+          ...(initialData.passportInfo || {}),
+        },
+        documents: {
+          ...defaultFormData.documents,
+          ...(initialData.documents || {}),
+        },
+      };
+    }
+
+    return defaultFormData;
   });
+  
+  useEffect(() => {
+      if (initialData) {
+          setFormData(currentData => ({
+             ...currentData,
+              personalInfo: {
+                ...currentData.personalInfo,
+                firstName: initialData.firstName || currentData.personalInfo.firstName,
+                lastName: initialData.lastName || currentData.personalInfo.lastName,
+                email: initialData.email || currentData.personalInfo.email,
+              },
+              travelInfo: {
+                ...currentData.travelInfo,
+                purposeOfTravel: initialData.purposeOfTravel || currentData.travelInfo.purposeOfTravel,
+                departureDate: initialData.departureDate || currentData.travelInfo.departureDate,
+                returnDate: initialData.returnDate || currentData.travelInfo.returnDate,
+                bookingOption: initialData.bookingOption || currentData.travelInfo.bookingOption,
+              },
+          }));
+      }
+  }, [initialData]);
 
   const steps: Step[] = [
     {
@@ -120,7 +183,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
       title: 'Document Upload',
       description: 'Upload all required documents',
       component: <DocumentUpload 
-        formData={formData.documents} 
+        formData={formData}
         updateFormData={(data) => updateFormSection('documents', data)} 
       />,
     },
@@ -130,27 +193,29 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
       description: 'Review your application',
       component: <ApplicationReview formData={formData} />,
     },
-    {
-      id: 'payment',
-      title: 'Payment',
-      description: 'Complete your payment',
-      component: <PaymentInfo />,
-    },
   ];
 
   const updateFormSection = (section: string, data: any) => {
-    setFormData({
-      ...formData,
-      [section]: data,
-    });
+    if (section === 'documents') {
+       setFormData(prev => ({
+         ...prev,
+         documents: {
+           ...prev.documents,
+           ...data
+         }
+       }));
+    } else {
+        setFormData(prev => ({
+          ...prev,
+          [section]: data,
+        }));
+    }
   };
 
   const handleNext = () => {
-    // Validate current step
     let isValid = true;
     
     if (currentStep === 0) {
-      // Basic validation for personal info
       const { firstName, lastName, email } = formData.personalInfo;
       if (!firstName || !lastName || !email) {
         isValid = false;
@@ -164,34 +229,94 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
     
     if (isValid && currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
-      // Scroll to top when moving to next step
       window.scrollTo(0, 0);
+    } else if (isValid && currentStep === steps.length - 1) {
+        handleSubmit();
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
-      // Scroll to top when moving to previous step
       window.scrollTo(0, 0);
     }
   };
 
-  const handleSubmit = () => {
-    // Submit form data
-    console.log('Form submitted:', formData);
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
-    // Show success message
-    toast({
-      title: "Application Submitted",
-      description: `Your ${isServiceOrder ? 'service order' : 'visa application'} has been successfully submitted.`,
-    });
+    if (!user?.id) {
+        toast({
+            title: "Authentication Error",
+            description: "You must be logged in to submit an application.",
+            variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+    }
     
-    // In a real app, you would submit the form data to your backend
-    // Redirect to confirmation page or dashboard
-    setTimeout(() => {
-      navigate('/');
-    }, 2000);
+    if (!packageId || !countryId) {
+        toast({
+            title: "Configuration Error",
+            description: "Missing necessary application identifiers (Package or Country ID).",
+            variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+    }
+    
+    const applicationData = {
+        user_id: user.id,
+        package_id: packageId,
+        visa_type_id: packageId,
+        status: 'Submitted',
+        submitted_date: new Date().toISOString(),
+        next_step: 'Document Review',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        form_data: formData
+    };
+    
+    console.log('Submitting to visa_applications:', applicationData);
+
+    try {
+      const { data, error } = await supabase
+        .from('visa_applications')
+        .insert([applicationData])
+        .select();
+
+      if (error) {
+        console.error('Error submitting application to Supabase:', error);
+        toast({
+          title: "Submission Failed",
+          description: `There was an error submitting your application: ${error.message}`,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('Application submitted successfully:', data);
+      toast({
+        title: "Application Submitted",
+        description: `Your ${isServiceOrder ? 'service order' : 'visa application'} has been successfully submitted.`,
+      });
+      
+      setTimeout(() => {
+        navigate('/dashboard?tab=applications');
+      }, 2000);
+
+    } catch (err) {
+      console.error('Unexpected error during submission:', err);
+      toast({
+        title: "Submission Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+       setIsSubmitting(false);
+    }
   };
 
   const getTitle = () => {
@@ -227,7 +352,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
           {getTitle()}
         </div>
 
-        {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => (
@@ -260,37 +384,35 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
           </div>
         </div>
 
-        {/* Form Content */}
         <div className="mb-8">
           {steps[currentStep].component}
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between pt-4 border-t border-gray-200">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 0}
-            className="flex items-center gap-2"
+        <div className="mt-8 flex justify-between">
+          <Button 
+            variant="outline" 
+            onClick={handlePrevious} 
+            disabled={currentStep === 0 || isSubmitting}
+            className="flex items-center"
           >
-            <ArrowLeft className="w-4 h-4" /> Previous
+            <ArrowLeft className="h-4 w-4 mr-2" /> Previous
           </Button>
-
-          {currentStep < steps.length - 1 ? (
-            <Button 
-              onClick={handleNext}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2"
-            >
-              Next <ArrowRight className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleSubmit}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
-            >
-              Submit {isServiceOrder ? 'Order' : 'Application'}
-            </Button>
-          )}
+          <Button 
+            onClick={handleNext} 
+            disabled={isSubmitting}
+            className="flex items-center bg-indigo-600 hover:bg-indigo-700"
+          >
+            {isSubmitting ? (
+                <>
+                  Submitting...
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full ml-2"></div>
+                </>
+            ) : currentStep === steps.length - 1 ? (
+              <>Submit Application <Check className="h-4 w-4 ml-2" /></>
+            ) : (
+              <>Next Step <ArrowRight className="h-4 w-4 ml-2" /></>
+            )}
+          </Button>
         </div>
       </Card>
     </div>
