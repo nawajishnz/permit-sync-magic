@@ -36,7 +36,7 @@ const VisaApplication = () => {
   ];
   
   // Display processing time based on visa package
-  const processingTimeDisplay = `${visaPackage?.processing_days || 'Standard'} processing`;
+  const processingTimeDisplay = `${visaPackage?.processing_days || 'Standard'} days processing`;
   
   // Handle form submission and navigate to the next step
   const handleSubmit = (formData: any) => {
@@ -62,7 +62,6 @@ const VisaApplication = () => {
     );
   }
   
-  // When rendering the visa package details, update the property references
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />

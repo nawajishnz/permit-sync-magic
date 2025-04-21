@@ -19,7 +19,7 @@ import {
   Minus,
   Plus,
   MessageSquare,
-  Check,
+  Check as CheckIcon,
   Users,
   ShieldCheck,
   BarChart,
@@ -33,7 +33,7 @@ import { format, addDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCountryData } from '@/hooks/useCountryData';
-import VisaDocument from '@/components/country/VisaDocument';
+import VisaDocument from '@/components/VisaDocument';
 import ProcessStep from '@/components/country/ProcessStep';
 import FAQItem from '@/components/country/FAQItem';
 import PricingTier from '@/components/country/PricingTier';
@@ -144,9 +144,13 @@ const CountryDetails = () => {
   const getBasePrice = (): number => {
     if (visaPackage) {
       return visaPackage.total_price || 
-            (visaPackage.government_fee || 0) + (visaPackage.service_fee || 0);
+             (visaPackage.government_fee || 0) + (visaPackage.service_fee || 0);
     }
-    return parsePrice(country?.packageDetails?.price);
+    if (country?.packageDetails) {
+      return country.packageDetails.total_price || 
+             (country.packageDetails.government_fee || 0) + (country.packageDetails.service_fee || 0);
+    }
+    return 0;
   };
 
   const parsePrice = (priceString: string | undefined | null): number => {
@@ -163,7 +167,9 @@ const CountryDetails = () => {
     if (visaPackage?.processing_days) {
       return `${visaPackage.processing_days} business days`;
     }
-    return country?.packageDetails?.processing_time || 'N/A';
+    return country?.packageDetails?.processing_days ? 
+      `${country.packageDetails.processing_days} business days` : 
+      'N/A';
   };
 
   const getEstimatedDate = (): string => {
@@ -441,12 +447,12 @@ const CountryDetails = () => {
                 <TabsContent value="details" className="p-5 md:p-6 focus:outline-none">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Required Documents</h3>
                   <div className="space-y-4">
-                    {country?.required_documents?.map((doc, index) => (
+                    {country?.documents?.map((doc, index) => (
                       <VisaDocument
                         key={index}
-                        title={doc.title}
-                        description={doc.description}
-                        isRequired={doc.required}
+                        documentName={doc.document_name}
+                        documentDescription={doc.document_description || ''}
+                        isRequired={doc.required || false}
                       />
                     ))}
                     

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -206,7 +205,8 @@ const ApplicationTracker = () => {
 
   const currentStep = getCurrentStep(application.status);
   const progress = getProgressPercentage(currentStep);
-  const countryName = application.countries ? application.countries.name : "Unknown Country";
+  const countryName = application.countries && typeof application.countries === 'object' ? 
+    application.countries.name || "Unknown Country" : "Unknown Country";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
