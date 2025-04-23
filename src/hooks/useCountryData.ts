@@ -32,8 +32,10 @@ export interface EmbassyDetails {
 export interface VisaPackage {
   id: string;
   name: string;
-  price: number; // We'll use total_price or calculate from government_fee + service_fee
+  price: number; // We'll calculate this from government_fee + service_fee
   processing_days: number;
+  government_fee?: number;
+  service_fee?: number;
   total_price?: number;
   country_id: string;
 }
@@ -118,10 +120,8 @@ export const useCountryData = (countryId: string | undefined) => {
                 (typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0)
               ),
               processing_days: visaPackages[0].processing_days || 15,
-              total_price: (
-                (typeof visaPackages[0].government_fee === 'number' ? visaPackages[0].government_fee : 0) + 
-                (typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0)
-              ),
+              government_fee: typeof visaPackages[0].government_fee === 'number' ? visaPackages[0].government_fee : 0,
+              service_fee: typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0,
               country_id: visaPackages[0].country_id
             }
           : null;

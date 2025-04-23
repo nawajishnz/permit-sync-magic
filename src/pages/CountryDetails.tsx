@@ -70,9 +70,12 @@ type VisaPackage = {
   government_fee?: number;
   service_fee?: number;
   processing_days: number;
-  total_price?: number;
   created_at?: string;
   updated_at?: string;
+  countries?: {
+    id: string;
+    name: string;
+  };
 };
 
 const CountryDetails = () => {
@@ -127,13 +130,6 @@ const CountryDetails = () => {
         
         console.log("Visa package data:", data);
         
-        // Calculate total price from government_fee and service_fee
-        if (data) {
-          const governmentFee = typeof data.government_fee === 'number' ? data.government_fee : 0;
-          const serviceFee = typeof data.service_fee === 'number' ? data.service_fee : 0;
-          data.total_price = governmentFee + serviceFee;
-        }
-        
         return data;
       } catch (err) {
         console.error('Failed to fetch visa package:', err);
@@ -149,17 +145,23 @@ const CountryDetails = () => {
   const [activeTab, setActiveTab] = useState("details");
   const [numberOfTravelers, setNumberOfTravelers] = useState(1);
 
-  const getBasePrice = (): number => {
-    if (visaPackage) {
-      // Calculate from government_fee and service_fee
-      const governmentFee = typeof visaPackage.government_fee === 'number' ? visaPackage.government_fee : 0;
-      const serviceFee = typeof visaPackage.service_fee === 'number' ? visaPackage.service_fee : 0;
+  // Calculate total price from government_fee and service_fee
+  const calculateTotalPrice = (packageData: VisaPackage | null): number => {
+    if (packageData) {
+      const governmentFee = typeof packageData.government_fee === 'number' ? packageData.government_fee : 0;
+      const serviceFee = typeof packageData.service_fee === 'number' ? packageData.service_fee : 0;
       return governmentFee + serviceFee;
     }
+    
     if (country?.packageDetails) {
       return country.packageDetails.price || 0;
     }
+    
     return 0;
+  };
+
+  const getBasePrice = (): number => {
+    return calculateTotalPrice(visaPackage || null);
   };
 
   const parsePrice = (priceString: string | undefined | null): number => {
@@ -244,16 +246,16 @@ const CountryDetails = () => {
 
   const PricingFeatures = ({ packageDetails }: { packageDetails: VisaPackage | null }) => {
     if (!packageDetails) return null;
-
-    // Calculate total price from government_fee and service_fee
+    
+    // Calculate price from government_fee and service_fee
     const governmentFee = typeof packageDetails.government_fee === 'number' ? packageDetails.government_fee : 0;
     const serviceFee = typeof packageDetails.service_fee === 'number' ? packageDetails.service_fee : 0;
-    const totalPrice = governmentFee + serviceFee;
+    const calculatedPrice = governmentFee + serviceFee;
     
     const formattedPrice = new Intl.NumberFormat('en-US', { 
       style: 'currency', 
       currency: 'USD',
-    }).format(totalPrice);
+    }).format(calculatedPrice);
 
     return (
       <ul className="space-y-2 text-sm">
@@ -261,7 +263,7 @@ const CountryDetails = () => {
           <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
             <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
           </div>
-          <span>Visa price: ${totalPrice}</span>
+          <span>Visa price: ${calculatedPrice}</span>
         </li>
         <li className="flex items-start">
           <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
@@ -392,7 +394,9 @@ const CountryDetails = () => {
                       <div className="flex-1">
                         <div className="mb-2">
                           <span className="text-sm text-gray-500">Visa Price</span>
-                          <p className="text-lg font-bold text-gray-800">${visaPackage.price?.toFixed(2)}</p>
+                          <p className="text-lg font-bold text-gray-800">
+                            ${calculateTotalPrice(visaPackage)?.toFixed(2)}
+                          </p>
                         </div>
                       </div>
                       <div className="flex-1">
@@ -563,7 +567,7 @@ const CountryDetails = () => {
                     <div className="mb-5 flex flex-col">
                       <div className="flex justify-between items-baseline mb-3">
                         <h3 className="text-2xl font-bold text-gray-900">
-                          ${visaPackage ? visaPackage.price?.toFixed(2) : numericBasePrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          ${visaPackage ? calculateTotalPrice(visaPackage).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : numericBasePrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </h3>
                         <span className="text-sm text-gray-500">per person</span>
                       </div>
@@ -571,7 +575,7 @@ const CountryDetails = () => {
                       {visaPackage && (
                         <div className="flex items-center mb-2 text-sm text-gray-500">
                           <Info className="h-4 w-4 mr-1.5 text-blue-500" />
-                          <span>Visa Price: ${visaPackage.price?.toFixed(2)}</span>
+                          <span>Visa Price: ${calculateTotalPrice(visaPackage).toFixed(2)}</span>
                         </div>
                       )}
                       
