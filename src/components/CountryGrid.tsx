@@ -11,13 +11,21 @@ interface CountryGridProps {
   limit?: number;
 }
 
+interface CountryData {
+  id: string;
+  name: string;
+  flag?: string;
+  min_price?: number | null;
+  popularity?: number;
+}
+
 const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
   const { data: countries, isLoading, error } = useQuery({
     queryKey: ['countries'],
     queryFn: async () => {
       const query = supabase
         .from('countries')
-        .select('*')
+        .select('id, name, flag, min_price, popularity')
         .order('popularity', { ascending: false });
       
       if (limit) {
@@ -27,7 +35,7 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data;
+      return data as CountryData[];
     },
   });
 
@@ -75,7 +83,7 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
                 {country.name}
                 <ExternalLink className="h-3 w-3 text-gray-400" />
               </h3>
-              <p className="text-sm text-gray-500">From ${country.min_price !== undefined ? country.min_price : '99'}</p>
+              <p className="text-sm text-gray-500">From ${country.min_price !== undefined && country.min_price !== null ? country.min_price : '99'}</p>
             </CardContent>
           </Card>
         </Link>

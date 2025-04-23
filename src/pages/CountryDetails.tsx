@@ -449,9 +449,9 @@ const CountryDetails = () => {
                       {country?.documents?.map((doc, index) => (
                         <VisaDocument
                           key={index}
-                          documentName={doc.document_name}
-                          documentDescription={doc.document_description || ''}
-                          isRequired={doc.required || false}
+                          name={doc.document_name}
+                          description={doc.document_description || ''}
+                          required={doc.required || false}
                         />
                       ))}
                       
