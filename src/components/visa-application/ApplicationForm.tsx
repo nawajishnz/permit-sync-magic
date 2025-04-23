@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ interface ApplicationFormProps {
   initialData?: any;
   packageId: string;
   countryId: string;
+  onSubmit?: (formData: any) => void;
 }
 
 const ApplicationForm: React.FC<ApplicationFormProps> = ({ 
@@ -40,6 +42,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
   initialData,
   packageId,
   countryId,
+  onSubmit
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -303,9 +306,15 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
         description: `Your ${isServiceOrder ? 'service order' : 'visa application'} has been successfully submitted.`,
       });
       
-      setTimeout(() => {
-        navigate('/dashboard?tab=applications');
-      }, 2000);
+      // If onSubmit prop is provided, call it
+      if (onSubmit && typeof onSubmit === 'function') {
+        onSubmit(formData);
+      } else {
+        // Default navigation if no onSubmit is provided
+        setTimeout(() => {
+          navigate('/dashboard?tab=applications');
+        }, 2000);
+      }
 
     } catch (err) {
       console.error('Unexpected error during submission:', err);

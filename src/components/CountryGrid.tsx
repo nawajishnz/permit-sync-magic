@@ -25,8 +25,7 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
     queryFn: async () => {
       const query = supabase
         .from('countries')
-        .select('id, name, flag, min_price, popularity')
-        .order('popularity', { ascending: false });
+        .select('id, name, flag, popularity');
       
       if (limit) {
         query.limit(limit);
@@ -35,7 +34,13 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as CountryData[];
+      
+      // Transform the data to include min_price with a default value
+      // since the column doesn't exist in the database
+      return data.map(country => ({
+        ...country,
+        min_price: 99 // Default price if not available
+      })) as CountryData[];
     },
   });
 
@@ -83,7 +88,7 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
                 {country.name}
                 <ExternalLink className="h-3 w-3 text-gray-400" />
               </h3>
-              <p className="text-sm text-gray-500">From ${country.min_price !== undefined && country.min_price !== null ? country.min_price : '99'}</p>
+              <p className="text-sm text-gray-500">From ${country.min_price || 99}</p>
             </CardContent>
           </Card>
         </Link>
