@@ -39,10 +39,15 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
       
       // Transform the data to include min_price with a default value
       // since the column doesn't exist in the database
-      return data.map(country => ({
-        ...country,
-        min_price: 99 // Default price if not available
-      })) as CountryData[];
+      return data.map(country => {
+        return {
+          id: country.id,
+          name: country.name,
+          flag: country.flag,
+          popularity: country.popularity,
+          min_price: 99 // Default price if not available
+        } as CountryData;
+      });
     },
   });
 
