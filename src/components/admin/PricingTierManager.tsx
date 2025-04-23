@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { refreshSchemaCache } from '@/integrations/supabase/refresh-schema';
 
 interface PricingTierManagerProps {
   countries: any[];
@@ -45,36 +46,69 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
   const localQueryClient = useQueryClient();
   const activeQueryClient = propQueryClient || localQueryClient;
   
-  // Check the database schema to see which columns are available
-  const checkDatabaseSchema = async () => {
+  // Check if the visa_packages table exists and has the required columns
+  const checkTableStructure = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_table_info', { p_table_name: 'visa_packages' });
+      console.log('Checking visa_packages table structure...');
       
-      if (error) {
-        console.error("Error checking schema:", error);
-        setSchemaError("Could not verify database schema: " + error.message);
-        return false;
+      // First try with the get_table_info function if it exists
+      try {
+        const { data: tableInfo, error: fnError } = await supabase.rpc('get_table_info', { p_table_name: 'visa_packages' });
+        
+        if (fnError) {
+          console.warn('get_table_info function not available:', fnError.message);
+          // Continue to fallback method
+        } else if (tableInfo) {
+          console.log('Table info retrieved via function:', tableInfo);
+          // Check if required columns exist
+          const columns = tableInfo.map((col: any) => col.column_name);
+          const hasRequiredColumns = 
+            columns.includes('government_fee') && 
+            columns.includes('service_fee') && 
+            columns.includes('processing_days');
+            
+          if (!hasRequiredColumns) {
+            setSchemaError(
+              "The visa_packages table is missing required columns. Please run the SQL script: supabase/fix-visa-packages.sql"
+            );
+          }
+          return hasRequiredColumns;
+        }
+      } catch (fnError) {
+        console.warn('Error using get_table_info function:', fnError);
+        // Continue to fallback method
       }
       
-      console.log("Table schema information:", data);
-      
-      // Check if the required columns exist
-      const hasGovernmentFee = data?.some((col: any) => col.column_name === 'government_fee');
-      const hasServiceFee = data?.some((col: any) => col.column_name === 'service_fee');
-      const hasProcessingDays = data?.some((col: any) => col.column_name === 'processing_days');
-      
-      if (!hasGovernmentFee || !hasServiceFee || !hasProcessingDays) {
-        setSchemaError(
-          "Your database schema is missing required columns. Please run the migration script: " +
-          "supabase/fix-visa-packages.sql"
-        );
-        return false;
+      // Fallback: Try to select from the table directly
+      const { data: sampleData, error: tableError } = await supabase
+        .from('visa_packages')
+        .select('id, government_fee, service_fee, processing_days')
+        .limit(1);
+        
+      if (tableError) {
+        console.error('Error checking table structure:', tableError);
+        
+        if (tableError.message.includes('column') && tableError.message.includes('does not exist')) {
+          setSchemaError(
+            "The visa_packages table is missing required columns. Please run the SQL script: supabase/fix-visa-packages.sql"
+          );
+          return false;
+        }
+        
+        if (tableError.message.includes('relation') && tableError.message.includes('does not exist')) {
+          setSchemaError(
+            "The visa_packages table does not exist. Please run the SQL script: supabase/fix-visa-packages.sql"
+          );
+          return false;
+        }
       }
       
+      // If we got data or no error about missing columns, assume the structure is okay
       return true;
-    } catch (err) {
-      console.error("Error in schema check:", err);
-      setSchemaError("Failed to check database schema");
+      
+    } catch (err: any) {
+      console.error('Error in schema check:', err);
+      setSchemaError(`Database schema check failed: ${err.message}`);
       return false;
     }
   };
@@ -87,9 +121,9 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     setError(null);
     
     try {
-      // First check if the schema is valid
-      const isSchemaValid = await checkDatabaseSchema();
-      if (!isSchemaValid) {
+      // First check if the table structure is valid
+      const isTableValid = await checkTableStructure();
+      if (!isTableValid) {
         setLoading(false);
         return;
       }
@@ -126,9 +160,9 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         console.log("No package data found for this country");
         setPackageData(null);
         setFormData({
-          government_fee: '',
-          service_fee: '',
-          processing_days: ''
+          government_fee: '0',
+          service_fee: '0',
+          processing_days: '15'
         });
       }
     } catch (err: any) {
@@ -177,122 +211,120 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
       const country = countries.find(c => c.id === selectedCountryId);
       const countryName = country?.name || "country";
       
-      // Try multiple approaches to save visa package data
+      // Try direct database update/insert first as it's most reliable
       let saveSucceeded = false;
-      let errorMessages = [];
+      let lastError = null;
       
-      // Approach 1: Using the JsonB version of the function
+      // Try multiple approaches
+      
+      // 1. Try direct database operation (most reliable)
       try {
-        console.log("Attempting to use save_visa_package with JSON body");
+        console.log("Attempting direct database operation");
         
-        // The jsonb version expects a single object with these keys
-        const jsonBody = {
-          country_id: selectedCountryId,
-          name: 'Visa Package',
-          government_fee,
-          service_fee,
-          processing_days
-        };
-        
-        const { data: jsonResult, error: jsonError } = await supabase.rpc(
-          'save_visa_package',
-          jsonBody
-        );
-        
-        if (jsonError) {
-          console.error("JSON body approach failed:", jsonError);
-          errorMessages.push(`JSON body: ${jsonError.message}`);
-        } else {
-          console.log("JSON body approach succeeded:", jsonResult);
-          saveSucceeded = true;
-        }
-      } catch (jsonErr: any) {
-        console.warn("JSON body approach threw exception:", jsonErr);
-        errorMessages.push(`JSON exception: ${jsonErr.message}`);
-      }
-      
-      // If JSON body approach failed, try with named parameters
-      if (!saveSucceeded) {
-        try {
-          console.log("Attempting to use save_visa_package with named parameters");
-          
-          const { data: namedResult, error: namedError } = await supabase.rpc(
-            'save_visa_package',
-            {
-              p_country_id: selectedCountryId,
-              p_name: 'Visa Package',
-              p_government_fee: government_fee,
-              p_service_fee: service_fee,
-              p_processing_days: processing_days
-            }
-          );
-          
-          if (namedError) {
-            console.error("Named parameters approach failed:", namedError);
-            errorMessages.push(`Named params: ${namedError.message}`);
+        if (packageData?.id) {
+          // Update existing package
+          const { data, error } = await supabase
+            .from('visa_packages')
+            .update({
+              government_fee,
+              service_fee,
+              processing_days,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', packageData.id)
+            .select();
+            
+          if (error) {
+            console.error("Direct update failed:", error);
+            lastError = error;
           } else {
-            console.log("Named parameters approach succeeded:", namedResult);
+            console.log("Direct update succeeded:", data);
+            setPackageData(data[0]);
             saveSucceeded = true;
           }
-        } catch (namedErr: any) {
-          console.warn("Named parameters approach threw exception:", namedErr);
-          errorMessages.push(`Named params exception: ${namedErr.message}`);
+        } else {
+          // Insert new package
+          const { data, error } = await supabase
+            .from('visa_packages')
+            .insert({
+              country_id: selectedCountryId,
+              name: 'Visa Package',
+              government_fee,
+              service_fee,
+              processing_days
+            })
+            .select();
+            
+          if (error) {
+            console.error("Direct insert failed:", error);
+            lastError = error;
+          } else {
+            console.log("Direct insert succeeded:", data);
+            setPackageData(data[0]);
+            saveSucceeded = true;
+          }
+        }
+      } catch (dbErr: any) {
+        console.error("Direct database approach failed:", dbErr);
+        lastError = dbErr;
+      }
+      
+      // 2. If direct approach failed, try the save_visa_package function with jsonb parameter
+      if (!saveSucceeded) {
+        try {
+          console.log("Attempting save_visa_package with jsonb parameter");
+          
+          const jsonBody = {
+            country_id: selectedCountryId,
+            government_fee,
+            service_fee,
+            processing_days
+          };
+          
+          const { data, error } = await supabase.rpc('save_visa_package', jsonBody);
+          
+          if (error) {
+            console.error("JSON parameter approach failed:", error);
+            lastError = error;
+          } else {
+            console.log("JSON parameter approach succeeded:", data);
+            saveSucceeded = true;
+            
+            // Refresh the data
+            await fetchPricingData();
+          }
+        } catch (jsonErr: any) {
+          console.error("JSON parameter approach failed:", jsonErr);
+          lastError = jsonErr;
         }
       }
       
-      // If previous approaches failed, try direct database update/insert
+      // 3. If both approaches failed, try with named parameters
       if (!saveSucceeded) {
         try {
-          console.log("Attempting direct database operation");
+          console.log("Attempting save_visa_package with named parameters");
           
-          if (packageData?.id) {
-            // Update existing package
-            const { data: updateData, error: updateError } = await supabase
-              .from('visa_packages')
-              .update({
-                government_fee,
-                service_fee,
-                processing_days,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', packageData.id)
-              .select()
-              .single();
-              
-            if (updateError) {
-              console.error("Direct update failed:", updateError);
-              errorMessages.push(`Update error: ${updateError.message}`);
-            } else {
-              console.log("Direct update succeeded:", updateData);
-              setPackageData(updateData);
-              saveSucceeded = true;
-            }
+          const { data, error } = await supabase.rpc('save_visa_package', {
+            p_country_id: selectedCountryId,
+            p_name: 'Visa Package',
+            p_government_fee: government_fee,
+            p_service_fee: service_fee,
+            p_processing_days: processing_days
+          });
+          
+          if (error) {
+            console.error("Named parameters approach failed:", error);
+            lastError = error;
           } else {
-            // Insert new package
-            const { data: insertData, error: insertError } = await supabase
-              .from('visa_packages')
-              .insert({
-                country_id: selectedCountryId,
-                name: 'Visa Package',
-                government_fee,
-                service_fee,
-                processing_days
-              })
-              .select()
-              .single();
-              
-            if (insertError) {
-              console.error("Direct insert failed:", insertError);
-              errorMessages.push(`Insert error: ${insertError.message}`);
-            } else {
-              console.log("Direct insert succeeded:", insertData);
-              setPackageData(insertData);
-              saveSucceeded = true;
-            }
+            console.log("Named parameters approach succeeded:", data);
+            saveSucceeded = true;
+            
+            // Refresh the data
+            await fetchPricingData();
           }
-        } catch (dbErr: any) {
-          console.error("Direct database approach threw exception:", dbErr);
-          errorMessages.push(`DB exception: ${dbErr.message}`);
+        } catch (namedErr: any) {
+          console.error("Named parameters approach failed:", namedErr);
+          lastError = namedErr;
         }
       }
       
@@ -306,12 +338,10 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         // Refresh the data
         activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
-        fetchPricingData();
       } else {
         // All approaches failed
-        const detailedError = `Failed to save pricing data. Errors: ${errorMessages.join(', ')}`;
-        console.error(detailedError);
-        setError(detailedError);
+        const errorMessage = lastError?.message || "Unknown error";
+        setError(`Failed to save pricing data: ${errorMessage}`);
         
         toast({
           title: "Error saving pricing",
@@ -345,7 +375,16 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Database Schema Error</AlertTitle>
-            <AlertDescription>{schemaError}</AlertDescription>
+            <AlertDescription>
+              {schemaError}
+              <Button 
+                variant="outline" 
+                className="mt-2 w-full"
+                onClick={() => window.open('/admin/database-setup', '_blank')}
+              >
+                Run Database Fix
+              </Button>
+            </AlertDescription>
           </Alert>
         )}
         
@@ -442,8 +481,8 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                   {packageData && (
                     <div className="pt-4 text-sm text-gray-500">
                       <p>Last updated: {new Date(packageData.updated_at).toLocaleString()}</p>
-                      {packageData.total_price !== undefined && (
-                        <p>Total Price: ${packageData.total_price}</p>
+                      {(packageData.government_fee !== undefined || packageData.service_fee !== undefined) && (
+                        <p>Total Price: ${(Number(packageData.government_fee || 0) + Number(packageData.service_fee || 0)).toFixed(2)}</p>
                       )}
                     </div>
                   )}

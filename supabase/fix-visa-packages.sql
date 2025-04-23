@@ -2,8 +2,43 @@
 -- Fix for the save_visa_package function
 -- Run this in your Supabase SQL editor
 
+-- First create the table info function
+CREATE OR REPLACE FUNCTION get_table_info(p_table_name text)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT json_agg(row_to_json(cols))
+    INTO result
+    FROM (
+        SELECT 
+            column_name, 
+            data_type, 
+            is_nullable = 'YES' as is_nullable
+        FROM 
+            information_schema.columns
+        WHERE 
+            table_name = p_table_name
+            AND table_schema = 'public'
+        ORDER BY 
+            ordinal_position
+    ) cols;
+    
+    RETURN result;
+END;
+$$;
+
+-- Grant necessary permissions
+GRANT EXECUTE ON FUNCTION get_table_info(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_table_info(text) TO anon;
+COMMENT ON FUNCTION get_table_info(text) IS 'Returns column information for a given table';
+
 -- Drop existing function if it exists
-DROP FUNCTION IF EXISTS save_visa_package;
+DROP FUNCTION IF EXISTS save_visa_package(uuid, text, numeric, numeric, integer);
+DROP FUNCTION IF EXISTS save_visa_package(jsonb);
 
 -- Recreate the function with proper parameter handling
 CREATE OR REPLACE FUNCTION save_visa_package(
@@ -77,10 +112,10 @@ END;
 $$;
 
 -- Grant necessary permissions
-GRANT EXECUTE ON FUNCTION save_visa_package TO authenticated;
-GRANT EXECUTE ON FUNCTION save_visa_package TO anon;
+GRANT EXECUTE ON FUNCTION save_visa_package(uuid, text, numeric, numeric, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION save_visa_package(uuid, text, numeric, numeric, integer) TO anon;
 
--- Also create an overloaded function that accepts the parameters by name
+-- Also create an overloaded function that accepts the parameters by name via jsonb
 -- This helps handle the "All object keys must match" error
 CREATE OR REPLACE FUNCTION save_visa_package(args jsonb)
 RETURNS jsonb
@@ -117,3 +152,6 @@ $$;
 -- Grant necessary permissions for the overloaded function too
 GRANT EXECUTE ON FUNCTION save_visa_package(jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION save_visa_package(jsonb) TO anon;
+
+-- Notify realtime to refresh schema cache
+SELECT pg_notify('pgrst', 'reload schema');
