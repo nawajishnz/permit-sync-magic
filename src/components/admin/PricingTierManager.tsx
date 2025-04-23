@@ -177,27 +177,139 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
       const country = countries.find(c => c.id === selectedCountryId);
       const countryName = country?.name || "country";
       
-      // Try using the RPC function if available
+      // Try multiple approaches to save visa package data
+      let saveSucceeded = false;
+      let errorMessages = [];
+      
+      // Approach 1: Using the JsonB version of the function
       try {
-        console.log("Attempting to use save_visa_package RPC function");
-        const { data: rpcResult, error: rpcError } = await supabase.rpc(
-          'save_visa_package',
-          {
-            p_country_id: selectedCountryId,
-            p_name: 'Visa Package',
-            p_government_fee: government_fee,
-            p_service_fee: service_fee,
-            p_processing_days: processing_days
-          }
+        console.log("Attempting to use save_visa_package RPC function with JSON parameters");
+        const jsonParams = {
+          p_country_id: selectedCountryId,
+          p_name: 'Visa Package',
+          p_government_fee: government_fee,
+          p_service_fee: service_fee,
+          p_processing_days: processing_days
+        };
+        
+        const { data: rpcJsonResult, error: rpcJsonError } = await supabase.rpc(
+          'save_visa_package', 
+          jsonParams
         );
         
-        if (rpcError) {
-          console.error("RPC function failed:", rpcError);
-          throw new Error(rpcError.message);
+        if (rpcJsonError) {
+          console.error("RPC JSON approach failed:", rpcJsonError);
+          errorMessages.push(`JSON params approach: ${rpcJsonError.message}`);
+        } else {
+          console.log("RPC function with JSON params succeeded:", rpcJsonResult);
+          saveSucceeded = true;
         }
+      } catch (rpcJsonErr: any) {
+        console.warn("RPC JSON approach threw an exception:", rpcJsonErr);
+        errorMessages.push(`JSON exception: ${rpcJsonErr.message}`);
+      }
+      
+      // If JSON approach failed, try with named parameters
+      if (!saveSucceeded) {
+        try {
+          console.log("Attempting to use save_visa_package RPC function with named parameters");
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'save_visa_package',
+            {
+              p_country_id: selectedCountryId,
+              p_name: 'Visa Package',
+              p_government_fee: government_fee,
+              p_service_fee: service_fee,
+              p_processing_days: processing_days
+            }
+          );
+          
+          if (rpcError) {
+            console.error("RPC named params approach failed:", rpcError);
+            errorMessages.push(`Named params approach: ${rpcError.message}`);
+          } else {
+            console.log("RPC function with named params succeeded:", rpcResult);
+            saveSucceeded = true;
+          }
+        } catch (rpcErr: any) {
+          console.warn("RPC named params approach threw an exception:", rpcErr);
+          errorMessages.push(`Named params exception: ${rpcErr.message}`);
+        }
+      }
+      
+      // If named parameters failed, try with positional parameters
+      if (!saveSucceeded) {
+        try {
+          console.log("Attempting to use save_visa_package RPC function with positional arguments");
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'save_visa_package',
+            [selectedCountryId, 'Visa Package', government_fee, service_fee, processing_days]
+          );
+          
+          if (rpcError) {
+            console.error("RPC positional params approach failed:", rpcError);
+            errorMessages.push(`Positional params approach: ${rpcError.message}`);
+          } else {
+            console.log("RPC function with positional params succeeded:", rpcResult);
+            saveSucceeded = true;
+          }
+        } catch (rpcErr: any) {
+          console.warn("RPC positional params approach threw an exception:", rpcErr);
+          errorMessages.push(`Positional params exception: ${rpcErr.message}`);
+        }
+      }
+      
+      // If all RPC approaches failed, fall back to traditional UPSERT
+      if (!saveSucceeded) {
+        console.log("All RPC approaches failed, falling back to traditional UPSERT");
         
-        console.log("RPC function succeeded:", rpcResult);
-        
+        try {
+          if (packageData?.id) {
+            // Update existing package
+            const { error } = await supabase
+              .from('visa_packages')
+              .update({
+                government_fee,
+                service_fee,
+                processing_days
+              })
+              .eq('id', packageData.id);
+              
+            if (error) {
+              console.error("Update approach failed:", error);
+              errorMessages.push(`Update approach: ${error.message}`);
+              throw error;
+            }
+            
+            saveSucceeded = true;
+          } else {
+            // Create new package
+            const { error } = await supabase
+              .from('visa_packages')
+              .insert({
+                country_id: selectedCountryId,
+                name: 'Visa Package',
+                government_fee,
+                service_fee,
+                processing_days
+              });
+              
+            if (error) {
+              console.error("Insert approach failed:", error);
+              errorMessages.push(`Insert approach: ${error.message}`);
+              throw error;
+            }
+            
+            saveSucceeded = true;
+          }
+        } catch (dbErr: any) {
+          console.error("Database fallback approach failed:", dbErr);
+          errorMessages.push(`Database fallback: ${dbErr.message}`);
+        }
+      }
+      
+      // Check if any approach succeeded
+      if (saveSucceeded) {
         toast({
           title: "Pricing saved",
           description: `Pricing for ${countryName} has been updated successfully`,
@@ -207,51 +319,10 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
         fetchPricingData();
-        
-        return;
-      } catch (rpcErr) {
-        console.warn("RPC approach failed, falling back to traditional UPSERT:", rpcErr);
-        // Continue with traditional approach
-      }
-      
-      // Fallback to traditional UPSERT approach
-      if (packageData?.id) {
-        // Update existing package
-        const { error } = await supabase
-          .from('visa_packages')
-          .update({
-            government_fee,
-            service_fee,
-            processing_days
-          })
-          .eq('id', packageData.id);
-          
-        if (error) throw error;
       } else {
-        // Create new package
-        const { error } = await supabase
-          .from('visa_packages')
-          .insert({
-            country_id: selectedCountryId,
-            name: 'Visa Package',
-            government_fee,
-            service_fee,
-            processing_days
-          });
-          
-        if (error) throw error;
+        // All approaches failed
+        throw new Error(`Failed to save pricing data. Please run the SQL fix script.\n\nErrors: ${errorMessages.join(', ')}`);
       }
-      
-      toast({
-        title: "Pricing saved",
-        description: `Pricing for ${countryName} has been updated successfully`,
-      });
-      
-      // Refresh the data
-      activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
-      activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
-      fetchPricingData();
-      
     } catch (err: any) {
       console.error("Error in handleSave:", err);
       setError(err.message || "Failed to save pricing data");

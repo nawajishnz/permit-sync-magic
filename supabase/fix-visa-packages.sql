@@ -5,7 +5,7 @@
 -- Drop existing function if it exists
 DROP FUNCTION IF EXISTS save_visa_package;
 
--- Recreate the function with both named and positional parameter support
+-- Recreate the function with proper parameter handling
 CREATE OR REPLACE FUNCTION save_visa_package(
   p_country_id uuid,
   p_name text DEFAULT 'Visa Package',
@@ -20,6 +20,10 @@ DECLARE
   v_existing_id uuid;
   v_result jsonb;
 BEGIN
+  -- Debug log
+  RAISE LOG 'save_visa_package called with: country_id=%, name=%, government_fee=%, service_fee=%, processing_days=%',
+    p_country_id, p_name, p_government_fee, p_service_fee, p_processing_days;
+  
   -- Check if a package exists for this country
   SELECT id INTO v_existing_id 
   FROM visa_packages 
@@ -76,5 +80,44 @@ $$;
 GRANT EXECUTE ON FUNCTION save_visa_package TO authenticated;
 GRANT EXECUTE ON FUNCTION save_visa_package TO anon;
 
+-- Also create an overloaded function that accepts the parameters by name
+-- This helps handle the "All object keys must match" error
+CREATE OR REPLACE FUNCTION save_visa_package(args jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_country_id uuid;
+  v_name text;
+  v_government_fee numeric;
+  v_service_fee numeric;
+  v_processing_days integer;
+  v_result jsonb;
+BEGIN
+  -- Extract parameters from JSON
+  v_country_id := (args->>'p_country_id')::uuid;
+  v_name := COALESCE(args->>'p_name', 'Visa Package');
+  v_government_fee := COALESCE((args->>'p_government_fee')::numeric, 0);
+  v_service_fee := COALESCE((args->>'p_service_fee')::numeric, 0);
+  v_processing_days := COALESCE((args->>'p_processing_days')::integer, 15);
+  
+  -- Call the main function
+  v_result := save_visa_package(
+    v_country_id,
+    v_name,
+    v_government_fee,
+    v_service_fee,
+    v_processing_days
+  );
+  
+  RETURN v_result;
+END;
+$$;
+
+-- Grant necessary permissions for the overloaded function too
+GRANT EXECUTE ON FUNCTION save_visa_package(jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION save_visa_package(jsonb) TO anon;
+
 -- View function definition to verify it's correct
-SELECT pg_get_functiondef('save_visa_package'::regproc);
+SELECT pg_get_functiondef('save_visa_package(uuid, text, numeric, numeric, integer)'::regproc);
+SELECT pg_get_functiondef('save_visa_package(jsonb)'::regproc);
