@@ -32,7 +32,7 @@ export interface EmbassyDetails {
 export interface VisaPackage {
   id: string;
   name: string;
-  price: number; // Changed from government_fee/service_fee
+  price: number; // We'll use total_price or calculate from government_fee + service_fee
   processing_days: number;
   total_price?: number;
   country_id: string;
@@ -99,7 +99,7 @@ export const useCountryData = (countryId: string | undefined) => {
         console.log(`[useCountryData] Querying visa_packages for country_id: ${countryId}`);
         const { data: visaPackages, error: packageError } = await supabase
           .from('visa_packages')
-          .select('id, name, price, processing_days, country_id') // Updated column names
+          .select('id, name, government_fee, service_fee, processing_days, country_id')
           .eq('country_id', countryId);
 
         // Log the package query result immediately
@@ -107,14 +107,21 @@ export const useCountryData = (countryId: string | undefined) => {
 
         if (packageError) throw packageError;
 
-        // Select the first package found
+        // Select the first package found and calculate the total price
         const selectedPackage: VisaPackage | null = visaPackages && visaPackages.length > 0
           ? {
               id: visaPackages[0].id,
               name: visaPackages[0].name,
-              price: visaPackages[0].price, // Use price instead of separate fees
-              processing_days: visaPackages[0].processing_days,
-              total_price: visaPackages[0].price, // Set total_price to price
+              // Calculate price from government_fee + service_fee
+              price: (
+                (typeof visaPackages[0].government_fee === 'number' ? visaPackages[0].government_fee : 0) + 
+                (typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0)
+              ),
+              processing_days: visaPackages[0].processing_days || 15,
+              total_price: (
+                (typeof visaPackages[0].government_fee === 'number' ? visaPackages[0].government_fee : 0) + 
+                (typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0)
+              ),
               country_id: visaPackages[0].country_id
             }
           : null;

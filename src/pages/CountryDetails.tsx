@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -66,11 +67,12 @@ type VisaPackage = {
   id: string;
   country_id: string;
   name: string;
-  price: number;
+  government_fee?: number;
+  service_fee?: number;
   processing_days: number;
   total_price?: number;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 const CountryDetails = () => {
@@ -105,7 +107,8 @@ const CountryDetails = () => {
             id,
             country_id,
             name,
-            price, 
+            government_fee,
+            service_fee, 
             processing_days,
             created_at,
             updated_at,
@@ -123,6 +126,14 @@ const CountryDetails = () => {
         }
         
         console.log("Visa package data:", data);
+        
+        // Calculate total price from government_fee and service_fee
+        if (data) {
+          const governmentFee = typeof data.government_fee === 'number' ? data.government_fee : 0;
+          const serviceFee = typeof data.service_fee === 'number' ? data.service_fee : 0;
+          data.total_price = governmentFee + serviceFee;
+        }
+        
         return data;
       } catch (err) {
         console.error('Failed to fetch visa package:', err);
@@ -140,7 +151,10 @@ const CountryDetails = () => {
 
   const getBasePrice = (): number => {
     if (visaPackage) {
-      return visaPackage.price || 0;
+      // Calculate from government_fee and service_fee
+      const governmentFee = typeof visaPackage.government_fee === 'number' ? visaPackage.government_fee : 0;
+      const serviceFee = typeof visaPackage.service_fee === 'number' ? visaPackage.service_fee : 0;
+      return governmentFee + serviceFee;
     }
     if (country?.packageDetails) {
       return country.packageDetails.price || 0;
@@ -168,7 +182,8 @@ const CountryDetails = () => {
   };
 
   const getEstimatedDate = (): string => {
-    const processingDays = visaPackage?.processing_days || 15;
+    const processingDays = visaPackage?.processing_days || 
+                          (country?.packageDetails?.processing_days) || 15;
     const today = new Date();
     const deliveryDate = addDays(today, processingDays + 2);
     return format(deliveryDate, 'PP');
@@ -230,7 +245,10 @@ const CountryDetails = () => {
   const PricingFeatures = ({ packageDetails }: { packageDetails: VisaPackage | null }) => {
     if (!packageDetails) return null;
 
-    const totalPrice = packageDetails.price || 0;
+    // Calculate total price from government_fee and service_fee
+    const governmentFee = typeof packageDetails.government_fee === 'number' ? packageDetails.government_fee : 0;
+    const serviceFee = typeof packageDetails.service_fee === 'number' ? packageDetails.service_fee : 0;
+    const totalPrice = governmentFee + serviceFee;
     
     const formattedPrice = new Intl.NumberFormat('en-US', { 
       style: 'currency', 
@@ -243,7 +261,7 @@ const CountryDetails = () => {
           <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
             <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
           </div>
-          <span>Visa price: ${packageDetails.price}</span>
+          <span>Visa price: ${totalPrice}</span>
         </li>
         <li className="flex items-start">
           <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
