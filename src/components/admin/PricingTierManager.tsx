@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Database } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { refreshSchemaCache } from '@/integrations/supabase/refresh-schema';
+import { refreshSchemaCache, runVisaPackagesDiagnostic } from '@/integrations/supabase/refresh-schema';
 
 interface PricingTierManagerProps {
   countries: any[];
@@ -33,6 +33,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fixingSchema, setFixingSchema] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [packageData, setPackageData] = useState<any | null>(null);
@@ -41,6 +42,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     service_fee: '',
     processing_days: ''
   });
+  const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   
   const { toast } = useToast();
   const localQueryClient = useQueryClient();
@@ -110,6 +112,72 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
       console.error('Error in schema check:', err);
       setSchemaError(`Database schema check failed: ${err.message}`);
       return false;
+    }
+  };
+  
+  // Function to fix schema issues
+  const handleFixSchema = async () => {
+    setFixingSchema(true);
+    setError(null);
+    setSchemaError(null);
+    
+    try {
+      toast({
+        title: "Fixing database schema",
+        description: "Running diagnostics and applying fixes...",
+      });
+      
+      // Run a full diagnostic if we have a country selected
+      if (selectedCountryId) {
+        const result = await runVisaPackagesDiagnostic(selectedCountryId);
+        setDiagnosticResult(result);
+        
+        if (result.success) {
+          setSchemaError(null);
+          toast({
+            title: "Schema fix successful",
+            description: "The database schema has been updated successfully.",
+          });
+          
+          // Refresh the data
+          await fetchPricingData();
+        } else {
+          setSchemaError(
+            "Automatic schema fix was not successful. Please run the SQL script manually: supabase/fix-visa-packages.sql"
+          );
+          toast({
+            title: "Schema fix incomplete",
+            description: "Some issues could not be fixed automatically.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Just run the schema refresh
+        const result = await refreshSchemaCache();
+        
+        if (result.success) {
+          setSchemaError(null);
+          toast({
+            title: "Schema refresh successful",
+            description: "The database schema cache has been refreshed.",
+          });
+        } else {
+          setSchemaError(
+            "Schema refresh was not successful. Please select a country to run a full diagnostic."
+          );
+        }
+      }
+    } catch (err: any) {
+      console.error("Error fixing schema:", err);
+      setError(`Error fixing schema: ${err.message}`);
+      
+      toast({
+        title: "Error fixing schema",
+        description: err.message || "An error occurred while fixing the schema",
+        variant: "destructive",
+      });
+    } finally {
+      setFixingSchema(false);
     }
   };
   
@@ -377,13 +445,55 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
             <AlertTitle>Database Schema Error</AlertTitle>
             <AlertDescription>
               {schemaError}
-              <Button 
-                variant="outline" 
-                className="mt-2 w-full"
-                onClick={() => window.open('/admin/database-setup', '_blank')}
-              >
-                Run Database Fix
-              </Button>
+              <div className="flex items-center gap-2 mt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handleFixSchema}
+                  disabled={fixingSchema}
+                >
+                  {fixingSchema ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Fixing Schema...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="mr-2 h-4 w-4" />
+                      Fix Schema Issues
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => window.open('/admin/database-setup', '_blank')}
+                >
+                  Open Database Setup
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {diagnosticResult && (
+          <Alert className="mb-4 bg-slate-50">
+            <AlertTitle>Diagnostic Results</AlertTitle>
+            <AlertDescription>
+              <div className="text-sm mt-2 space-y-1">
+                <div><strong>Schema Fix:</strong> {diagnosticResult.schemaFix?.success ? 'Successful' : 'Failed'}</div>
+                {diagnosticResult.operationsTest && (
+                  <div>
+                    <strong>Operations Test:</strong> {diagnosticResult.operationsTest?.success ? 'Successful' : 'Failed'}
+                    <ul className="ml-4 mt-1 list-disc text-xs">
+                      <li>SELECT: {diagnosticResult.operationsTest?.results?.select?.success ? 'OK' : 'Failed'}</li>
+                      <li>INSERT: {diagnosticResult.operationsTest?.results?.insert?.success ? 'OK' : diagnosticResult.operationsTest?.results?.insert?.skipped || 'Failed'}</li>
+                      <li>UPDATE: {diagnosticResult.operationsTest?.results?.update?.success ? 'OK' : diagnosticResult.operationsTest?.results?.update?.skipped || 'Failed'}</li>
+                      <li>RPC: {diagnosticResult.operationsTest?.results?.rpc?.success ? 'OK' : 'Failed'}</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
             </AlertDescription>
           </Alert>
         )}

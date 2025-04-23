@@ -179,10 +179,11 @@ export async function testVisaPackagesOperations(countryId: string) {
     // Test RPC function
     try {
       const { data, error } = await supabase.rpc('save_visa_package', {
-        country_id: countryId,
-        government_fee: 20,
-        service_fee: 20,
-        processing_days: 20
+        p_country_id: countryId,
+        p_government_fee: 20,
+        p_service_fee: 20,
+        p_processing_days: 20,
+        p_name: 'RPC Test Package'
       });
       
       results.rpc = {
@@ -211,4 +212,3 @@ export async function testVisaPackagesOperations(countryId: string) {
     };
   }
 }
-
