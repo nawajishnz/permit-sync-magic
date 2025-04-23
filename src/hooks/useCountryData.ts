@@ -32,7 +32,7 @@ export interface EmbassyDetails {
 export interface VisaPackage {
   id: string;
   name: string;
-  price: number; // We'll calculate this from government_fee + service_fee
+  price: number; // Calculated from government_fee + service_fee
   processing_days: number;
   government_fee?: number;
   service_fee?: number;
@@ -96,25 +96,59 @@ export const useCountryData = (countryId: string | undefined) => {
 
         if (documentsError) throw documentsError;
 
-        // Fetch the relevant visa package for this country
-        // Updated to match actual database schema
+        // Try to get visa package data with a more resilient approach
         console.log(`[useCountryData] Querying visa_packages for country_id: ${countryId}`);
-        const { data: visaPackages, error: packageError } = await supabase
-          .from('visa_packages')
-          .select('id, name, government_fee, service_fee, processing_days, country_id')
-          .eq('country_id', countryId);
+        
+        // First check which columns are available in the visa_packages table
+        let visaPackages = null;
+        let packageError = null;
+        
+        try {
+          // Get basic visa package data without specifying government_fee/service_fee fields
+          const { data: basicPackages, error } = await supabase
+            .from('visa_packages')
+            .select('id, name, country_id, processing_days')
+            .eq('country_id', countryId);
+            
+          if (error) {
+            packageError = error;
+          } else {
+            visaPackages = basicPackages;
+            
+            // Try to get the fee columns separately to check if they exist
+            if (visaPackages && visaPackages.length > 0) {
+              // Try to get government_fee
+              try {
+                const { data: feeData, error: feeError } = await supabase
+                  .from('visa_packages')
+                  .select('id, government_fee, service_fee')
+                  .eq('id', visaPackages[0].id)
+                  .single();
+                
+                if (!feeError && feeData) {
+                  // Add fee data to our package
+                  visaPackages[0].government_fee = feeData.government_fee || 0;
+                  visaPackages[0].service_fee = feeData.service_fee || 0;
+                }
+              } catch (feeErr) {
+                console.log('[useCountryData] Fee columns may not exist yet:', feeErr);
+              }
+            }
+          }
+        } catch (packageErr) {
+          console.error('[useCountryData] Error fetching visa packages:', packageErr);
+          packageError = packageErr;
+        }
 
-        // Log the package query result immediately
+        // Log the package query result
         console.log(`[useCountryData] Result from visa_packages query:`, { visaPackages, packageError });
-
-        if (packageError) throw packageError;
 
         // Select the first package found and calculate the total price
         const selectedPackage: VisaPackage | null = visaPackages && visaPackages.length > 0
           ? {
               id: visaPackages[0].id,
               name: visaPackages[0].name,
-              // Calculate price from government_fee + service_fee
+              // Calculate price from government_fee + service_fee or default to 0
               price: (
                 (typeof visaPackages[0].government_fee === 'number' ? visaPackages[0].government_fee : 0) + 
                 (typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0)
