@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +15,6 @@ interface CountryData {
   name: string;
   flag?: string;
   min_price?: number | null;
-  popularity?: number;
 }
 
 const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
@@ -88,7 +86,7 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      {countries.map((country) => (
+      {countries?.map((country) => (
         <Link to={`/countries/${country.id}`} key={country.id}>
           <Card className="overflow-hidden h-full transition-shadow hover:shadow-md">
             {country.flag && (

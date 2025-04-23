@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ import { format, addDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCountryData } from '@/hooks/useCountryData';
-import VisaDocument from '@/components/country/VisaDocument';
+import VisaDocument from '@/components/VisaDocument';
 import ProcessStep from '@/components/country/ProcessStep';
 import FAQItem from '@/components/country/FAQItem';
 import PricingTier from '@/components/country/PricingTier';
@@ -66,10 +66,9 @@ type VisaPackage = {
   id: string;
   country_id: string;
   name: string;
-  government_fee: number;
-  service_fee: number;
+  price: number;
   processing_days: number;
-  total_price: number;
+  total_price?: number;
   created_at: string;
   updated_at: string;
 };
@@ -106,10 +105,8 @@ const CountryDetails = () => {
             id,
             country_id,
             name,
-            government_fee,
-            service_fee,
+            price, 
             processing_days,
-            total_price,
             created_at,
             updated_at,
             countries (
@@ -143,12 +140,10 @@ const CountryDetails = () => {
 
   const getBasePrice = (): number => {
     if (visaPackage) {
-      return visaPackage.total_price || 
-             (visaPackage.government_fee || 0) + (visaPackage.service_fee || 0);
+      return visaPackage.price || 0;
     }
     if (country?.packageDetails) {
-      return country.packageDetails.total_price || 
-             (country.packageDetails.government_fee || 0) + (country.packageDetails.service_fee || 0);
+      return country.packageDetails.price || 0;
     }
     return 0;
   };
@@ -235,8 +230,7 @@ const CountryDetails = () => {
   const PricingFeatures = ({ packageDetails }: { packageDetails: VisaPackage | null }) => {
     if (!packageDetails) return null;
 
-    const totalPrice = 
-      (packageDetails.government_fee || 0) + (packageDetails.service_fee || 0);
+    const totalPrice = packageDetails.price || 0;
     
     const formattedPrice = new Intl.NumberFormat('en-US', { 
       style: 'currency', 
@@ -249,13 +243,7 @@ const CountryDetails = () => {
           <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
             <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
           </div>
-          <span>Government fee: ${packageDetails.government_fee}</span>
-        </li>
-        <li className="flex items-start">
-          <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
-            <CheckIcon className="h-3.5 w-3.5 text-blue-600" />
-          </div>
-          <span>Service fee: ${packageDetails.service_fee}</span>
+          <span>Visa price: ${packageDetails.price}</span>
         </li>
         <li className="flex items-start">
           <div className="mr-2 mt-0.5 bg-blue-100 p-1 rounded-full">
@@ -385,26 +373,8 @@ const CountryDetails = () => {
                     <div className="flex flex-col md:flex-row gap-4">
                       <div className="flex-1">
                         <div className="mb-2">
-                          <span className="text-sm text-gray-500">Government Fee</span>
-                          <p className="text-lg font-bold text-gray-800">${visaPackage.government_fee?.toFixed(2)}</p>
-                        </div>
-                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full" 
-                            style={{ width: `${(visaPackage.government_fee / (visaPackage.total_price || 1)) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="mb-2">
-                          <span className="text-sm text-gray-500">Service Fee</span>
-                          <p className="text-lg font-bold text-gray-800">${visaPackage.service_fee?.toFixed(2)}</p>
-                        </div>
-                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-green-500 rounded-full" 
-                            style={{ width: `${(visaPackage.service_fee / (visaPackage.total_price || 1)) * 100}%` }}
-                          ></div>
+                          <span className="text-sm text-gray-500">Visa Price</span>
+                          <p className="text-lg font-bold text-gray-800">${visaPackage.price?.toFixed(2)}</p>
                         </div>
                       </div>
                       <div className="flex-1">
@@ -575,7 +545,7 @@ const CountryDetails = () => {
                     <div className="mb-5 flex flex-col">
                       <div className="flex justify-between items-baseline mb-3">
                         <h3 className="text-2xl font-bold text-gray-900">
-                          ${visaPackage ? visaPackage.total_price?.toFixed(2) : numericBasePrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          ${visaPackage ? visaPackage.price?.toFixed(2) : numericBasePrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </h3>
                         <span className="text-sm text-gray-500">per person</span>
                       </div>
@@ -583,7 +553,7 @@ const CountryDetails = () => {
                       {visaPackage && (
                         <div className="flex items-center mb-2 text-sm text-gray-500">
                           <Info className="h-4 w-4 mr-1.5 text-blue-500" />
-                          <span>Gov. Fee: ${visaPackage.government_fee?.toFixed(2)} + Service: ${visaPackage.service_fee?.toFixed(2)}</span>
+                          <span>Visa Price: ${visaPackage.price?.toFixed(2)}</span>
                         </div>
                       )}
                       

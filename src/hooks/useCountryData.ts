@@ -32,8 +32,7 @@ export interface EmbassyDetails {
 export interface VisaPackage {
   id: string;
   name: string;
-  government_fee: number;
-  service_fee: number;
+  price: number; // Changed from government_fee/service_fee
   processing_days: number;
   total_price?: number;
   country_id: string;
@@ -96,10 +95,11 @@ export const useCountryData = (countryId: string | undefined) => {
         if (documentsError) throw documentsError;
 
         // Fetch the relevant visa package for this country
+        // Updated to match actual database schema
         console.log(`[useCountryData] Querying visa_packages for country_id: ${countryId}`);
         const { data: visaPackages, error: packageError } = await supabase
           .from('visa_packages')
-          .select('id, name, government_fee, service_fee, total_price, processing_days, country_id')
+          .select('id, name, price, processing_days, country_id') // Updated column names
           .eq('country_id', countryId);
 
         // Log the package query result immediately
@@ -112,10 +112,9 @@ export const useCountryData = (countryId: string | undefined) => {
           ? {
               id: visaPackages[0].id,
               name: visaPackages[0].name,
-              government_fee: visaPackages[0].government_fee,
-              service_fee: visaPackages[0].service_fee,
+              price: visaPackages[0].price, // Use price instead of separate fees
               processing_days: visaPackages[0].processing_days,
-              total_price: visaPackages[0].total_price,
+              total_price: visaPackages[0].price, // Set total_price to price
               country_id: visaPackages[0].country_id
             }
           : null;
