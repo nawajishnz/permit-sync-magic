@@ -8,19 +8,20 @@ export async function fixVisaPackagesSchema() {
   console.log('Attempting to fix visa_packages schema...');
   
   try {
-    // Step 1: Check if the table exists
-    const { data: tableExists, error: tableError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_name', 'visa_packages')
-      .eq('table_schema', 'public')
-      .maybeSingle();
+    // Step 1: Check if the table exists using a raw query instead of schema tables
+    console.log('Checking if visa_packages table exists...');
+    const { data: tablesData, error: tablesError } = await supabase.rpc(
+      'get_table_info', 
+      { p_table_name: 'visa_packages' }
+    ).catch(() => ({ data: null, error: { message: 'Function get_table_info not available' } }));
       
-    console.log('Table check result:', { tableExists, tableError });
+    console.log('Table check result:', { tablesData, tablesError });
+    const tableExists = tablesData && Array.isArray(tablesData) && tablesData.length > 0;
     
     // Step 2: Try to direct-insert a record with all fields
     // This will help debug any column issues
     try {
+      console.log('Testing visa_packages table structure with insert operation...');
       const { data: testInsert, error: insertError } = await supabase
         .from('visa_packages')
         .insert({
@@ -43,11 +44,15 @@ export async function fixVisaPackagesSchema() {
       // Make a dummy request to force schema refresh
       await supabase
         .from('visa_packages')
-        .select('count(*)', { count: 'exact', head: true });
+        .select('count(*)')
+        .limit(1)
+        .throwOnError();
       
       await supabase
         .from('countries')
-        .select('count(*)', { count: 'exact', head: true });
+        .select('count(*)')
+        .limit(1)
+        .throwOnError();
     } catch (refreshErr) {
       console.log('Schema refresh exception:', refreshErr);
     }
@@ -55,7 +60,8 @@ export async function fixVisaPackagesSchema() {
     return {
       success: true,
       message: 'Schema fix attempted. See console for results.',
-      details: 'Run the SQL script in supabase/fix-visa-packages.sql for a permanent fix.'
+      details: 'Run the SQL script in supabase/fix-visa-packages.sql for a permanent fix.',
+      tableExists
     };
   } catch (err: any) {
     console.error('Error in fixVisaPackagesSchema:', err);
@@ -205,3 +211,4 @@ export async function testVisaPackagesOperations(countryId: string) {
     };
   }
 }
+

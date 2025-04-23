@@ -1,4 +1,38 @@
+
 -- Run this script in the Supabase SQL editor to fix the visa_packages table structure
+
+-- Create the table info function - required for schema diagnostics
+CREATE OR REPLACE FUNCTION get_table_info(p_table_name text)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT json_agg(row_to_json(cols))
+    INTO result
+    FROM (
+        SELECT 
+            column_name, 
+            data_type, 
+            is_nullable = 'YES' as is_nullable
+        FROM 
+            information_schema.columns
+        WHERE 
+            table_name = p_table_name
+            AND table_schema = 'public'
+        ORDER BY 
+            ordinal_position
+    ) cols;
+    
+    RETURN result;
+END;
+$$;
+
+-- Grant necessary permissions for the table info function
+GRANT EXECUTE ON FUNCTION get_table_info(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_table_info(text) TO anon;
 
 -- Check if the visa_packages table exists, if not create it
 DO $$
@@ -83,6 +117,17 @@ BEGIN
     ) THEN
       ALTER TABLE public.visa_packages ADD COLUMN processing_days INTEGER NOT NULL DEFAULT 15;
     END IF;
+    
+    -- Add computed total_price column if it doesn't exist
+    IF NOT EXISTS (
+      SELECT FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+      AND table_name = 'visa_packages' 
+      AND column_name = 'total_price'
+    ) THEN
+      ALTER TABLE public.visa_packages ADD COLUMN total_price NUMERIC 
+      GENERATED ALWAYS AS (government_fee + service_fee) STORED;
+    END IF;
   END IF;
   
   -- Make sure the updated_at is automatically updated
@@ -105,6 +150,122 @@ BEGIN
   END IF;
 END $$; 
 
+-- Drop existing function if it exists
+DROP FUNCTION IF EXISTS save_visa_package(uuid, text, numeric, numeric, integer);
+DROP FUNCTION IF EXISTS save_visa_package(jsonb);
+
+-- Recreate the function with proper parameter handling
+CREATE OR REPLACE FUNCTION save_visa_package(
+  p_country_id uuid,
+  p_name text DEFAULT 'Visa Package',
+  p_government_fee numeric DEFAULT 0,
+  p_service_fee numeric DEFAULT 0,
+  p_processing_days integer DEFAULT 15
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_existing_id uuid;
+  v_result jsonb;
+BEGIN
+  -- Debug log
+  RAISE LOG 'save_visa_package called with: country_id=%, name=%, government_fee=%, service_fee=%, processing_days=%',
+    p_country_id, p_name, p_government_fee, p_service_fee, p_processing_days;
+  
+  -- Check if a package exists for this country
+  SELECT id INTO v_existing_id 
+  FROM visa_packages 
+  WHERE country_id = p_country_id 
+  LIMIT 1;
+  
+  -- Update or insert based on existence
+  IF v_existing_id IS NOT NULL THEN
+    -- Update existing package
+    UPDATE visa_packages
+    SET 
+      name = p_name,
+      government_fee = p_government_fee,
+      service_fee = p_service_fee,
+      processing_days = p_processing_days,
+      updated_at = now()
+    WHERE id = v_existing_id;
+    
+    v_result = jsonb_build_object(
+      'id', v_existing_id,
+      'action', 'updated',
+      'country_id', p_country_id
+    );
+  ELSE
+    -- Insert new package
+    INSERT INTO visa_packages(
+      country_id, 
+      name, 
+      government_fee, 
+      service_fee, 
+      processing_days
+    )
+    VALUES (
+      p_country_id,
+      p_name,
+      p_government_fee,
+      p_service_fee,
+      p_processing_days
+    )
+    RETURNING id INTO v_existing_id;
+    
+    v_result = jsonb_build_object(
+      'id', v_existing_id,
+      'action', 'created',
+      'country_id', p_country_id
+    );
+  END IF;
+  
+  RETURN v_result;
+END;
+$$;
+
+-- Grant necessary permissions
+GRANT EXECUTE ON FUNCTION save_visa_package(uuid, text, numeric, numeric, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION save_visa_package(uuid, text, numeric, numeric, integer) TO anon;
+
+-- Also create an overloaded function that accepts the parameters as a JSON object
+CREATE OR REPLACE FUNCTION save_visa_package(args jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_country_id uuid;
+  v_name text;
+  v_government_fee numeric;
+  v_service_fee numeric;
+  v_processing_days integer;
+  v_result jsonb;
+BEGIN
+  -- Extract parameters from JSON
+  v_country_id := (args->>'country_id')::uuid;
+  v_name := COALESCE(args->>'name', 'Visa Package');
+  v_government_fee := COALESCE((args->>'government_fee')::numeric, 0);
+  v_service_fee := COALESCE((args->>'service_fee')::numeric, 0);
+  v_processing_days := COALESCE((args->>'processing_days')::integer, 15);
+  
+  -- Call the main function
+  v_result := save_visa_package(
+    v_country_id,
+    v_name,
+    v_government_fee,
+    v_service_fee,
+    v_processing_days
+  );
+  
+  RETURN v_result;
+END;
+$$;
+
+-- Grant permissions for the JSON version too
+GRANT EXECUTE ON FUNCTION save_visa_package(jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION save_visa_package(jsonb) TO anon;
+
 -- Create a view to link countries and visa packages for easier querying
 CREATE OR REPLACE VIEW public.countries_with_packages AS
 SELECT 
@@ -120,100 +281,14 @@ SELECT
   vp.government_fee,
   vp.service_fee,
   vp.processing_days,
-  vp.is_active
+  vp.government_fee + vp.service_fee as total_price
 FROM 
   public.countries c
 LEFT JOIN 
   public.visa_packages vp ON c.id = vp.country_id;
-  
+
 -- Grant access to the view
 GRANT SELECT ON public.countries_with_packages TO anon, authenticated;
 
--- Run this command to try to update existing data from pricing_tiers if possible
-DO $$
-DECLARE
-  pt RECORD;
-  gov_fee NUMERIC;
-  srv_fee NUMERIC;
-  proc_days INTEGER;
-BEGIN
-  FOR pt IN 
-    SELECT * FROM visa_pricing_tiers
-  LOOP
-    -- Try to extract pricing data from features
-    gov_fee := 0;
-    srv_fee := 0;
-    proc_days := 15;
-    
-    -- Try to extract government fee
-    BEGIN
-      IF EXISTS (
-        SELECT FROM jsonb_array_elements_text(pt.features) AS f
-        WHERE f LIKE 'Government fee: %'
-      ) THEN
-        SELECT REGEXP_REPLACE(f, 'Government fee: \$?([0-9.]+)', '\1')::NUMERIC INTO gov_fee
-        FROM jsonb_array_elements_text(pt.features) AS f
-        WHERE f LIKE 'Government fee: %'
-        LIMIT 1;
-      END IF;
-    EXCEPTION WHEN OTHERS THEN
-      RAISE NOTICE 'Error extracting government fee from pricing tier %: %', pt.id, SQLERRM;
-    END;
-    
-    -- Try to extract service fee
-    BEGIN
-      IF EXISTS (
-        SELECT FROM jsonb_array_elements_text(pt.features) AS f
-        WHERE f LIKE 'Service fee: %'
-      ) THEN
-        SELECT REGEXP_REPLACE(f, 'Service fee: \$?([0-9.]+)', '\1')::NUMERIC INTO srv_fee
-        FROM jsonb_array_elements_text(pt.features) AS f
-        WHERE f LIKE 'Service fee: %'
-        LIMIT 1;
-      END IF;
-    EXCEPTION WHEN OTHERS THEN
-      RAISE NOTICE 'Error extracting service fee from pricing tier %: %', pt.id, SQLERRM;
-    END;
-    
-    -- Try to extract processing days
-    BEGIN
-      SELECT REGEXP_REPLACE(pt.processing_time, '([0-9]+).*', '\1')::INTEGER INTO proc_days
-      WHERE pt.processing_time ~ '^\d+';
-    EXCEPTION WHEN OTHERS THEN
-      RAISE NOTICE 'Error extracting processing days from pricing tier %: %', pt.id, SQLERRM;
-    END;
-    
-    -- Check if a visa package already exists for this country
-    IF EXISTS (
-      SELECT FROM visa_packages WHERE country_id = pt.country_id
-    ) THEN
-      -- Update existing visa package
-      UPDATE visa_packages 
-      SET 
-        government_fee = gov_fee,
-        service_fee = srv_fee,
-        processing_days = proc_days,
-        updated_at = NOW()
-      WHERE country_id = pt.country_id;
-      
-      RAISE NOTICE 'Updated visa package for country %', pt.country_id;
-    ELSE
-      -- Insert new visa package
-      INSERT INTO visa_packages (
-        country_id,
-        name,
-        government_fee,
-        service_fee,
-        processing_days
-      ) VALUES (
-        pt.country_id,
-        pt.name,
-        gov_fee,
-        srv_fee,
-        proc_days
-      );
-      
-      RAISE NOTICE 'Created new visa package for country %', pt.country_id;
-    END IF;
-  END LOOP;
-END $$; 
+-- Notify system to reload schema cache
+NOTIFY pgrst, 'reload schema';
