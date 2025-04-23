@@ -224,6 +224,39 @@ export type Database = {
           is_nullable: boolean;
         }[];
       };
+      update_application_document: {
+        Args: {
+          p_application_id: string;
+          p_document_type: string;
+          p_file_url: string;
+          p_status: string;
+        };
+        Returns: {
+          success: boolean;
+        };
+      };
+      add_application_timeline: {
+        Args: {
+          p_application_id: string;
+          p_event: string;
+          p_description: string;
+          p_date: string;
+        };
+        Returns: {
+          success: boolean;
+        };
+      };
+      submit_contact_message: {
+        Args: {
+          p_name: string;
+          p_email: string;
+          p_message: string;
+          p_subject: string;
+        };
+        Returns: {
+          success: boolean;
+        };
+      };
     }
   }
 }

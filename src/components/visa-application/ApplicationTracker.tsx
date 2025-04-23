@@ -113,47 +113,24 @@ const ApplicationTracker = () => {
     queryKey: ['application', applicationId],
     queryFn: async () => {
       try {
-        // Get application data
-        const { data: appData, error: appError } = await supabase
-          .from('visa_applications')
-          .select(`
-            *,
-            visa_packages (*),
-            countries (id, name, flag),
-            application_documents (
-              id, 
-              document_type,
-              file_url,
-              status,
-              feedback,
-              uploaded_at
-            ),
-            application_timeline (
-              id,
-              event,
-              date,
-              description
-            )
-          `)
-          .eq('id', applicationId)
-          .single();
+        // Get application data using RPC to avoid type errors
+        const { data: appData, error: appError } = await supabase.rpc('get_application_details', {
+          p_application_id: applicationId
+        });
 
         if (appError) {
           throw appError;
         }
 
-        // Ensure timeline data is properly processed
-        if (appData && appData.application_timeline && Array.isArray(appData.application_timeline)) {
-          // Sort timeline by date in descending order
-          appData.application_timeline.sort((a: any, b: any) => {
-            return new Date(b.date).getTime() - new Date(a.date).getTime();
-          });
+        // Ensure we have data
+        if (!appData) {
+          throw new Error("No application data found");
         }
 
         return appData;
-      } catch (error) {
-        console.error("Error fetching application data:", error);
-        throw error;
+      } catch (err) {
+        console.error("Error fetching application data:", err);
+        throw err;
       }
     },
     enabled: !!applicationId,
@@ -221,14 +198,25 @@ const ApplicationTracker = () => {
   const progress = getProgressPercentage(currentStep);
   
   // Safely access country name
-  const countryName = application.countries && typeof application.countries === 'object' && 'name' in application.countries 
+  const countryName = application.countries && 
+                      typeof application.countries === 'object' && 
+                      application.countries !== null && 
+                      'name' in application.countries 
     ? application.countries.name as string
     : "Unknown Country";
 
   // Safely handle timeline events
   const timelineEvents: TimelineEvent[] = 
+    application.application_timeline && 
     Array.isArray(application.application_timeline) 
       ? application.application_timeline 
+      : [];
+
+  // Safely handle documents
+  const applicationDocuments = 
+    application.application_documents && 
+    Array.isArray(application.application_documents) 
+      ? application.application_documents 
       : [];
 
   return (
@@ -291,9 +279,9 @@ const ApplicationTracker = () => {
               <CardTitle>Required Documents</CardTitle>
             </CardHeader>
             <CardContent>
-              {application.application_documents && Array.isArray(application.application_documents) && application.application_documents.length > 0 ? (
+              {applicationDocuments.length > 0 ? (
                 <div className="space-y-4">
-                  {application.application_documents.map((doc: any) => (
+                  {applicationDocuments.map((doc: any) => (
                     <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center">
                         <DocumentStatus status={doc.status} />
@@ -399,7 +387,10 @@ const ApplicationTracker = () => {
                 <h3 className="font-medium text-gray-700 mb-2">Visa Package</h3>
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    {application.countries && typeof application.countries === 'object' && 'flag' in application.countries && (
+                    {application.countries && 
+                     typeof application.countries === 'object' && 
+                     application.countries !== null && 
+                     'flag' in application.countries && (
                       <img 
                         src={application.countries.flag as string} 
                         alt={`${countryName} flag`}

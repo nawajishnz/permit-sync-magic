@@ -5,25 +5,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
 
+interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  order: number;
+}
+
 const FAQ = () => {
   const { data: faqs, isLoading, error } = useQuery({
     queryKey: ['faqs'],
     queryFn: async () => {
       try {
-        // Check if the faqs table exists
+        // Check if the faqs table exists using RPC call
         const { data: tableExists } = await supabase
           .rpc('get_table_info', { p_table_name: 'faqs' });
         
-        // If table exists and has data, fetch from it
+        // If table exists, use a custom RPC function to get FAQs
         if (tableExists && tableExists.length > 0) {
-          const { data, error } = await supabase
-            .from('faqs')
-            .select('*')
-            .order('order')
-            .limit(10);
+          // Using raw query via rpc to fetch faqs safely
+          const { data, error } = await supabase.rpc('get_faqs');
           
-          if (data && data.length > 0 && !error) {
-            return data;
+          if (data && Array.isArray(data) && data.length > 0 && !error) {
+            return data as FaqItem[];
           }
         }
         

@@ -8,16 +8,13 @@ export async function handleContactForm(data: {
   subject?: string;
 }) {
   try {
-    // Use the contact_messages table that exists in our schema
-    const { error } = await supabase
-      .from('contact_messages')
-      .insert({
-        name: data.name,
-        email: data.email,
-        message: data.message,
-        subject: data.subject || 'Website Contact Form',
-        status: 'new'
-      });
+    // Use RPC function to submit contact message
+    const { data: result, error } = await supabase.rpc('submit_contact_message', {
+      p_name: data.name,
+      p_email: data.email, 
+      p_message: data.message,
+      p_subject: data.subject || 'Website Contact Form'
+    });
 
     if (error) throw error;
     

@@ -1,74 +1,52 @@
 
-import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
-export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, process.cwd(), '');
-  
-  console.log('Building in mode:', mode);
-  console.log('Supabase URL available:', !!env.VITE_SUPABASE_URL);
+// Fix for ESM-only libraries
+const componentTaggerDevFix = {
+  name: 'component-tagger-dev-fix',
+  resolveId(id) {
+    if (id === 'lovable-tagger') {
+      return { id: 'lovable-tagger-stub', external: false };
+    }
+    return null;
+  },
+  load(id) {
+    if (id === 'lovable-tagger-stub') {
+      return `export const componentTagger = () => { return { handler: () => {} } }`;
+    }
+    return null;
+  }
+};
 
-  return {
-    plugins: [
-      react(),
-      // Using dynamic import to avoid ESM loading issues
-      mode === 'development' && {
-        name: 'lovable-tagger-plugin',
-        async configureServer(server) {
-          try {
-            // Dynamically import the ESM module
-            const module = await import('lovable-tagger');
-            const plugin = module.componentTagger();
-            if (plugin.configureServer) {
-              await plugin.configureServer(server);
-            }
-          } catch (e) {
-            console.warn('Warning: Could not load lovable-tagger:', e.message);
-          }
-        }
-      }
-    ].filter(Boolean),
-    base: './', // Use relative paths for assets
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react(), tsconfigPaths(), componentTaggerDevFix],
+  server: {
+    host: '0.0.0.0',
+    hmr: {
+      clientPort: 443, // Use the same port as the server
+    },
+    // Only for dev-server
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
       },
     },
-    server: {
-      port: 8080,
-      host: "::",
-      watch: {
-        usePolling: true,
-      },
+    watch: {
+      ignored: ['**/node_modules/**'],
     },
-    build: {
-      outDir: 'dist',
-      assetsDir: 'assets',
-      sourcemap: true,
-      // Ensure environment variables are injected
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
-            ui: [
-              'react-router-dom',
-              '@radix-ui/react-dialog',
-              '@radix-ui/react-tabs',
-              '@radix-ui/react-select'
-            ],
-            'supabase': ['@supabase/supabase-js'],
-          },
-        },
-      },
+  },
+  build: {
+    outDir: 'build',
+    sourcemap: true,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
     },
-    define: {
-      // Add any custom defines here that need to be accessible in the app
-      __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
-      // Expose env variables to the client
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
-    },
-  };
+  },
 });

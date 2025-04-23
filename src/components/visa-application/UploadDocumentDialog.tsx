@@ -82,9 +82,8 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         .from('visa-documents')
         .getPublicUrl(filePath);
 
-      // Update the application document record with raw SQL query
-      // since we don't have the proper type definitions yet
-      const { error: updateError } = await supabase.rpc('update_application_document', {
+      // Update the application document record with RPC call
+      const { data: updateResult, error: updateError } = await supabase.rpc('update_application_document', {
         p_application_id: applicationId,
         p_document_type: documentType,
         p_file_url: publicUrl,
@@ -95,13 +94,17 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
         throw updateError;
       }
 
-      // Add a timeline event for the document upload with raw SQL query
-      await supabase.rpc('add_application_timeline', {
+      // Add a timeline event for the document upload with RPC call
+      const { data: timelineResult, error: timelineError } = await supabase.rpc('add_application_timeline', {
         p_application_id: applicationId,
         p_event: `${documentType} uploaded`,
         p_description: `Document "${documentType}" was uploaded and is pending review.`,
         p_date: new Date().toISOString()
       });
+
+      if (timelineError) {
+        throw timelineError;
+      }
 
       toast({
         title: "Document uploaded",
