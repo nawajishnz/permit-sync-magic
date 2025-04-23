@@ -56,6 +56,89 @@ export type Database = {
           status?: string;
         };
       };
+      countries: {
+        Row: {
+          id: string;
+          name: string;
+          flag: string;
+          banner: string;
+          description: string;
+          entry_type: string;
+          validity: string;
+          length_of_stay: string;
+          visa_includes: string[];
+          visa_assistance: string[];
+          embassy_details: any;
+          processing_steps: any;
+          faq: any;
+          requirements_description: string;
+          popularity: number;
+          min_price: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          flag?: string;
+          banner?: string;
+          description?: string;
+          entry_type?: string;
+          validity?: string;
+          length_of_stay?: string;
+          visa_includes?: string[];
+          visa_assistance?: string[];
+          embassy_details?: any;
+          processing_steps?: any;
+          faq?: any;
+          requirements_description?: string;
+          popularity?: number;
+          min_price?: number;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          flag?: string;
+          banner?: string;
+          description?: string;
+          entry_type?: string;
+          validity?: string;
+          length_of_stay?: string;
+          visa_includes?: string[];
+          visa_assistance?: string[];
+          embassy_details?: any;
+          processing_steps?: any;
+          faq?: any;
+          requirements_description?: string;
+          popularity?: number;
+          min_price?: number;
+        };
+      };
+      faqs: {
+        Row: {
+          id: string;
+          question: string;
+          answer: string;
+          order: number;
+          category?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Insert: {
+          id?: string;
+          question: string;
+          answer: string;
+          order?: number;
+          category?: string;
+        };
+        Update: {
+          id?: string;
+          question?: string;
+          answer?: string;
+          order?: number;
+          category?: string;
+        };
+      };
       // ... existing tables ...
     },
     Functions: {

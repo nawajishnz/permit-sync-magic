@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ExternalLink } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CountryGridProps {
   limit?: number;
@@ -74,7 +75,7 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
                 {country.name}
                 <ExternalLink className="h-3 w-3 text-gray-400" />
               </h3>
-              <p className="text-sm text-gray-500">From ${country.min_price || '99'}</p>
+              <p className="text-sm text-gray-500">From ${country.min_price !== undefined ? country.min_price : '99'}</p>
             </CardContent>
           </Card>
         </Link>

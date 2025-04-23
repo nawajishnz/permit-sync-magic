@@ -24,7 +24,7 @@ import { Progress } from '@/components/ui/progress';
 import UploadDocumentDialog from './UploadDocumentDialog';
 
 // Helper component for document status
-const DocumentStatus = ({ status }) => {
+const DocumentStatus = ({ status }: { status: string }) => {
   if (status === 'verified') {
     return <CheckCircle className="h-5 w-5 text-green-500" />;
   } else if (status === 'rejected') {
@@ -37,8 +37,8 @@ const DocumentStatus = ({ status }) => {
 };
 
 // Component to display the status badge
-const StatusBadge = ({ status }) => {
-  const statusConfig = {
+const StatusBadge = ({ status }: { status: string }) => {
+  const statusConfig: Record<string, { bg: string, text: string, label: string }> = {
     'pending': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
     'in_progress': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'In Progress' },
     'document_review': { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Document Review' },
@@ -58,7 +58,14 @@ const StatusBadge = ({ status }) => {
 };
 
 // Timeline component
-const Timeline = ({ events }) => {
+interface TimelineEvent {
+  id: string;
+  event: string;
+  date: string;
+  description?: string;
+}
+
+const Timeline = ({ events }: { events?: TimelineEvent[] }) => {
   if (!events || events.length === 0) {
     return <div className="text-gray-500 text-sm italic">No timeline events yet</div>;
   }
@@ -90,7 +97,7 @@ const Timeline = ({ events }) => {
 const ApplicationTracker = () => {
   const { applicationId } = useParams();
   const { toast } = useToast();
-  const [uploadingDocumentType, setUploadingDocumentType] = useState(null);
+  const [uploadingDocumentType, setUploadingDocumentType] = useState<string | null>(null);
   
   // Define the application progress steps
   const progressSteps = [
@@ -134,11 +141,12 @@ const ApplicationTracker = () => {
         throw appError;
       }
 
-      // Sort timeline by date in descending order
+      // Ensure timeline data is properly processed
       if (appData && appData.application_timeline && Array.isArray(appData.application_timeline)) {
-        appData.application_timeline.sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
+        // Sort timeline by date in descending order
+        appData.application_timeline.sort((a: any, b: any) => {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        });
       }
 
       return appData;
@@ -150,7 +158,7 @@ const ApplicationTracker = () => {
     if (error) {
       toast({
         title: "Error loading application",
-        description: error.message || "Could not load application details",
+        description: error instanceof Error ? error.message : "Could not load application details",
         variant: "destructive",
       });
     }
@@ -167,8 +175,8 @@ const ApplicationTracker = () => {
   };
 
   // Calculate current step based on application status
-  const getCurrentStep = (status) => {
-    const stepMap = {
+  const getCurrentStep = (status: string) => {
+    const stepMap: Record<string, number> = {
       'pending': 0,
       'in_progress': 1,
       'document_review': 2,
@@ -182,7 +190,7 @@ const ApplicationTracker = () => {
   };
 
   // Application progress as percentage
-  const getProgressPercentage = (currentStep) => {
+  const getProgressPercentage = (currentStep: number) => {
     return (currentStep / (progressSteps.length - 1)) * 100;
   };
 
@@ -206,8 +214,10 @@ const ApplicationTracker = () => {
 
   const currentStep = getCurrentStep(application.status);
   const progress = getProgressPercentage(currentStep);
-  const countryName = application.countries && application.countries.name 
-    ? application.countries.name 
+  
+  // Safely access country name
+  const countryName = application.countries && typeof application.countries === 'object' && 'name' in application.countries 
+    ? application.countries.name as string
     : "Unknown Country";
 
   return (
@@ -272,7 +282,7 @@ const ApplicationTracker = () => {
             <CardContent>
               {application.application_documents && Array.isArray(application.application_documents) && application.application_documents.length > 0 ? (
                 <div className="space-y-4">
-                  {application.application_documents.map((doc) => (
+                  {application.application_documents.map((doc: any) => (
                     <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center">
                         <DocumentStatus status={doc.status} />
@@ -333,7 +343,11 @@ const ApplicationTracker = () => {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-500">Full Name</p>
-                      <p>{application.form_data?.personalInfo?.fullName || "Not provided"}</p>
+                      <p>
+                        {application.form_data?.personalInfo ? 
+                          `${application.form_data.personalInfo.firstName || ''} ${application.form_data.personalInfo.lastName || ''}` : 
+                          "Not provided"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
@@ -341,7 +355,7 @@ const ApplicationTracker = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Phone</p>
-                      <p>{application.form_data?.personalInfo?.phone || "Not provided"}</p>
+                      <p>{application.form_data?.personalInfo?.phoneNumber || "Not provided"}</p>
                     </div>
                   </div>
                 </div>
@@ -351,15 +365,15 @@ const ApplicationTracker = () => {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-500">Purpose of Travel</p>
-                      <p>{application.form_data?.travelInfo?.purpose || "Not specified"}</p>
+                      <p>{application.form_data?.travelInfo?.purposeOfTravel || "Not specified"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Planned Travel Dates</p>
-                      <p>{application.form_data?.travelInfo?.dateFrom ? (
+                      <p>{application.form_data?.travelInfo?.departureDate ? (
                         <>
-                          {new Date(application.form_data.travelInfo.dateFrom).toLocaleDateString()} 
-                          {application.form_data.travelInfo.dateTo && (
-                            <> to {new Date(application.form_data.travelInfo.dateTo).toLocaleDateString()}</>
+                          {new Date(application.form_data.travelInfo.departureDate).toLocaleDateString()} 
+                          {application.form_data.travelInfo.returnDate && (
+                            <> to {new Date(application.form_data.travelInfo.returnDate).toLocaleDateString()}</>
                           )}
                         </>
                       ) : "Not specified"}</p>
@@ -374,9 +388,9 @@ const ApplicationTracker = () => {
                 <h3 className="font-medium text-gray-700 mb-2">Visa Package</h3>
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    {application.countries && application.countries.flag && (
+                    {application.countries && typeof application.countries === 'object' && 'flag' in application.countries && (
                       <img 
-                        src={application.countries.flag} 
+                        src={application.countries.flag as string} 
                         alt={`${countryName} flag`}
                         className="w-8 h-6 object-cover rounded-sm"
                       />
@@ -404,7 +418,7 @@ const ApplicationTracker = () => {
               <CardTitle>Application Timeline</CardTitle>
             </CardHeader>
             <CardContent>
-              <Timeline events={application.application_timeline || []} />
+              <Timeline events={application.application_timeline} />
             </CardContent>
           </Card>
 
@@ -431,8 +445,8 @@ const ApplicationTracker = () => {
                     Prepare for Your Interview
                   </h3>
                   <p className="text-sm text-blue-700 mt-2">
-                    Your interview is scheduled for {application.form_data?.interviewDate ? 
-                      new Date(application.form_data.interviewDate).toLocaleDateString() : "the scheduled date"}.
+                    Your interview is scheduled for {application.form_data?.appointmentInfo?.interviewDate ? 
+                      new Date(application.form_data.appointmentInfo.interviewDate).toLocaleDateString() : "the scheduled date"}.
                   </p>
                 </div>
               ) : application.status === 'approved' ? (
@@ -456,7 +470,7 @@ const ApplicationTracker = () => {
       </div>
 
       {/* Document upload dialog */}
-      {uploadingDocumentType && (
+      {uploadingDocumentType && applicationId && (
         <UploadDocumentDialog
           open={!!uploadingDocumentType}
           onClose={() => setUploadingDocumentType(null)}

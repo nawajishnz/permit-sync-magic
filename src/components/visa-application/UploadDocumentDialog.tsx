@@ -1,10 +1,13 @@
 
 import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Upload, FileUp, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Upload, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -24,14 +27,24 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+  const { toast } = useToast();
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       
-      // Validate file size (max 5MB)
+      // Check file size (max 5MB)
       if (selectedFile.size > 5 * 1024 * 1024) {
-        setError('File size exceeds 5MB limit');
+        setError('File size exceeds 5MB. Please select a smaller file.');
+        setFile(null);
+        return;
+      }
+      
+      // Check file type (allow only PDF, JPG, PNG)
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(selectedFile.type)) {
+        setError('Invalid file type. Please select a PDF, JPG or PNG file.');
+        setFile(null);
         return;
       }
       
@@ -39,127 +52,124 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       setError(null);
     }
   };
-  
+
   const handleUpload = async () => {
     if (!file) {
       setError('Please select a file to upload');
       return;
     }
-    
+
     setIsUploading(true);
     setError(null);
-    
+
     try {
-      // Generate a unique filename
+      // Generate a unique file path
       const fileExt = file.name.split('.').pop();
-      const fileName = `${applicationId}_${documentType.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
-      const filePath = `visa_documents/${fileName}`;
-      
+      const fileName = `${applicationId}/${documentType.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.${fileExt}`;
+      const filePath = `application-documents/${fileName}`;
+
       // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('visa-documents')
         .upload(filePath, file);
-      
-      if (uploadError) throw uploadError;
-      
-      // Get the public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('documents')
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('visa-documents')
         .getPublicUrl(filePath);
-      
-      // Update application_documents in the database
+
+      // Update the application document record
       const { error: updateError } = await supabase
         .from('application_documents')
         .update({
-          file_url: publicUrlData.publicUrl,
+          file_url: publicUrl,
           status: 'uploaded',
           uploaded_at: new Date().toISOString()
         })
-        .eq('application_id', applicationId)
-        .eq('document_type', documentType);
-      
-      if (updateError) throw updateError;
-      
-      // Add timeline entry
+        .eq('document_type', documentType)
+        .eq('application_id', applicationId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Add a timeline event for the document upload
       await supabase
         .from('application_timeline')
         .insert({
           application_id: applicationId,
-          event: `Document Uploaded: ${documentType}`,
-          date: new Date().toISOString(),
-          description: `The ${documentType} document has been uploaded and is pending review.`
+          event: `${documentType} uploaded`,
+          description: `Document "${documentType}" was uploaded and is pending review.`,
+          date: new Date().toISOString()
         });
-      
+
+      toast({
+        title: "Document uploaded",
+        description: "Your document has been successfully uploaded.",
+      });
+
       onUploadComplete();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading document:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred while uploading the document');
+      setError(`Upload failed: ${err.message || 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Upload {documentType}</DialogTitle>
-          <DialogDescription>
-            Please upload a clear, legible copy of your {documentType.toLowerCase()}. 
-            Accepted formats: PDF, JPG, PNG (max 5MB).
-          </DialogDescription>
         </DialogHeader>
-        
+
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
+
         <div className="space-y-4">
-          <div className="flex justify-center">
-            <input
-              id="document-upload"
-              type="file"
-              className="hidden"
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="document-file">Select File</Label>
+            <Input 
+              id="document-file" 
+              type="file" 
               onChange={handleFileChange}
               accept=".pdf,.jpg,.jpeg,.png"
+              disabled={isUploading}
             />
-            <label 
-              htmlFor="document-upload" 
-              className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center w-full cursor-pointer hover:bg-gray-50"
-            >
-              <Upload className="h-10 w-10 text-gray-400 mb-2" />
-              <span className="text-gray-600 font-medium">Select a file</span>
-              <span className="text-xs text-gray-500 mt-1">PDF, JPG or PNG (max 5MB)</span>
-            </label>
+            <p className="text-xs text-gray-500">
+              Maximum file size: 5MB. Accepted formats: PDF, JPG, PNG.
+            </p>
           </div>
-          
+
           {file && (
-            <div className="flex items-center text-sm bg-blue-50 border border-blue-200 rounded p-2">
-              <FileUp className="h-4 w-4 text-blue-500 mr-2" />
-              <span className="truncate">{file.name}</span>
-              <span className="ml-auto text-gray-500">
-                {(file.size / 1024).toFixed(1)} KB
-              </span>
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p className="font-medium">Selected file:</p>
+              <p className="text-sm truncate">{file.name}</p>
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isUploading}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
           <Button 
             onClick={handleUpload} 
             disabled={!file || isUploading}
+            className="ml-2"
           >
-            {isUploading ? (
-              <>
-                <span className="animate-spin mr-2">⟳</span> Uploading...
-              </>
-            ) : 'Upload Document'}
+            {isUploading && (
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-gray-100 border-t-white" />
+            )}
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Document
           </Button>
         </DialogFooter>
       </DialogContent>

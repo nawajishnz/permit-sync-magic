@@ -9,14 +9,25 @@ const FAQ = () => {
   const { data: faqs, isLoading, error } = useQuery({
     queryKey: ['faqs'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('faqs')
-        .select('*')
-        .order('order')
-        .limit(10);
-      
-      if (error) throw error;
-      return data;
+      try {
+        // First try to fetch from the dedicated faqs table
+        const { data, error } = await supabase
+          .from('faqs')
+          .select('*')
+          .order('order')
+          .limit(10);
+        
+        // If we got data, return it
+        if (data && data.length > 0) {
+          return data;
+        }
+        
+        // If there was an error or no data, we'll use default FAQs
+        return null;
+      } catch (err) {
+        console.error('Error fetching FAQs:', err);
+        return null;
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

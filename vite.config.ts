@@ -13,17 +13,22 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      // Using require to avoid ESM issues
-      mode === 'development' && (() => {
-        try {
-          // Dynamic import to avoid ESM loading issues
-          // This is a safer approach than using import directly
-          return require('lovable-tagger').componentTagger();
-        } catch (e) {
-          console.warn('Warning: Could not load lovable-tagger:', e.message);
-          return null;
+      // Using dynamic import to avoid ESM loading issues
+      mode === 'development' && {
+        name: 'lovable-tagger-plugin',
+        async configureServer(server) {
+          try {
+            // Dynamically import the ESM module
+            const module = await import('lovable-tagger');
+            const plugin = module.componentTagger();
+            if (plugin.configureServer) {
+              await plugin.configureServer(server);
+            }
+          } catch (e) {
+            console.warn('Warning: Could not load lovable-tagger:', e.message);
+          }
         }
-      })(),
+      }
     ].filter(Boolean),
     base: './', // Use relative paths for assets
     resolve: {

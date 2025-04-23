@@ -1,5 +1,4 @@
 
-// Simple placeholder for contact API
 import { supabase } from '@/integrations/supabase/client';
 
 export async function handleContactForm(data: {
@@ -9,17 +8,15 @@ export async function handleContactForm(data: {
   subject?: string;
 }) {
   try {
-    // Instead of using a non-existent table, store messages in a more generic way
-    // or create the table first if needed
+    // Use the contact_messages table that exists in our schema
     const { error } = await supabase
-      .from('profiles')  // Using an existing table as fallback
+      .from('contact_messages')
       .insert({
-        // Store contact form as metadata in an existing table
-        full_name: data.name,
+        name: data.name,
         email: data.email,
-        contact_message: data.message,
-        contact_subject: data.subject || 'Website Contact Form',
-        contact_status: 'new'
+        message: data.message,
+        subject: data.subject || 'Website Contact Form',
+        status: 'new'
       });
 
     if (error) throw error;
