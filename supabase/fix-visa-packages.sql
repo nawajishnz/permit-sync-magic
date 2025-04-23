@@ -95,11 +95,11 @@ DECLARE
   v_result jsonb;
 BEGIN
   -- Extract parameters from JSON
-  v_country_id := (args->>'p_country_id')::uuid;
-  v_name := COALESCE(args->>'p_name', 'Visa Package');
-  v_government_fee := COALESCE((args->>'p_government_fee')::numeric, 0);
-  v_service_fee := COALESCE((args->>'p_service_fee')::numeric, 0);
-  v_processing_days := COALESCE((args->>'p_processing_days')::integer, 15);
+  v_country_id := (args->>'country_id')::uuid;
+  v_name := COALESCE(args->>'name', 'Visa Package');
+  v_government_fee := COALESCE((args->>'government_fee')::numeric, 0);
+  v_service_fee := COALESCE((args->>'service_fee')::numeric, 0);
+  v_processing_days := COALESCE((args->>'processing_days')::integer, 15);
   
   -- Call the main function
   v_result := save_visa_package(
@@ -117,7 +117,3 @@ $$;
 -- Grant necessary permissions for the overloaded function too
 GRANT EXECUTE ON FUNCTION save_visa_package(jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION save_visa_package(jsonb) TO anon;
-
--- View function definition to verify it's correct
-SELECT pg_get_functiondef('save_visa_package(uuid, text, numeric, numeric, integer)'::regproc);
-SELECT pg_get_functiondef('save_visa_package(jsonb)'::regproc);
