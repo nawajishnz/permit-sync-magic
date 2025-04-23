@@ -112,44 +112,49 @@ const ApplicationTracker = () => {
   const { data: application, isLoading, error, refetch } = useQuery({
     queryKey: ['application', applicationId],
     queryFn: async () => {
-      // Get application data
-      const { data: appData, error: appError } = await supabase
-        .from('visa_applications')
-        .select(`
-          *,
-          visa_packages (*),
-          countries (id, name, flag),
-          application_documents (
-            id, 
-            document_type,
-            file_url,
-            status,
-            feedback,
-            uploaded_at
-          ),
-          application_timeline (
-            id,
-            event,
-            date,
-            description
-          )
-        `)
-        .eq('id', applicationId)
-        .single();
+      try {
+        // Get application data
+        const { data: appData, error: appError } = await supabase
+          .from('visa_applications')
+          .select(`
+            *,
+            visa_packages (*),
+            countries (id, name, flag),
+            application_documents (
+              id, 
+              document_type,
+              file_url,
+              status,
+              feedback,
+              uploaded_at
+            ),
+            application_timeline (
+              id,
+              event,
+              date,
+              description
+            )
+          `)
+          .eq('id', applicationId)
+          .single();
 
-      if (appError) {
-        throw appError;
+        if (appError) {
+          throw appError;
+        }
+
+        // Ensure timeline data is properly processed
+        if (appData && appData.application_timeline && Array.isArray(appData.application_timeline)) {
+          // Sort timeline by date in descending order
+          appData.application_timeline.sort((a: any, b: any) => {
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+          });
+        }
+
+        return appData;
+      } catch (error) {
+        console.error("Error fetching application data:", error);
+        throw error;
       }
-
-      // Ensure timeline data is properly processed
-      if (appData && appData.application_timeline && Array.isArray(appData.application_timeline)) {
-        // Sort timeline by date in descending order
-        appData.application_timeline.sort((a: any, b: any) => {
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        });
-      }
-
-      return appData;
     },
     enabled: !!applicationId,
   });
@@ -219,6 +224,12 @@ const ApplicationTracker = () => {
   const countryName = application.countries && typeof application.countries === 'object' && 'name' in application.countries 
     ? application.countries.name as string
     : "Unknown Country";
+
+  // Safely handle timeline events
+  const timelineEvents: TimelineEvent[] = 
+    Array.isArray(application.application_timeline) 
+      ? application.application_timeline 
+      : [];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -418,7 +429,7 @@ const ApplicationTracker = () => {
               <CardTitle>Application Timeline</CardTitle>
             </CardHeader>
             <CardContent>
-              <Timeline events={application.application_timeline} />
+              <Timeline events={timelineEvents} />
             </CardContent>
           </Card>
 
@@ -445,8 +456,8 @@ const ApplicationTracker = () => {
                     Prepare for Your Interview
                   </h3>
                   <p className="text-sm text-blue-700 mt-2">
-                    Your interview is scheduled for {application.form_data?.appointmentInfo?.interviewDate ? 
-                      new Date(application.form_data.appointmentInfo.interviewDate).toLocaleDateString() : "the scheduled date"}.
+                    Your interview is scheduled for {application.form_data?.interviewDate ? 
+                      new Date(application.form_data.interviewDate).toLocaleDateString() : "the scheduled date"}.
                   </p>
                 </div>
               ) : application.status === 'approved' ? (

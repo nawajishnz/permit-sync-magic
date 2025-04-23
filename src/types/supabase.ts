@@ -1,3 +1,4 @@
+
 export type Database = {
   public: {
     Tables: {
@@ -11,6 +12,7 @@ export type Database = {
           processing_days: number;
           created_at?: string;
           updated_at?: string;
+          total_price?: number;
         };
         Insert: {
           id?: string;
@@ -19,6 +21,7 @@ export type Database = {
           government_fee: number;
           service_fee: number;
           processing_days: number;
+          total_price?: number;
         };
         Update: {
           id?: string;
@@ -27,6 +30,7 @@ export type Database = {
           government_fee?: number;
           service_fee?: number;
           processing_days?: number;
+          total_price?: number;
         };
       };
       contact_messages: {
@@ -73,7 +77,7 @@ export type Database = {
           faq: any;
           requirements_description: string;
           popularity: number;
-          min_price: number;
+          min_price?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -139,7 +143,61 @@ export type Database = {
           category?: string;
         };
       };
-      // ... existing tables ...
+      application_documents: {
+        Row: {
+          id: string;
+          application_id: string;
+          document_type: string;
+          file_url?: string;
+          status: string;
+          feedback?: string;
+          uploaded_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          document_type: string;
+          file_url?: string;
+          status?: string;
+          feedback?: string;
+          uploaded_at?: string;
+        };
+        Update: {
+          id?: string;
+          application_id?: string;
+          document_type?: string;
+          file_url?: string;
+          status?: string;
+          feedback?: string;
+          uploaded_at?: string;
+        };
+      };
+      application_timeline: {
+        Row: {
+          id: string;
+          application_id: string;
+          event: string;
+          description?: string;
+          date: string;
+          created_at?: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          event: string;
+          description?: string;
+          date: string;
+        };
+        Update: {
+          id?: string;
+          application_id?: string;
+          event?: string;
+          description?: string;
+          date?: string;
+        };
+      };
     },
     Functions: {
       save_visa_package: {
@@ -166,7 +224,6 @@ export type Database = {
           is_nullable: boolean;
         }[];
       };
-      // ... existing functions ...
     }
   }
 }

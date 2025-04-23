@@ -124,8 +124,6 @@ const VisaApplication = () => {
         </div>
       </main>
       <Footer />
-      
-      {/* Add any modals or dialogs here if needed */}
     </div>
   );
 };

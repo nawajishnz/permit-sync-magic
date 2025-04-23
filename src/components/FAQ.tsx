@@ -10,19 +10,24 @@ const FAQ = () => {
     queryKey: ['faqs'],
     queryFn: async () => {
       try {
-        // First try to fetch from the dedicated faqs table
-        const { data, error } = await supabase
-          .from('faqs')
-          .select('*')
-          .order('order')
-          .limit(10);
+        // Check if the faqs table exists
+        const { data: tableExists } = await supabase
+          .rpc('get_table_info', { p_table_name: 'faqs' });
         
-        // If we got data, return it
-        if (data && data.length > 0) {
-          return data;
+        // If table exists and has data, fetch from it
+        if (tableExists && tableExists.length > 0) {
+          const { data, error } = await supabase
+            .from('faqs')
+            .select('*')
+            .order('order')
+            .limit(10);
+          
+          if (data && data.length > 0 && !error) {
+            return data;
+          }
         }
         
-        // If there was an error or no data, we'll use default FAQs
+        // Fallback - return null to trigger use of default FAQs
         return null;
       } catch (err) {
         console.error('Error fetching FAQs:', err);
