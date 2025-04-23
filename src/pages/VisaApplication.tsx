@@ -40,7 +40,7 @@ const VisaApplication = () => {
   const processingTimeDisplay = `${visaPackage?.processing_days || 'Standard'} days processing`;
   
   // Handle form submission and navigate to the next step
-  const handleSubmit = (formData: any) => {
+  const handleFormSubmission = (formData: any) => {
     // Navigate to the application tracker page with the application ID
     navigate(`/application-tracker/APP-001`);
   };
@@ -117,7 +117,7 @@ const VisaApplication = () => {
               countryName={countryData.name}
               visaType={visaPackage?.name || 'Tourist Visa'}
               processingTime={processingTimeDisplay}
-              onSubmit={handleSubmit}
+              handleSubmit={handleFormSubmission}
               isServiceOrder={false}
             />
           </div>

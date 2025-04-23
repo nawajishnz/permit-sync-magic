@@ -29,6 +29,33 @@ export type Database = {
           processing_days?: number;
         };
       };
+      contact_messages: {
+        Row: {
+          id: string;
+          name: string;
+          email: string;
+          message: string;
+          subject: string;
+          status: string;
+          created_at?: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          email: string;
+          message: string;
+          subject?: string;
+          status?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          email?: string;
+          message?: string;
+          subject?: string;
+          status?: string;
+        };
+      };
       // ... existing tables ...
     },
     Functions: {

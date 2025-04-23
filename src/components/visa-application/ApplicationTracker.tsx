@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -134,7 +135,7 @@ const ApplicationTracker = () => {
       }
 
       // Sort timeline by date in descending order
-      if (appData.application_timeline) {
+      if (appData && appData.application_timeline && Array.isArray(appData.application_timeline)) {
         appData.application_timeline.sort((a, b) => 
           new Date(b.date).getTime() - new Date(a.date).getTime()
         );
@@ -205,8 +206,9 @@ const ApplicationTracker = () => {
 
   const currentStep = getCurrentStep(application.status);
   const progress = getProgressPercentage(currentStep);
-  const countryName = application.countries && typeof application.countries === 'object' ? 
-    application.countries.name || "Unknown Country" : "Unknown Country";
+  const countryName = application.countries && application.countries.name 
+    ? application.countries.name 
+    : "Unknown Country";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -268,7 +270,7 @@ const ApplicationTracker = () => {
               <CardTitle>Required Documents</CardTitle>
             </CardHeader>
             <CardContent>
-              {application.application_documents?.length > 0 ? (
+              {application.application_documents && Array.isArray(application.application_documents) && application.application_documents.length > 0 ? (
                 <div className="space-y-4">
                   {application.application_documents.map((doc) => (
                     <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -331,15 +333,15 @@ const ApplicationTracker = () => {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-500">Full Name</p>
-                      <p>{application.applicant_name || "Not provided"}</p>
+                      <p>{application.form_data?.personalInfo?.fullName || "Not provided"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
-                      <p>{application.email || "Not provided"}</p>
+                      <p>{application.form_data?.personalInfo?.email || "Not provided"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Phone</p>
-                      <p>{application.phone || "Not provided"}</p>
+                      <p>{application.form_data?.personalInfo?.phone || "Not provided"}</p>
                     </div>
                   </div>
                 </div>
@@ -349,15 +351,15 @@ const ApplicationTracker = () => {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-500">Purpose of Travel</p>
-                      <p>{application.purpose_of_travel || "Not specified"}</p>
+                      <p>{application.form_data?.travelInfo?.purpose || "Not specified"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Planned Travel Dates</p>
-                      <p>{application.travel_date_from ? (
+                      <p>{application.form_data?.travelInfo?.dateFrom ? (
                         <>
-                          {new Date(application.travel_date_from).toLocaleDateString()} 
-                          {application.travel_date_to && (
-                            <> to {new Date(application.travel_date_to).toLocaleDateString()}</>
+                          {new Date(application.form_data.travelInfo.dateFrom).toLocaleDateString()} 
+                          {application.form_data.travelInfo.dateTo && (
+                            <> to {new Date(application.form_data.travelInfo.dateTo).toLocaleDateString()}</>
                           )}
                         </>
                       ) : "Not specified"}</p>
@@ -372,7 +374,7 @@ const ApplicationTracker = () => {
                 <h3 className="font-medium text-gray-700 mb-2">Visa Package</h3>
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    {application.countries?.flag && (
+                    {application.countries && application.countries.flag && (
                       <img 
                         src={application.countries.flag} 
                         alt={`${countryName} flag`}
@@ -429,8 +431,8 @@ const ApplicationTracker = () => {
                     Prepare for Your Interview
                   </h3>
                   <p className="text-sm text-blue-700 mt-2">
-                    Your interview is scheduled for {application.interview_date ? 
-                      new Date(application.interview_date).toLocaleDateString() : "the scheduled date"}.
+                    Your interview is scheduled for {application.form_data?.interviewDate ? 
+                      new Date(application.form_data.interviewDate).toLocaleDateString() : "the scheduled date"}.
                   </p>
                 </div>
               ) : application.status === 'approved' ? (

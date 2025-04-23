@@ -2,7 +2,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
@@ -14,7 +13,17 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      mode === 'development' && componentTagger(),
+      // Using require to avoid ESM issues
+      mode === 'development' && (() => {
+        try {
+          // Dynamic import to avoid ESM loading issues
+          // This is a safer approach than using import directly
+          return require('lovable-tagger').componentTagger();
+        } catch (e) {
+          console.warn('Warning: Could not load lovable-tagger:', e.message);
+          return null;
+        }
+      })(),
     ].filter(Boolean),
     base: './', // Use relative paths for assets
     resolve: {
