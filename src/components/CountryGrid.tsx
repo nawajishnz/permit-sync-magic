@@ -23,31 +23,42 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
   const { data: countries, isLoading, error } = useQuery({
     queryKey: ['countries'],
     queryFn: async () => {
-      const query = supabase
-        .from('countries')
-        .select('id, name, flag, popularity');
-      
-      if (limit) {
-        query.limit(limit);
+      try {
+        const query = supabase
+          .from('countries')
+          .select('id, name, flag');
+        
+        if (limit) {
+          query.limit(limit);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error("Supabase query error:", error);
+          throw error;
+        }
+        
+        if (!data) return [];
+        
+        // Transform the data to include min_price with a default value
+        return data.map(country => {
+          if (!country || typeof country !== 'object') {
+            console.warn("Invalid country data item:", country);
+            return null;
+          }
+          
+          return {
+            id: country.id,
+            name: country.name,
+            flag: country.flag,
+            min_price: 99 // Default price if not available
+          } as CountryData;
+        }).filter(Boolean) as CountryData[]; // Filter out any null values
+      } catch (err) {
+        console.error("Error in countries query:", err);
+        throw err;
       }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      if (!data) return [];
-      
-      // Transform the data to include min_price with a default value
-      // since the column doesn't exist in the database
-      return data.map(country => {
-        return {
-          id: country.id,
-          name: country.name,
-          flag: country.flag,
-          popularity: country.popularity,
-          min_price: 99 // Default price if not available
-        } as CountryData;
-      });
     },
   });
 
