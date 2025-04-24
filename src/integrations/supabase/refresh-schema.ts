@@ -56,3 +56,10 @@ export async function runVisaPackagesDiagnostic(countryId: string) {
     };
   }
 }
+
+// Auto-run schema fix on import for critical components
+export const autoFixSchema = async () => {
+  console.log('Auto-fixing schema on component load...');
+  const result = await refreshSchemaCache();
+  return result;
+};

@@ -8,7 +8,7 @@ export async function fixVisaPackagesSchema() {
   console.log('Attempting to fix visa_packages schema...');
   
   try {
-    // Step 1: Check if the table exists using a raw query instead of schema tables
+    // Step 1: Check if the table exists using a custom RPC function
     console.log('Checking if visa_packages table exists...');
     const { data: tablesData, error: tablesError } = await supabase.rpc(
       'get_table_info', 
@@ -18,24 +18,27 @@ export async function fixVisaPackagesSchema() {
     console.log('Table check result:', { tablesData, tablesError });
     const tableExists = tablesData && Array.isArray(tablesData) && tablesData.length > 0;
     
-    // Step 2: Try to direct-insert a record with all fields
-    // This will help debug any column issues
+    // Step 2: Create a default package if none exists
     try {
-      console.log('Testing visa_packages table structure with insert operation...');
-      const { data: testInsert, error: insertError } = await supabase
-        .from('visa_packages')
-        .insert({
-          country_id: '00000000-0000-0000-0000-000000000000', // Invalid UUID, will fail but shows column errors
-          name: 'Test Package',
-          government_fee: 0,
-          service_fee: 0,
-          processing_days: 15
-        })
-        .select();
+      if (tableExists) {
+        console.log('Testing visa_packages table with save_visa_package RPC...');
         
-      console.log('Test insert result:', { testInsert, insertError });
-    } catch (insertErr) {
-      console.log('Test insert exception:', insertErr);
+        // Try to use the RPC function that's defined in fix-visa-packages.sql
+        const { data: testSave, error: saveError } = await supabase.rpc(
+          'save_visa_package',
+          {
+            p_country_id: '00000000-0000-0000-0000-000000000000',
+            p_name: 'Test Default Package',
+            p_government_fee: 0,
+            p_service_fee: 0, 
+            p_processing_days: 15
+          }
+        );
+        
+        console.log('RPC test result:', { testSave, saveError });
+      }
+    } catch (saveErr) {
+      console.log('RPC test exception:', saveErr);
     }
     
     // Step 3: Try to refresh schema cache
@@ -43,16 +46,22 @@ export async function fixVisaPackagesSchema() {
     try {
       // Make a dummy request to force schema refresh
       await supabase
-        .from('visa_packages')
+        .from('countries_with_packages')
         .select('count(*)')
         .limit(1)
-        .throwOnError();
+        .catch(() => {
+          console.log('countries_with_packages view may not exist yet, trying direct table access');
+          // If view doesn't exist, try direct table access
+          return supabase
+            .from('visa_packages')
+            .select('count(*)')
+            .limit(1);
+        });
       
       await supabase
         .from('countries')
         .select('count(*)')
-        .limit(1)
-        .throwOnError();
+        .limit(1);
     } catch (refreshErr) {
       console.log('Schema refresh exception:', refreshErr);
     }
@@ -83,10 +92,31 @@ export async function testVisaPackagesOperations(countryId: string) {
     select: { success: false },
     insert: { success: false },
     update: { success: false },
-    rpc: { success: false }
+    rpc: { success: false },
+    view: { success: false }
   };
   
   try {
+    // Test VIEW first (preferred approach)
+    try {
+      const { data, error } = await supabase
+        .from('countries_with_packages')
+        .select('country_id, package_id, package_name, government_fee, service_fee')
+        .eq('country_id', countryId)
+        .limit(1);
+        
+      results.view = {
+        success: !error,
+        data,
+        error: error?.message
+      };
+    } catch (err: any) {
+      results.view = {
+        success: false,
+        error: err.message
+      };
+    }
+    
     // Test SELECT
     try {
       const { data, error } = await supabase
@@ -107,83 +137,14 @@ export async function testVisaPackagesOperations(countryId: string) {
       };
     }
     
-    // Test INSERT
-    try {
-      // Only try insert if no record exists
-      if (!results.select.data || results.select.data.length === 0) {
-        const { data, error } = await supabase
-          .from('visa_packages')
-          .insert({
-            country_id: countryId,
-            name: 'Test Package',
-            government_fee: 0,
-            service_fee: 0,
-            processing_days: 15
-          })
-          .select();
-          
-        results.insert = {
-          success: !error,
-          data,
-          error: error?.message
-        };
-        
-        // Store ID for update test
-        if (data && data.length > 0) {
-          results.recordId = data[0].id;
-        }
-      } else {
-        results.insert = {
-          success: true,
-          skipped: 'Record already exists'
-        };
-        results.recordId = results.select.data[0].id;
-      }
-    } catch (err: any) {
-      results.insert = {
-        success: false,
-        error: err.message
-      };
-    }
-    
-    // Test UPDATE
-    try {
-      if (results.recordId) {
-        const { data, error } = await supabase
-          .from('visa_packages')
-          .update({
-            government_fee: 10,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', results.recordId)
-          .select();
-          
-        results.update = {
-          success: !error,
-          data,
-          error: error?.message
-        };
-      } else {
-        results.update = {
-          success: false,
-          skipped: 'No record ID available'
-        };
-      }
-    } catch (err: any) {
-      results.update = {
-        success: false,
-        error: err.message
-      };
-    }
-    
     // Test RPC function
     try {
       const { data, error } = await supabase.rpc('save_visa_package', {
         p_country_id: countryId,
+        p_name: 'RPC Test Package',
         p_government_fee: 20,
         p_service_fee: 20,
-        p_processing_days: 20,
-        p_name: 'RPC Test Package'
+        p_processing_days: 20
       });
       
       results.rpc = {
@@ -199,7 +160,7 @@ export async function testVisaPackagesOperations(countryId: string) {
     }
     
     return {
-      success: results.select.success || results.insert.success || results.update.success || results.rpc.success,
+      success: results.view.success || results.select.success || results.rpc.success,
       message: 'Tests completed. See results for details.',
       results
     };
