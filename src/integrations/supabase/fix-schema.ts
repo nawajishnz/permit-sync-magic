@@ -44,24 +44,26 @@ export async function fixVisaPackagesSchema() {
     // Step 3: Try to refresh schema cache
     console.log('Attempting to refresh schema cache...');
     try {
-      // Make a dummy request to force schema refresh
-      await supabase
-        .from('countries_with_packages')
-        .select('count(*)')
-        .limit(1)
-        .catch(() => {
-          console.log('countries_with_packages view may not exist yet, trying direct table access');
-          // If view doesn't exist, try direct table access
-          return supabase
-            .from('visa_packages')
+      // Create a function to safely query a table or view
+      const safeQuery = async (tableName: string) => {
+        try {
+          const result = await supabase
+            .from(tableName)
             .select('count(*)')
             .limit(1);
-        });
+          return { success: !result.error, error: result.error };
+        } catch (err) {
+          return { success: false, error: err };
+        }
+      };
       
-      await supabase
-        .from('countries')
-        .select('count(*)')
-        .limit(1);
+      // Try to query tables/views to refresh schema
+      await safeQuery('countries');
+      await safeQuery('visa_packages');
+      
+      // Try an RPC to get country packages instead of direct view access
+      await supabase.rpc('get_country_packages', { p_country_id: '00000000-0000-0000-0000-000000000000' })
+        .catch(() => ({ data: null, error: { message: 'Function not available' } }));
     } catch (refreshErr) {
       console.log('Schema refresh exception:', refreshErr);
     }
@@ -97,16 +99,28 @@ export async function testVisaPackagesOperations(countryId: string) {
   };
   
   try {
-    // Test VIEW first (preferred approach)
+    // Create a function to safely query a table or view
+    const safeQuery = async (tableName: string, condition: any) => {
+      try {
+        const result = await supabase
+          .from(tableName)
+          .select('*')
+          .eq(condition.column, condition.value)
+          .limit(1);
+        return { success: !result.error, data: result.data, error: result.error };
+      } catch (err) {
+        return { success: false, error: err };
+      }
+    };
+    
+    // Test VIEW via RPC instead of direct view access
     try {
-      const { data, error } = await supabase
-        .from('countries_with_packages')
-        .select('country_id, package_id, package_name, government_fee, service_fee')
-        .eq('country_id', countryId)
-        .limit(1);
+      const { data, error } = await supabase.rpc('get_country_packages', {
+        p_country_id: countryId
+      });
         
       results.view = {
-        success: !error,
+        success: !error && data,
         data,
         error: error?.message
       };
@@ -117,16 +131,15 @@ export async function testVisaPackagesOperations(countryId: string) {
       };
     }
     
-    // Test SELECT
+    // Test SELECT on visa_packages
     try {
-      const { data, error } = await supabase
-        .from('visa_packages')
-        .select('id, country_id')
-        .eq('country_id', countryId)
-        .limit(1);
+      const { success, data, error } = await safeQuery('visa_packages', {
+        column: 'country_id',
+        value: countryId
+      });
         
       results.select = {
-        success: !error,
+        success,
         data,
         error: error?.message
       };

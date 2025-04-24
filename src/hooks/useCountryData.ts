@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -33,7 +34,7 @@ export interface EmbassyDetails {
 export interface VisaPackage {
   id: string;
   name: string;
-  price: number; // Calculated from government_fee + service_fee
+  price?: number; // Calculated from government_fee + service_fee
   processing_days: number;
   government_fee?: number;
   service_fee?: number;
@@ -50,6 +51,7 @@ export interface CountryData {
   entry_type: string;
   validity: string;
   length_of_stay: string;
+  processing_time?: string;
   visa_includes: string[];
   visa_assistance: string[];
   processing_steps: ProcessStep[];
@@ -110,25 +112,29 @@ export const useCountryData = (countryId: string | undefined) => {
         let packageError = null;
         
         try {
-          const { data: viewPackages, error: viewError } = await supabase
-            .from('countries_with_packages')
-            .select('package_id, package_name, government_fee, service_fee, processing_days, total_price, country_id')
-            .eq('country_id', countryId)
-            .maybeSingle();
+          // Instead of using 'countries_with_packages' view, which may not be registered in TypeScript,
+          // use a simpler approach for type safety
+          const { data: viewData, error: viewError } = await supabase
+            .rpc('get_country_packages', { p_country_id: countryId })
+            .maybeSingle()
+            .catch(() => {
+              // Fallback if RPC doesn't exist
+              return { data: null, error: { message: 'Function not available' } };
+            });
             
-          if (!viewError && viewPackages) {
+          if (!viewError && viewData) {
             visaPackages = [{
-              id: viewPackages.package_id,
-              name: viewPackages.package_name,
-              government_fee: viewPackages.government_fee || 0,
-              service_fee: viewPackages.service_fee || 0,
-              processing_days: viewPackages.processing_days || 15,
-              country_id: viewPackages.country_id
+              id: viewData.package_id,
+              name: viewData.package_name,
+              government_fee: viewData.government_fee || 0,
+              service_fee: viewData.service_fee || 0,
+              processing_days: viewData.processing_days || 15,
+              country_id: viewData.country_id
             }];
           } else {
             const { data: basicPackages, error } = await supabase
               .from('visa_packages')
-              .select('id, name, country_id, processing_days')
+              .select('id, name, country_id, processing_days, government_fee, service_fee')
               .eq('country_id', countryId);
               
             if (error) {
@@ -137,7 +143,7 @@ export const useCountryData = (countryId: string | undefined) => {
             } else {
               visaPackages = basicPackages;
               
-              if (visaPackages && visaPackages.length > 0) {
+              if (!visaPackages || visaPackages.length === 0) {
                 try {
                   const { data: packageData, error: rpcError } = await supabase.rpc('save_visa_package', {
                     p_country_id: countryId,
@@ -152,7 +158,7 @@ export const useCountryData = (countryId: string | undefined) => {
                     
                     const { data: updatedPackage } = await supabase
                       .from('visa_packages')
-                      .select('id, name, country_id, processing_days')
+                      .select('id, name, country_id, processing_days, government_fee, service_fee')
                       .eq('country_id', countryId)
                       .single();
                       
@@ -234,14 +240,23 @@ export const useCountryData = (countryId: string | undefined) => {
         }
 
         const countryData: CountryData = {
-          ...restOfCountryData,
+          id: countryBase.id,
+          name: countryBase.name,
+          flag: countryBase.flag,
+          banner: countryBase.banner,
+          description: countryBase.description,
+          entry_type: countryBase.entry_type,
+          validity: countryBase.validity,
+          length_of_stay: countryBase.length_of_stay,
+          processing_time: countryBase.processing_time,
           documents: documents || [],
           packageDetails: selectedPackage,
           processing_steps: processingSteps,
           faq: faq,
           embassy_details: embassyDetails,
           visa_includes: visa_includes,
-          visa_assistance: visa_assistance
+          visa_assistance: visa_assistance,
+          requirements_description: countryBase.requirements_description || ''
         };
 
         if (!selectedPackage) {

@@ -24,7 +24,7 @@ const CountryDataFallback = ({ countryId, error, onRetry }: CountryDataFallbackP
       const result = await refreshSchemaCache();
       toast({
         title: result.success ? 'Schema refreshed' : 'Schema refresh failed',
-        description: result.message || (result.success ? 'Schema has been refreshed, try loading the page again.' : 'Could not refresh schema.'),
+        description: result.success ? 'Schema has been refreshed, try loading the page again.' : 'Could not refresh schema.',
         variant: result.success ? 'default' : 'destructive',
       });
       
@@ -50,7 +50,7 @@ const CountryDataFallback = ({ countryId, error, onRetry }: CountryDataFallbackP
       
       toast({
         title: result.success ? 'Diagnostic completed' : 'Diagnostic failed',
-        description: result.message || (result.success ? 'Diagnostic tests have been completed.' : 'Failed to run diagnostic tests.'),
+        description: result.success ? 'Diagnostic tests have been completed.' : 'Failed to run diagnostic tests.',
         variant: result.success ? 'default' : 'destructive',
       });
       
