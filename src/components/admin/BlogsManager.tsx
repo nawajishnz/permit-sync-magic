@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -131,7 +130,12 @@ const BlogsManager = () => {
     try {
       await createBlogMutation.mutateAsync({
         ...values,
-        author_id: 'auth0|123456789', // In a real app, this would come from the logged-in user
+        title: values.title,
+        slug: values.slug,
+        excerpt: values.excerpt,
+        content: values.content,
+        featured_image: values.featured_image,
+        author_id: 'auth0|123456789',
         published_at: new Date().toISOString(),
       });
       

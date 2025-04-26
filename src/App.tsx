@@ -24,8 +24,8 @@ import NavigationScrollToTop from '@/components/NavigationScrollToTop';
 import Dashboard from '@/pages/Dashboard';
 import { AuthProvider } from '@/context/AuthContext';
 import Blog from '@/pages/Blog';
+import BlogPost from '@/pages/BlogPost';
 
-// Lazy load the admin dashboard to improve initial page load
 const AdminDashboard = lazy(() => {
   console.log('Lazy loading AdminDashboard component');
   return import('@/pages/AdminDashboard')
@@ -39,22 +39,19 @@ const AdminDashboard = lazy(() => {
     });
 });
 
-// Lazy load the AdminLegalPages component
 const AdminLegalPages = lazy(() => import('@/pages/admin/LegalPages'));
 
-// Create a QueryClient instance with reliable settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minute cache
-      refetchOnWindowFocus: false, // Prevent unnecessary refetches
-      retry: 1, // Minimal retry to prevent hanging on errors
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
       refetchOnReconnect: 'always',
     },
   },
 });
 
-// Loading component for Suspense with better UX
 const PageLoader = () => (
   <div className="flex justify-center items-center min-h-screen bg-gray-50">
     <div className="flex flex-col items-center">
@@ -65,13 +62,11 @@ const PageLoader = () => (
   </div>
 );
 
-// Add debug component
 const DebugPanel = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [debugInfo, setDebugInfo] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    // Log environment variables
     const envInfo = {
       nodeEnv: import.meta.env.MODE,
       supabaseUrl: import.meta.env.VITE_SUPABASE_URL || 'Not set',
@@ -81,7 +76,6 @@ const DebugPanel = () => {
     
     setDebugInfo(envInfo);
     
-    // Check if we can access Supabase
     import('@/integrations/supabase/client')
       .then(({ supabase }) => {
         supabase.auth.getSession()
@@ -169,22 +163,20 @@ const App: React.FC = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin-login" element={<AdminAuth />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             
-            {/* User Dashboard */}
             <Route path="/dashboard" element={
               <ProtectedRoute requiredRole="user">
                 <Dashboard />
               </ProtectedRoute>
             } />
             
-            {/* Admin routes */}
             <Route path="/admin/*" element={
               <Suspense fallback={<PageLoader />}>
                 <AdminDashboard />
               </Suspense>
             } />
             
-            {/* Policy Pages */}
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/cookies" element={<Cookies />} />
@@ -192,7 +184,6 @@ const App: React.FC = () => {
             <Route path="/faqs" element={<FAQs />} />
             <Route path="/contact" element={<Contact />} />
             
-            {/* 404 Not Found Page */}
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
