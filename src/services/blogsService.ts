@@ -91,7 +91,6 @@ export const deleteBlog = async (id: string): Promise<void> => {
 
 export const updateBlog = async (id: string, blogData: Partial<Blog>): Promise<Blog> => {
   // In a real application, this would update the blog in Supabase
-  // For now, we'll just log it
   console.log(`Blog with id ${id} would be updated with:`, blogData);
   
   // Find the blog index
@@ -114,4 +113,20 @@ export const updateBlog = async (id: string, blogData: Partial<Blog>): Promise<B
   return Promise.resolve(updatedBlog);
 };
 
-// Additional methods for blog management would go here
+export const createBlog = async (blogData: Omit<Blog, 'id' | 'created_at' | 'updated_at'>): Promise<Blog> => {
+  // In a real application, this would create a new blog in Supabase
+  // For now, we'll just log it and return a mock response
+  console.log('New blog would be created with:', blogData);
+  
+  const newBlog: Blog = {
+    id: `${mockBlogs.length + 1}`,
+    ...blogData,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  
+  // In a real app with state management, we would add to the mockBlogs array
+  // mockBlogs.push(newBlog);
+  
+  return Promise.resolve(newBlog);
+};

@@ -23,6 +23,7 @@ import ScrollToTop from '@/components/ScrollToTop';
 import NavigationScrollToTop from '@/components/NavigationScrollToTop';
 import Dashboard from '@/pages/Dashboard';
 import { AuthProvider } from '@/context/AuthContext';
+import Blog from '@/pages/Blog';
 
 // Lazy load the admin dashboard to improve initial page load
 const AdminDashboard = lazy(() => {
@@ -167,6 +168,7 @@ const App: React.FC = () => {
             <Route path="/visa-application/:countryId" element={<VisaApplication />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin-login" element={<AdminAuth />} />
+            <Route path="/blog" element={<Blog />} />
             
             {/* User Dashboard */}
             <Route path="/dashboard" element={
