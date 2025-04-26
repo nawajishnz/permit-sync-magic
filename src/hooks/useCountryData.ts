@@ -87,6 +87,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
       }
 
       try {
+        // First, fetch the country base data
         const { data: countryBase, error: countryError } = await supabase
           .from('countries')
           .select('*')
@@ -99,6 +100,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
         if (countryError) throw countryError;
         if (!countryBase) return null;
 
+        // Fetch document checklist
         const { data: documents, error: documentsError } = await supabase
           .from('document_checklist')
           .select('*')
@@ -106,85 +108,34 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
 
         if (documentsError) throw documentsError;
 
+        // Fetch visa package data
         console.log(`[useCountryData] Querying visa_packages for country_id: ${countryId}`);
         
-        let visaPackages = null;
-        let packageError = null;
+        // Import the visa package service
+        const { getCountryVisaPackage } = await import('@/services/visaPackageService');
         
-        try {
-          const timestamp = new Date().getTime();
-          
-          const { data: packageData, error } = await supabase
-            .from('visa_packages')
-            .select('*')
-            .eq('country_id', countryId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-            
-          if (error) {
-            packageError = error;
-            console.error('[useCountryData] Error fetching visa packages:', error);
-          } else if (packageData) {
-            visaPackages = [packageData];
-            console.log('[useCountryData] Successfully retrieved package data:', packageData);
-          } else {
-            console.log('[useCountryData] No package data found, creating fallback...');
-            
-            try {
-              const { data: newPackageData, error: createError } = await supabase.rpc('save_visa_package', {
-                p_country_id: countryId,
-                p_name: 'Default Package',
-                p_government_fee: 0,
-                p_service_fee: 0,
-                p_processing_days: 15
-              });
-              
-              if (!createError) {
-                console.log('[useCountryData] Successfully created default package:', newPackageData);
-                
-                const { data: updatedPackage } = await supabase
-                  .from('visa_packages')
-                  .select('*')
-                  .eq('country_id', countryId)
-                  .single();
-                  
-                if (updatedPackage) {
-                  visaPackages = [updatedPackage];
-                }
-              }
-            } catch (feeErr) {
-              console.log('[useCountryData] Fee columns may not exist yet:', feeErr);
-            }
-          }
-        } catch (packageErr: any) {
-          console.error('[useCountryData] Error fetching visa packages:', packageErr);
-          packageError = packageErr;
-        }
+        // Get package data using the service function
+        const packageData = await getCountryVisaPackage(countryId);
+        
+        console.log('[useCountryData] Visa package data:', packageData);
+        
+        // Process package data into the expected format
+        const selectedPackage: VisaPackage | null = packageData ? {
+          id: packageData.id || 'default',
+          name: packageData.name || 'Visa Package',
+          price: (packageData.government_fee || 0) + (packageData.service_fee || 0),
+          processing_days: packageData.processing_days || 15,
+          government_fee: packageData.government_fee || 0,
+          service_fee: packageData.service_fee || 0,
+          total_price: packageData.total_price || 0,
+          country_id: packageData.country_id
+        } : null;
 
-        console.log(`[useCountryData] Result from visa_packages query:`, { visaPackages, packageError });
-
-        const selectedPackage: VisaPackage | null = visaPackages && visaPackages.length > 0
-          ? {
-              id: visaPackages[0].id,
-              name: visaPackages[0].name,
-              price: (
-                (typeof visaPackages[0].government_fee === 'number' ? visaPackages[0].government_fee : 0) + 
-                (typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0)
-              ),
-              processing_days: visaPackages[0].processing_days || 15,
-              government_fee: typeof visaPackages[0].government_fee === 'number' ? visaPackages[0].government_fee : 0,
-              service_fee: typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0,
-              total_price: visaPackages[0].total_price,
-              country_id: visaPackages[0].country_id
-            }
-          : null;
-
-        console.log('[useCountryData] Final selectedPackage:', selectedPackage);
-
+        // Parse arrays and objects from JSON if needed
         const visa_includes = Array.isArray(countryBase.visa_includes) ? countryBase.visa_includes : [];
         const visa_assistance = Array.isArray(countryBase.visa_assistance) ? countryBase.visa_assistance : [];
 
+        // Parse processing steps
         let processingSteps: ProcessStep[] = [];
         if (countryBase.processing_steps) {
           const stepsData = typeof countryBase.processing_steps === 'string'
@@ -200,6 +151,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
           }
         }
 
+        // Parse FAQ items
         let faq: FAQItem[] = [];
         if (countryBase.faq) {
           const faqData = typeof countryBase.faq === 'string'
@@ -214,6 +166,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
           }
         }
 
+        // Parse embassy details
         let embassyDetails: EmbassyDetails = { address: '', phone: '', email: '', hours: '' };
         if (countryBase.embassy_details && typeof countryBase.embassy_details === 'object' && !Array.isArray(countryBase.embassy_details)) {
           const details = countryBase.embassy_details as Record<string, Json>;
@@ -225,6 +178,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
           };
         }
 
+        // Build the full country data object
         const countryData: CountryData = {
           id: countryBase.id,
           name: countryBase.name,
@@ -244,11 +198,6 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
           visa_assistance: visa_assistance,
           requirements_description: countryBase.requirements_description || ''
         };
-
-        if (!selectedPackage) {
-          console.warn(`[useCountryData] No packageDetails found for country ${countryId}. Returning null for packageDetails.`);
-          countryData.packageDetails = null;
-        }
 
         return countryData;
       } catch (error: any) {

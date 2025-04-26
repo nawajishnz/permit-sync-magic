@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/types/supabase';
 
@@ -18,40 +17,79 @@ export type VisaPackage = {
  * Get visa package for a country using RPC function for type safety
  */
 export async function getCountryVisaPackage(countryId: string): Promise<VisaPackage | null> {
+  console.log('Getting visa package for country:', countryId);
+  
   try {
-    // Try RPC function first (preferred method)
-    const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
-      p_country_id: countryId
-    });
-    
-    if (!rpcError && rpcData && rpcData.length > 0) {
-      const packageData = rpcData[0];
-      return {
-        id: packageData.package_id,
-        country_id: packageData.country_id,
-        name: packageData.package_name || 'Visa Package',
-        government_fee: packageData.government_fee || 0,
-        service_fee: packageData.service_fee || 0,
-        processing_days: packageData.processing_days || 15,
-        total_price: packageData.total_price || 0
-      };
-    }
-
-    // Fallback to direct query
+    // Direct query approach - most reliable
     const { data, error } = await supabase
       .from('visa_packages')
       .select('*')
       .eq('country_id', countryId)
-      .single();
-
+      .maybeSingle();
+    
     if (error) {
       console.error('Error fetching visa package:', error);
-      return null;
+      
+      // Try RPC function if direct query fails
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
+          p_country_id: countryId
+        });
+        
+        if (!rpcError && rpcData && rpcData.length > 0) {
+          const packageData = rpcData[0];
+          console.log('RPC succeeded:', packageData);
+          return {
+            id: packageData.package_id,
+            country_id: packageData.country_id,
+            name: packageData.package_name || 'Visa Package',
+            government_fee: packageData.government_fee || 0,
+            service_fee: packageData.service_fee || 0,
+            processing_days: packageData.processing_days || 15,
+            total_price: packageData.total_price || 0
+          };
+        }
+      } catch (rpcErr) {
+        console.warn('RPC fetch failed:', rpcErr);
+      }
+      
+      // Create a default package if nothing found
+      return await createDefaultPackage(countryId);
     }
-
+    
+    console.log('Visa package found:', data);
     return data;
   } catch (err) {
     console.error('Failed to fetch visa package:', err);
+    return await createDefaultPackage(countryId);
+  }
+}
+
+/**
+ * Create a default package for a country if none exists
+ */
+async function createDefaultPackage(countryId: string): Promise<VisaPackage | null> {
+  console.log('Creating default package for country:', countryId);
+  
+  try {
+    const packageData = {
+      country_id: countryId,
+      name: 'Visa Package',
+      government_fee: 0,
+      service_fee: 0,
+      processing_days: 15
+    };
+    
+    const result = await saveVisaPackage(packageData);
+    
+    if (result.success && result.data) {
+      console.log('Default package created:', result.data);
+      return await getCountryVisaPackage(countryId);
+    }
+    
+    return null;
+  } catch (err) {
+    console.error('Failed to create default package:', err);
     return null;
   }
 }

@@ -20,6 +20,11 @@ const PricingTier: React.FC<PricingTierProps> = ({
   // Calculate total if not provided directly
   const totalPrice = price || (governmentFee + serviceFee);
   
+  // Log props for debugging
+  console.log('PricingTier props:', { 
+    name, price, governmentFee, serviceFee, processingDays, calculatedTotal: totalPrice 
+  });
+  
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       <div className="p-6">

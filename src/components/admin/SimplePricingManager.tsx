@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,6 +85,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         }
         
         try {
+          // Try to create a default package if one doesn't exist
           const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', {
             p_country_id: countryId,
             p_name: 'Visa Package',
@@ -97,6 +99,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
           } else {
             console.log('Package created via RPC:', rpcData);
             
+            // Fetch the newly created package
             const { data: newPackage } = await supabase
               .from('visa_packages')
               .select('*')
@@ -156,96 +159,49 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         processingDays 
       });
       
-      try {
-        const { data: existingPackage } = await supabase
-          .from('visa_packages')
-          .select('id')
-          .eq('country_id', countryId)
-          .single();
-          
-        let result;
-        if (existingPackage?.id) {
-          result = await supabase
-            .from('visa_packages')
-            .update({
-              name: 'Visa Package',
-              government_fee: governmentFee,
-              service_fee: serviceFee,
-              processing_days: processingDays,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingPackage.id);
-        } else {
-          result = await supabase
-            .from('visa_packages')
-            .insert({
-              country_id: countryId,
-              name: 'Visa Package',
-              government_fee: governmentFee,
-              service_fee: serviceFee,
-              processing_days: processingDays
-            });
-        }
-        
-        if (result.error) throw result.error;
-        
-        queryClient.invalidateQueries({ queryKey: ['countries'] });
-        queryClient.invalidateQueries({ queryKey: ['country', countryId] });
-        queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
-        
-        const { data: verifyData, error: verifyError } = await supabase
-          .from('visa_packages')
-          .select('*')
-          .eq('country_id', countryId)
-          .single();
-          
-        if (verifyError || !verifyData) {
-          throw new Error('Failed to verify saved data');
-        }
-        
-        console.log('Verified saved data:', verifyData);
-        
-        setFormData({
-          government_fee: verifyData.government_fee?.toString() || '0',
-          service_fee: verifyData.service_fee?.toString() || '0',
-          processing_days: verifyData.processing_days?.toString() || '15'
-        });
-        
-        setSuccess(`Pricing for ${countryName} has been updated successfully`);
-        toast({
-          title: "Pricing saved",
-          description: `Pricing for ${countryName} has been updated successfully`,
-        });
-        
-        if (onSaved) {
-          onSaved();
-        }
-        
-        return;
-      } catch (directErr) {
-        console.warn('Direct database update failed, trying RPC function:', directErr);
+      // Save using visaPackageService for more reliable saving
+      const { saveVisaPackage } = await import('@/services/visaPackageService');
+      
+      const result = await saveVisaPackage({
+        country_id: countryId,
+        name: 'Visa Package',
+        government_fee: governmentFee,
+        service_fee: serviceFee,
+        processing_days: processingDays
+      });
+      
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to save package data');
       }
       
-      const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        'save_visa_package',
-        {
-          p_country_id: countryId,
-          p_name: 'Visa Package',
-          p_government_fee: governmentFee,
-          p_service_fee: serviceFee,
-          p_processing_days: processingDays
-        }
-      );
+      console.log('Package saved successfully:', result);
       
-      if (rpcError) throw rpcError;
-      
-      console.log('Package saved with RPC:', rpcResult);
-      
+      // Force invalidate all related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['countries'] });
       queryClient.invalidateQueries({ queryKey: ['country', countryId] });
       queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
       
+      // Verify the save by fetching fresh data
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('visa_packages')
+        .select('*')
+        .eq('country_id', countryId)
+        .single();
+        
+      if (verifyError || !verifyData) {
+        throw new Error('Failed to verify saved data');
+      }
+      
+      console.log('Verified saved data:', verifyData);
+      
+      setFormData({
+        government_fee: verifyData.government_fee?.toString() || '0',
+        service_fee: verifyData.service_fee?.toString() || '0',
+        processing_days: verifyData.processing_days?.toString() || '15'
+      });
+      
       setSuccess(`Pricing for ${countryName} has been updated successfully`);
+      
       toast({
         title: "Pricing saved",
         description: `Pricing for ${countryName} has been updated successfully`,

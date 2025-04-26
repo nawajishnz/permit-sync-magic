@@ -6,7 +6,7 @@ import { useCountryData } from '@/hooks/useCountryData';
 import { useToast } from '@/hooks/use-toast';
 import CountryDataFallback from '@/components/country/CountryDataFallback';
 import CountryNotFound from '@/components/country/CountryNotFound';
-import { autoFixSchema, createFallbackPricing } from '@/integrations/supabase/fix-schema';
+import { autoFixSchema } from '@/integrations/supabase/fix-schema';
 import {
   Card,
   CardContent,
@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Globe, MapPin, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Globe, MapPin } from 'lucide-react';
 import PricingTier from '@/components/country/PricingTier';
 import ProcessStep from '@/components/country/ProcessStep';
 import FAQSection from '@/components/country/FAQSection';
@@ -23,8 +23,7 @@ import EmbassySection from '@/components/country/EmbassySection';
 import DocumentChecklist from '@/components/country/DocumentChecklist';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +55,19 @@ const CountryDetails = () => {
   // Use our enhanced useCountryData hook with staleTime: 0 to always fetch fresh data
   const { data: country, isLoading, error, refetch } = useCountryData(id, { staleTime: 0 });
 
+  // Handle refresh button click
+  const handleRefresh = () => {
+    if (id) {
+      console.log('Manually refreshing country data for:', id);
+      queryClient.invalidateQueries({ queryKey: ['countryDetail', id] });
+      refetch();
+      toast({
+        title: "Refreshing data",
+        description: "Getting the latest country information",
+      });
+    }
+  };
+
   // Handle loading states
   if (isLoading) {
     return (
@@ -85,18 +97,29 @@ const CountryDetails = () => {
     return <CountryNotFound onRetry={refetch} />;
   }
 
-  // Create a fallback package if none exists
-  const packageDetails = country.packageDetails || (id ? createFallbackPricing(id) : null);
+  // Debug - log the package details
+  console.log('Country package details:', country.packageDetails);
   
   return (
     <div className="container mx-auto px-4 py-8">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">{country.name}</CardTitle>
-          <Link to="/" className="flex items-center text-blue-500 hover:text-blue-700">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleRefresh} 
+              className="flex items-center"
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Refresh
+            </Button>
+            <Link to="/" className="flex items-center text-blue-500 hover:text-blue-700">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Home
+            </Link>
+          </div>
         </CardHeader>
         <CardContent className="py-4">
           <div className="relative">
@@ -127,20 +150,37 @@ const CountryDetails = () => {
             </div>
             <div className="flex items-center text-gray-500">
               <Clock className="h-4 w-4 mr-2" />
-              <span>Processing Time: {country.processing_time}</span>
+              <span>Processing Time: {country.packageDetails?.processing_days || country.processing_time || 'Not specified'} days</span>
             </div>
           </div>
 
           <Separator className="my-4" />
 
-          {packageDetails && (
+          {country.packageDetails ? (
             <PricingTier
-              name={packageDetails.name}
-              price={(packageDetails.total_price || packageDetails.government_fee + packageDetails.service_fee) || 0}
-              governmentFee={packageDetails.government_fee || 0}
-              serviceFee={packageDetails.service_fee || 0}
-              processingDays={packageDetails.processing_days || 15}
+              name={country.packageDetails.name}
+              price={
+                country.packageDetails.total_price || 
+                country.packageDetails.price || 
+                (country.packageDetails.government_fee || 0) + (country.packageDetails.service_fee || 0)
+              }
+              governmentFee={country.packageDetails.government_fee || 0}
+              serviceFee={country.packageDetails.service_fee || 0}
+              processingDays={country.packageDetails.processing_days || 15}
             />
+          ) : (
+            <div className="p-4 bg-gray-50 rounded-md text-center">
+              <p className="text-gray-500">No pricing information available</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh}
+                className="mt-2"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh Pricing
+              </Button>
+            </div>
           )}
 
           <Separator className="my-4" />
