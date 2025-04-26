@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SimplePricingManagerProps {
   countryId: string;
@@ -36,6 +38,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
   });
   
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch existing pricing data
   useEffect(() => {
@@ -48,9 +51,31 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       try {
         console.log('Fetching pricing data for country:', countryId);
         
-        // Check if visa_packages table exists by trying to query it directly
+        // Try a direct query first (most reliable method)
         try {
-          // First try RPC function (most reliable method)
+          const { data, error } = await supabase
+            .from('visa_packages')
+            .select('*')
+            .eq('country_id', countryId)
+            .single();
+            
+          if (error) {
+            console.warn('Direct query failed:', error.message);
+          } else if (data) {
+            console.log('Package data loaded via direct query:', data);
+            setFormData({
+              government_fee: data.government_fee?.toString() || '0',
+              service_fee: data.service_fee?.toString() || '0',
+              processing_days: data.processing_days?.toString() || '15'
+            });
+            return;
+          }
+        } catch (directErr) {
+          console.warn('Direct query threw error:', directErr);
+        }
+        
+        // Fall back to RPC function if direct query fails
+        try {
           const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
             p_country_id: countryId
           });
@@ -65,32 +90,10 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
             });
             return;
           } else if (rpcError) {
-            console.warn('RPC method failed, trying direct query:', rpcError);
+            console.warn('RPC method failed:', rpcError);
           }
         } catch (rpcErr) {
-          console.warn('RPC call failed, falling back to direct query:', rpcErr);
-        }
-        
-        // Fall back to direct query if RPC fails
-        const { data, error } = await supabase
-          .from('visa_packages')
-          .select('*')
-          .eq('country_id', countryId)
-          .single();
-          
-        if (error) {
-          console.warn('Direct query failed:', error.message);
-          // No existing pricing data - use defaults
-          return;
-        } 
-        
-        if (data) {
-          console.log('Package data loaded via direct query:', data);
-          setFormData({
-            government_fee: data.government_fee?.toString() || '0',
-            service_fee: data.service_fee?.toString() || '0',
-            processing_days: data.processing_days?.toString() || '15'
-          });
+          console.warn('RPC call failed:', rpcErr);
         }
       } catch (err: any) {
         console.error('Error fetching pricing data:', err);
@@ -172,6 +175,11 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         
         if (result.error) throw result.error;
         
+        // Invalidate all relevant queries to force refetch
+        queryClient.invalidateQueries({ queryKey: ['countries'] });
+        queryClient.invalidateQueries({ queryKey: ['country', countryId] });
+        queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
+        
         // Verify the data was saved by fetching it back
         const { data: verifyData, error: verifyError } = await supabase
           .from('visa_packages')
@@ -224,6 +232,11 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       if (rpcError) throw rpcError;
       
       console.log('Package saved with RPC:', rpcResult);
+      
+      // Invalidate all relevant queries to force refetch
+      queryClient.invalidateQueries({ queryKey: ['countries'] });
+      queryClient.invalidateQueries({ queryKey: ['country', countryId] });
+      queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
       
       // Verify the data was saved by fetching it back
       const { data: verifyData, error: verifyError } = await supabase

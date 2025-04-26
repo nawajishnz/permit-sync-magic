@@ -40,12 +40,18 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   };
   
   const handlePricingSaved = () => {
-    // Invalidate any relevant queries
+    // Invalidate ALL relevant queries
     queryClient.invalidateQueries({ queryKey: ['countries'] });
     queryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
+    queryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
     
     // Force refresh the pricing manager component
     setRefreshKey(prev => prev + 1);
+    
+    // Extra cache invalidation for good measure
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
+    }, 1000);
     
     toast({
       title: "Pricing Updated",

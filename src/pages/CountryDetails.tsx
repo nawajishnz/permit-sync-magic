@@ -1,7 +1,6 @@
-
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCountryData } from '@/hooks/useCountryData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Trigger schema fix on page load
   useEffect(() => {
@@ -37,10 +37,25 @@ const CountryDetails = () => {
       autoFixSchema().catch(console.error);
     }
   }, [id]);
+
+  // Add effect to periodically refresh pricing data
+  useEffect(() => {
+    if (!id) return;
+    
+    // Initial data refresh
+    queryClient.invalidateQueries({ queryKey: ['countryDetail', id] });
+    
+    // Set up interval to check for updates (every 10 seconds)
+    const intervalId = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['countryDetail', id] });
+    }, 10000);
+    
+    return () => clearInterval(intervalId);
+  }, [id, queryClient]);
   
-  // Use our enhanced useCountryData hook
-  const { data: country, isLoading, error, refetch } = useCountryData(id);
-  
+  // Use our enhanced useCountryData hook with staleTime: 0 to always fetch fresh data
+  const { data: country, isLoading, error, refetch } = useCountryData(id, { staleTime: 0 });
+
   // Handle loading states
   if (isLoading) {
     return (

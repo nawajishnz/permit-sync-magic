@@ -61,7 +61,7 @@ export interface CountryData {
   packageDetails: VisaPackage | null;
 }
 
-export const useCountryData = (countryId: string | undefined) => {
+export const useCountryData = (countryId: string | undefined, options = {}) => {
   const { toast } = useToast();
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export const useCountryData = (countryId: string | undefined) => {
         console.error('[useCountryData] Schema auto-fix error:', err);
       });
     }
-  }, []);
+  }, [countryId]);
 
   return useQuery({
     queryKey: ['countryDetail', countryId],
@@ -111,65 +111,49 @@ export const useCountryData = (countryId: string | undefined) => {
         let packageError = null;
         
         try {
-          const { data: packageData, error: rpcError } = await supabase
-            .rpc('get_country_packages', { p_country_id: countryId })
-            .then(response => ({ 
-              data: response.data ? response.data[0] : null, 
-              error: response.error 
-            }))
-            .catch((err) => {
-              console.error('[useCountryData] RPC error:', err);
-              return { data: null, error: err };
-            });
+          const timestamp = new Date().getTime();
+          
+          const { data: packageData, error } = await supabase
+            .from('visa_packages')
+            .select('*')
+            .eq('country_id', countryId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
             
-          if (!rpcError && packageData) {
-            visaPackages = [{
-              id: packageData.package_id,
-              name: packageData.package_name,
-              government_fee: packageData.government_fee || 0,
-              service_fee: packageData.service_fee || 0,
-              processing_days: packageData.processing_days || 15,
-              country_id: packageData.country_id
-            }];
+          if (error) {
+            packageError = error;
+            console.error('[useCountryData] Error fetching visa packages:', error);
+          } else if (packageData) {
+            visaPackages = [packageData];
+            console.log('[useCountryData] Successfully retrieved package data:', packageData);
           } else {
-            const { data: basicPackages, error } = await supabase
-              .from('visa_packages')
-              .select('id, name, country_id, processing_days, government_fee, service_fee')
-              .eq('country_id', countryId);
+            console.log('[useCountryData] No package data found, creating fallback...');
+            
+            try {
+              const { data: newPackageData, error: createError } = await supabase.rpc('save_visa_package', {
+                p_country_id: countryId,
+                p_name: 'Default Package',
+                p_government_fee: 0,
+                p_service_fee: 0,
+                p_processing_days: 15
+              });
               
-            if (error) {
-              packageError = error;
-              console.error('[useCountryData] Error fetching visa packages:', error);
-            } else {
-              visaPackages = basicPackages;
-              
-              if (!visaPackages || visaPackages.length === 0) {
-                try {
-                  const { data: packageData, error: rpcError } = await supabase.rpc('save_visa_package', {
-                    p_country_id: countryId,
-                    p_name: 'Default Package',
-                    p_government_fee: 0,
-                    p_service_fee: 0,
-                    p_processing_days: 15
-                  });
+              if (!createError) {
+                console.log('[useCountryData] Successfully created default package:', newPackageData);
+                
+                const { data: updatedPackage } = await supabase
+                  .from('visa_packages')
+                  .select('*')
+                  .eq('country_id', countryId)
+                  .single();
                   
-                  if (!rpcError) {
-                    console.log('[useCountryData] Successfully created default package:', packageData);
-                    
-                    const { data: updatedPackage } = await supabase
-                      .from('visa_packages')
-                      .select('id, name, country_id, processing_days, government_fee, service_fee')
-                      .eq('country_id', countryId)
-                      .single();
-                      
-                    if (updatedPackage) {
-                      visaPackages = [updatedPackage];
-                    }
-                  }
-                } catch (feeErr) {
-                  console.log('[useCountryData] Fee columns may not exist yet:', feeErr);
+                if (updatedPackage) {
+                  visaPackages = [updatedPackage];
                 }
               }
+            } catch (feeErr) {
+              console.log('[useCountryData] Fee columns may not exist yet:', feeErr);
             }
           }
         } catch (packageErr: any) {
@@ -190,6 +174,7 @@ export const useCountryData = (countryId: string | undefined) => {
               processing_days: visaPackages[0].processing_days || 15,
               government_fee: typeof visaPackages[0].government_fee === 'number' ? visaPackages[0].government_fee : 0,
               service_fee: typeof visaPackages[0].service_fee === 'number' ? visaPackages[0].service_fee : 0,
+              total_price: visaPackages[0].total_price,
               country_id: visaPackages[0].country_id
             }
           : null;
@@ -277,5 +262,7 @@ export const useCountryData = (countryId: string | undefined) => {
     },
     enabled: !!countryId,
     retry: 1,
+    staleTime: 0,
+    ...options
   });
 };
