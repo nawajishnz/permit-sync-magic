@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { BadgeCheck, Clock, Loader2 } from 'lucide-react';
+import { BadgeCheck, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
@@ -127,10 +126,6 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
                 </AspectRatio>
-                
-                <Badge className="absolute top-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white border-0 py-1.5 px-3 rounded-full">
-                  15K+ Visas on Time
-                </Badge>
                 
                 {country.has_special_visa && (
                   <div className="absolute top-3 right-3">

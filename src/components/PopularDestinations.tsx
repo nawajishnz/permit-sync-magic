@@ -1,8 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Loader2, ArrowRight, BadgeCheck, Clock, Globe } from 'lucide-react';
+import { BadgeCheck, Clock, ArrowRight, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -110,7 +109,6 @@ const PopularDestinations = () => {
   const getCountryDetails = (country: any) => {
     return {
       price: `₹${country.startingPrice.toLocaleString('en-IN')}`,
-      visaCount: country.visaCount,
       processingDays: country.processingDays,
     };
   };
@@ -130,8 +128,7 @@ const PopularDestinations = () => {
         
         {isLoading ? (
           <div className="flex justify-center items-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-            <span className="ml-3 text-gray-700">Loading destinations...</span>
+            Loading destinations...
           </div>
         ) : destinations.length === 0 ? (
           <div className="text-center py-16 px-4">
@@ -143,7 +140,7 @@ const PopularDestinations = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-0">
             {destinations.map((destination, index) => {
-              const { price, visaCount, processingDays } = getCountryDetails(destination);
+              const { price, processingDays } = getCountryDetails(destination);
               
               return (
                 <motion.div
@@ -169,10 +166,6 @@ const PopularDestinations = () => {
                           />
                           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
                         </AspectRatio>
-                        
-                        <Badge className="absolute top-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white border-0 py-1.5 px-3 rounded-full">
-                          {visaCount} Visas on Time
-                        </Badge>
                         
                         {destination.hasSpecialVisa && (
                           <div className="absolute top-3 right-3">
