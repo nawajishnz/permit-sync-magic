@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { useSupabaseDelete, useSupabaseInsert, useSupabaseUpdate } from '@/hooks/useSupabaseMutation';
+import { useApiMutation } from '@/hooks/useApiMutations';
 import { useToast } from '@/hooks/use-toast';
-import { Blog, transformToBlogs } from '@/types/blog';
+import { Blog } from '@/types/blog';
+import { getAllBlogs, deleteBlog } from '@/services/blogsService';
 
 const BlogsManager = () => {
   const { toast } = useToast();
@@ -13,28 +13,44 @@ const BlogsManager = () => {
   const { data: blogs, isLoading } = useQuery({
     queryKey: ['admin-blogs'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('blogs')
-        .select('*')
-        .order('published_at', { ascending: false });
-      
-      if (error) throw error;
-      return transformToBlogs(data || []) as Blog[];
+      return await getAllBlogs();
     },
   });
 
-  const deleteBlog = useSupabaseDelete<Blog>({
-    table: 'blogs',
-    queryKey: ['admin-blogs'],
-    successMessage: 'Blog post deleted successfully',
-    errorMessage: 'Failed to delete blog post',
+  const deleteBlogMutation = useApiMutation<void, string, Error>({
+    mutationFn: async (id: string) => {
+      await deleteBlog(id);
+      return;
+    },
+    queryKeysToInvalidate: ['admin-blogs', 'blogs', 'recentBlogs'],
+    onSuccessMessage: 'Blog post deleted successfully',
+    onErrorMessage: 'Failed to delete blog post',
   });
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this blog post?')) {
-      await deleteBlog.mutateAsync(id);
+      await deleteBlogMutation.mutateAsync(id);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Manage Blog Posts</h2>
+          <Button disabled>Create New Post</Button>
+        </div>
+        <div className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white p-4 rounded-lg shadow animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

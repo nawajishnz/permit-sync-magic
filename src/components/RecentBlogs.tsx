@@ -1,24 +1,18 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { BlogCard } from './blog/BlogCard';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
-import { Blog, transformToBlogs } from '@/types/blog';
+import { Blog } from '@/types/blog';
+import { getRecentBlogs } from '@/services/blogsService';
 
 export const RecentBlogs = () => {
   const { data: blogs, isLoading } = useQuery({
     queryKey: ['recentBlogs'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('blogs')
-        .select('*')
-        .order('published_at', { ascending: false })
-        .limit(3);
-      
-      if (error) throw error;
-      return transformToBlogs(data || []) as Blog[];
+      return await getRecentBlogs(3);
     },
   });
 

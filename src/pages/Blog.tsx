@@ -1,21 +1,15 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { BlogCard } from '@/components/blog/BlogCard';
-import { Blog as BlogType, transformToBlogs } from '@/types/blog';
+import { getAllBlogs } from '@/services/blogsService';
+import { Blog as BlogType } from '@/types/blog';
 
 const Blog = () => {
   const { data: blogs, isLoading } = useQuery({
     queryKey: ['blogs'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('blogs')
-        .select('*')
-        .order('published_at', { ascending: false });
-      
-      if (error) throw error;
-      return transformToBlogs(data || []) as BlogType[];
+      return await getAllBlogs();
     },
   });
 
@@ -29,19 +23,37 @@ const Blog = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {blogs?.map((blog) => (
-            <BlogCard
-              key={blog.id}
-              id={blog.id}
-              title={blog.title}
-              excerpt={blog.excerpt}
-              slug={blog.slug}
-              featuredImage={blog.featured_image}
-              publishedAt={blog.published_at}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-200 h-48 rounded-t-lg"></div>
+                <div className="p-6 space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-8 bg-gray-200 rounded"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {blogs?.map((blog) => (
+              <BlogCard
+                key={blog.id}
+                id={blog.id}
+                title={blog.title}
+                excerpt={blog.excerpt}
+                slug={blog.slug}
+                featuredImage={blog.featured_image}
+                publishedAt={blog.published_at}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

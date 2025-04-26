@@ -1,4 +1,3 @@
-
 import { Database } from '@/types/supabase';
 import { Json } from '@/types/supabase';
 
@@ -16,7 +15,8 @@ export type Blog = {
   updated_at: string;
 };
 
-// Mock data transformer to convert Supabase response to our Blog type
+// These functions aren't needed with our new approach but we'll keep them
+// for compatibility with any other code that might use them
 export const transformToBlog = (data: any): Blog => {
   return {
     id: data.id,
