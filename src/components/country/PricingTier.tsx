@@ -3,7 +3,7 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface PricingTierProps {
+export interface PricingTierProps {
   name: string;
   price: number;
   governmentFee: number;

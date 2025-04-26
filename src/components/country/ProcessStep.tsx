@@ -2,13 +2,13 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 
-interface Step {
+export interface Step {
   step: number;
   title: string;
   description: string;
 }
 
-interface ProcessStepProps {
+export interface ProcessStepProps {
   steps: Step[];
 }
 
