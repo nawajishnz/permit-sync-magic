@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, IndianRupee } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 export interface PricingTierProps {
   name: string;
@@ -20,36 +21,46 @@ const PricingTier: React.FC<PricingTierProps> = ({
   // Calculate total if not provided directly
   const totalPrice = price || (governmentFee + serviceFee);
   
-  // Log props for debugging
-  console.log('PricingTier props:', { 
-    name, price, governmentFee, serviceFee, processingDays, calculatedTotal: totalPrice 
-  });
-  
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="p-6">
+    <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-6">
         <h3 className="text-lg font-semibold">{name}</h3>
         <div className="mt-2">
-          <p className="text-3xl font-bold text-gray-900">₹{totalPrice.toFixed(2)}</p>
+          <div className="flex items-center">
+            <IndianRupee className="h-5 w-5 text-gray-700 mr-1" />
+            <p className="text-3xl font-bold text-gray-900">{totalPrice.toFixed(2)}</p>
+          </div>
           <p className="text-sm text-gray-500 mt-1">Processing time: {processingDays} days</p>
         </div>
         
         <ul className="mt-6 space-y-4">
           <li className="flex items-start">
             <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-            <span>Government Fee: ₹{governmentFee.toFixed(2)}</span>
+            <div>
+              <span className="font-medium">Government Fee:</span>
+              <div className="flex items-center">
+                <IndianRupee className="h-3.5 w-3.5 text-gray-600 mr-0.5" />
+                <span>{governmentFee.toFixed(2)}</span>
+              </div>
+            </div>
           </li>
           <li className="flex items-start">
             <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-            <span>Service Fee: ₹{serviceFee.toFixed(2)}</span>
+            <div>
+              <span className="font-medium">Service Fee:</span>
+              <div className="flex items-center">
+                <IndianRupee className="h-3.5 w-3.5 text-gray-600 mr-0.5" />
+                <span>{serviceFee.toFixed(2)}</span>
+              </div>
+            </div>
           </li>
           <li className="flex items-start">
             <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
             <span>Processing Time: {processingDays} days</span>
           </li>
         </ul>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

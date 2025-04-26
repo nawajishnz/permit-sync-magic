@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCountryData } from '@/hooks/useCountryData';
@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Globe, MapPin } from 'lucide-react';
+import { Calendar, Clock, Globe, MapPin, IndianRupee } from 'lucide-react';
 import PricingTier from '@/components/country/PricingTier';
 import ProcessStep from '@/components/country/ProcessStep';
 import FAQSection from '@/components/country/FAQSection';
@@ -29,42 +29,64 @@ const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Trigger schema fix on page load
+  // Run schema fix on page load
   useEffect(() => {
     if (id) {
       autoFixSchema().catch(console.error);
     }
   }, [id]);
 
-  // Add effect to periodically refresh pricing data
+  // Periodic data refresh
   useEffect(() => {
     if (!id) return;
     
     // Initial data refresh
     queryClient.invalidateQueries({ queryKey: ['countryDetail', id] });
     
-    // Set up interval to check for updates (every 10 seconds)
+    // Set up interval to periodically refresh data (every 15 seconds)
     const intervalId = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ['countryDetail', id] });
-    }, 10000);
+    }, 15000);
     
     return () => clearInterval(intervalId);
   }, [id, queryClient]);
   
   // Use our enhanced useCountryData hook with staleTime: 0 to always fetch fresh data
-  const { data: country, isLoading, error, refetch } = useCountryData(id, { staleTime: 0 });
+  const { data: country, isLoading, error, refetch } = useCountryData(id, { 
+    staleTime: 0,
+    refetchOnWindowFocus: true
+  });
 
-  // Handle refresh button click
-  const handleRefresh = () => {
-    if (id) {
-      console.log('Manually refreshing country data for:', id);
-      queryClient.invalidateQueries({ queryKey: ['countryDetail', id] });
-      refetch();
+  // Handle refresh button click with better UX
+  const handleRefresh = async () => {
+    if (!id) return;
+    
+    setIsRefreshing(true);
+    console.log('Manually refreshing country data for:', id);
+    
+    try {
+      // Run schema fix first to ensure table structures are correct
+      await autoFixSchema();
+      
+      // Force query invalidation and refetch
+      await queryClient.invalidateQueries({ queryKey: ['countryDetail', id] });
+      await refetch();
+      
       toast({
-        title: "Refreshing data",
-        description: "Getting the latest country information",
+        title: "Data refreshed",
+        description: "Country information has been updated",
       });
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      toast({
+        title: "Refresh failed",
+        description: "Could not update country information",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -102,7 +124,7 @@ const CountryDetails = () => {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <Card>
+      <Card className="shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">{country.name}</CardTitle>
           <div className="flex items-center space-x-2">
@@ -110,10 +132,11 @@ const CountryDetails = () => {
               variant="ghost" 
               size="sm" 
               onClick={handleRefresh} 
+              disabled={isRefreshing}
               className="flex items-center"
             >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Refresh
+              <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
             <Link to="/" className="flex items-center text-blue-500 hover:text-blue-700">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -156,32 +179,36 @@ const CountryDetails = () => {
 
           <Separator className="my-4" />
 
-          {country.packageDetails ? (
-            <PricingTier
-              name={country.packageDetails.name}
-              price={
-                country.packageDetails.total_price || 
-                country.packageDetails.price || 
-                (country.packageDetails.government_fee || 0) + (country.packageDetails.service_fee || 0)
-              }
-              governmentFee={country.packageDetails.government_fee || 0}
-              serviceFee={country.packageDetails.service_fee || 0}
-              processingDays={country.packageDetails.processing_days || 15}
-            />
-          ) : (
-            <div className="p-4 bg-gray-50 rounded-md text-center">
-              <p className="text-gray-500">No pricing information available</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRefresh}
-                className="mt-2"
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Refresh Pricing
-              </Button>
-            </div>
-          )}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Visa Pricing</h2>
+            
+            {country.packageDetails ? (
+              <PricingTier
+                name={country.packageDetails.name}
+                price={
+                  country.packageDetails.total_price || 
+                  country.packageDetails.price || 
+                  (country.packageDetails.government_fee || 0) + (country.packageDetails.service_fee || 0)
+                }
+                governmentFee={country.packageDetails.government_fee || 0}
+                serviceFee={country.packageDetails.service_fee || 0}
+                processingDays={country.packageDetails.processing_days || 15}
+              />
+            ) : (
+              <div className="p-6 bg-gray-50 rounded-md text-center">
+                <p className="text-gray-500 mb-2">No pricing information available</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh Pricing'}
+                </Button>
+              </div>
+            )}
+          </div>
 
           <Separator className="my-4" />
 

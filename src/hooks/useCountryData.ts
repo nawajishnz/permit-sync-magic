@@ -34,7 +34,7 @@ export interface EmbassyDetails {
 export interface VisaPackage {
   id: string;
   name: string;
-  price?: number; // Calculated from government_fee + service_fee
+  price?: number;
   processing_days: number;
   government_fee?: number;
   service_fee?: number;
@@ -67,10 +67,8 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
 
   useEffect(() => {
     if (countryId) {
-      console.log('[useCountryData] Attempting auto schema fix...');
-      autoFixSchema().then(result => {
-        console.log('[useCountryData] Schema auto-fix result:', result);
-      }).catch(err => {
+      console.log('[useCountryData] Running schema fix check...');
+      autoFixSchema().catch(err => {
         console.error('[useCountryData] Schema auto-fix error:', err);
       });
     }
@@ -79,10 +77,9 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
   return useQuery({
     queryKey: ['countryDetail', countryId],
     queryFn: async (): Promise<CountryData | null> => {
-      console.log(`[useCountryData] Hook triggered with countryId: ${countryId}`);
+      console.log(`[useCountryData] Fetching data for countryId: ${countryId}`);
 
       if (!countryId) {
-        console.log(`[useCountryData] countryId is undefined or null, returning null.`);
         return null;
       }
 
@@ -94,11 +91,15 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
           .eq('id', countryId)
           .single();
 
-        if (countryError) console.error(`[useCountryData] Error fetching countries table:`, countryError);
-        if (!countryBase) console.log(`[useCountryData] No data found for countryId ${countryId} in countries table.`);
-
-        if (countryError) throw countryError;
-        if (!countryBase) return null;
+        if (countryError) {
+          console.error(`[useCountryData] Error fetching country:`, countryError);
+          throw countryError;
+        }
+        
+        if (!countryBase) {
+          console.log(`[useCountryData] No data found for countryId ${countryId}`);
+          return null;
+        }
 
         // Fetch document checklist
         const { data: documents, error: documentsError } = await supabase
@@ -106,17 +107,13 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
           .select('*')
           .eq('country_id', countryId);
 
-        if (documentsError) throw documentsError;
+        if (documentsError) {
+          console.warn('[useCountryData] Error fetching documents:', documentsError);
+        }
 
-        // Fetch visa package data
-        console.log(`[useCountryData] Querying visa_packages for country_id: ${countryId}`);
-        
-        // Import the visa package service
+        // Fetch visa package data using direct service call
         const { getCountryVisaPackage } = await import('@/services/visaPackageService');
-        
-        // Get package data using the service function
         const packageData = await getCountryVisaPackage(countryId);
-        
         console.log('[useCountryData] Visa package data:', packageData);
         
         // Process package data into the expected format
@@ -127,7 +124,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
           processing_days: packageData.processing_days || 15,
           government_fee: packageData.government_fee || 0,
           service_fee: packageData.service_fee || 0,
-          total_price: packageData.total_price || 0,
+          total_price: packageData.total_price || ((packageData.government_fee || 0) + (packageData.service_fee || 0)),
           country_id: packageData.country_id
         } : null;
 
@@ -201,7 +198,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
 
         return countryData;
       } catch (error: any) {
-        console.error('[useCountryData] Catch block error:', error);
+        console.error('[useCountryData] Error fetching country data:', error);
         toast({
           title: "Error loading country data",
           description: error.message || "Failed to load country information",
