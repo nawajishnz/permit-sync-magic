@@ -1,17 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
-
-export type VisaPackage = {
-  id?: string;
-  country_id: string;
-  name: string;
-  government_fee: number;
-  service_fee: number;
-  processing_days: number;
-  total_price?: number;
-  created_at?: string;
-  updated_at?: string;
-};
+import type { VisaPackage } from '@/types/visaPackage';
+import { createDefaultPackage } from './defaultPackageService';
+export { runDiagnostic } from './visaDiagnosticService';
 
 /**
  * Get visa package for a country with proper error handling and retries
@@ -25,7 +16,6 @@ export async function getCountryVisaPackage(countryId: string): Promise<VisaPack
   console.log('Fetching visa package for country:', countryId);
   
   try {
-    // Direct query to visa_packages table
     const { data, error } = await supabase
       .from('visa_packages')
       .select('*')
@@ -46,40 +36,6 @@ export async function getCountryVisaPackage(countryId: string): Promise<VisaPack
     return await createDefaultPackage(countryId);
   } catch (err) {
     console.error('Unexpected error in getCountryVisaPackage:', err);
-    return null;
-  }
-}
-
-/**
- * Create a default package for a country if none exists
- */
-async function createDefaultPackage(countryId: string): Promise<VisaPackage | null> {
-  console.log('Creating default package for country:', countryId);
-  
-  try {
-    const packageData: VisaPackage = {
-      country_id: countryId,
-      name: 'Visa Package',
-      government_fee: 0,
-      service_fee: 0,
-      processing_days: 15
-    };
-    
-    const { data, error } = await supabase
-      .from('visa_packages')
-      .insert(packageData)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error creating default package:', error);
-      return packageData; // Return the data even if it failed to save
-    }
-    
-    console.log('Default package created successfully:', data);
-    return data;
-  } catch (err) {
-    console.error('Failed to create default package:', err);
     return null;
   }
 }
@@ -162,86 +118,6 @@ export async function saveVisaPackage(packageData: VisaPackage): Promise<{ succe
     return { 
       success: false, 
       message: err.message || "An unexpected error occurred" 
-    };
-  }
-}
-
-/**
- * Run diagnostic to help troubleshoot database issues
- */
-export async function runDiagnostic(countryId: string): Promise<{ success: boolean; message: string; results?: any }> {
-  try {
-    const results: any = {
-      tableAccess: null,
-      packageExists: false,
-      rpc: {
-        success: false,
-        error: null
-      }
-    };
-    
-    // Test direct table access
-    try {
-      const { data: tableData, error: tableError } = await supabase
-        .from('visa_packages')
-        .select('count(*)')
-        .single();
-        
-      results.tableAccess = {
-        success: !tableError,
-        error: tableError?.message,
-        data: tableData
-      };
-    } catch (err: any) {
-      results.tableAccess = {
-        success: false,
-        error: err.message
-      };
-    }
-    
-    // Check if package exists for this country
-    if (countryId) {
-      const { data, error } = await supabase
-        .from('visa_packages')
-        .select('id')
-        .eq('country_id', countryId)
-        .maybeSingle();
-        
-      results.packageExists = !error && !!data;
-    }
-    
-    // Try using RPC function for better compatibility
-    try {
-      // Using the save_visa_package RPC function
-      const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', {
-        p_country_id: countryId,
-        p_name: 'Test Package',
-        p_government_fee: 0,
-        p_service_fee: 0,
-        p_processing_days: 15
-      });
-      
-      results.rpc = {
-        success: !rpcError && !!rpcData,
-        error: rpcError?.message,
-        data: rpcData
-      };
-    } catch (err: any) {
-      results.rpc = {
-        success: false,
-        error: err.message
-      };
-    }
-    
-    return {
-      success: results.tableAccess?.success || results.rpc?.success,
-      message: "Diagnostic completed",
-      results
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      message: `Diagnostic failed: ${err.message}`
     };
   }
 }
