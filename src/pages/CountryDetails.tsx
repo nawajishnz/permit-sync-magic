@@ -6,7 +6,7 @@ import { useCountryData } from '@/hooks/useCountryData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CountryDataFallback from '@/components/country/CountryDataFallback';
-import { autoFixSchema } from '@/integrations/supabase/refresh-schema';
+import { autoFixSchema, createFallbackPricing } from '@/integrations/supabase/refresh-schema';
 import {
   Card,
   CardContent,
@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Globe, MapPin } from 'lucide-react';
+import { Calendar, Clock, Globe, MapPin, AlertCircle } from 'lucide-react';
 import PricingTier from '@/components/country/PricingTier';
 import ProcessStep from '@/components/country/ProcessStep';
 import FAQSection from '@/components/country/FAQSection';
@@ -25,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,65 +33,14 @@ const CountryDetails = () => {
   
   // Trigger schema fix on page load
   useEffect(() => {
-    autoFixSchema().catch(console.error);
-  }, []);
+    if (id) {
+      autoFixSchema().catch(console.error);
+    }
+  }, [id]);
   
   // Use our enhanced useCountryData hook
   const { data: country, isLoading, error, refetch } = useCountryData(id);
   
-  // Additional visa package query as backup (more resilient)
-  const {
-    data: visaPackage,
-    isLoading: isLoadingPackage
-  } = useQuery({
-    queryKey: ['countryVisaPackage', id],
-    queryFn: async () => {
-      console.log('Fetching visa package for country ID:', id);
-      try {
-        // Use RPC function instead of direct view query
-        const { data, error } = await supabase
-          .rpc('get_country_packages', { p_country_id: id })
-          .then(response => ({ 
-            data: response.data?.[0] || null, 
-            error: response.error 
-          }))
-          .catch(err => ({ 
-            data: null, 
-            error: err 
-          }));
-          
-        if (!error && data) {
-          return {
-            id: data.package_id,
-            name: data.package_name,
-            government_fee: data.government_fee || 0,
-            service_fee: data.service_fee || 0,
-            processing_days: data.processing_days || 15,
-            total_price: data.total_price || 0
-          };
-        }
-        
-        // Fallback to direct query
-        const { data: packageData, error: packageError } = await supabase
-          .from('visa_packages')
-          .select('*')
-          .eq('country_id', id)
-          .single();
-          
-        if (packageError) {
-          console.error('Error fetching visa package:', packageError);
-          return null;
-        }
-        
-        return packageData;
-      } catch (err) {
-        console.error('Failed to fetch visa package:', err);
-        return null;
-      }
-    },
-    enabled: !!id && !country?.packageDetails, // Only run if country exists but has no package
-  });
-
   // Handle loading states
   if (isLoading) {
     return (
@@ -112,7 +62,39 @@ const CountryDetails = () => {
   
   // Handle error state with our fallback component
   if (error || (!country && !isLoading)) {
-    return <CountryDataFallback countryId={id || ''} error={error as Error} onRetry={refetch} />;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertTitle>Error Loading Country Details</AlertTitle>
+          <AlertDescription>
+            {error?.message || "Country details could not be loaded"}
+          </AlertDescription>
+        </Alert>
+        
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center justify-center py-12">
+              <h2 className="text-xl font-bold mb-2">Country details not available</h2>
+              <p className="text-gray-600 mb-4">There was a problem loading this country's information.</p>
+              <div className="flex gap-4">
+                <Button 
+                  onClick={() => refetch()}
+                  className="bg-blue-600 text-white"
+                >
+                  Try Again
+                </Button>
+                <Link to="/">
+                  <Button variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   // Ensure we have all necessary data
@@ -122,19 +104,26 @@ const CountryDetails = () => {
         <div className="text-center">
           <h2 className="text-xl font-bold mb-2">Country details not available</h2>
           <p className="text-gray-600 mb-4">The requested country could not be found.</p>
-          <button 
-            onClick={() => refetch()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Try Again
-          </button>
+          <div className="flex justify-center gap-4">
+            <Button 
+              onClick={() => refetch()}
+              className="bg-blue-600 text-white"
+            >
+              Try Again
+            </Button>
+            <Link to="/">
+              <Button variant="outline">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Use visa package from dedicated query if main country query failed to get package
-  const packageDetails = country.packageDetails || visaPackage;
+  // Create a fallback package if none exists
+  const packageDetails = country.packageDetails || (id ? createFallbackPricing(id) : null);
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -184,10 +173,10 @@ const CountryDetails = () => {
           {packageDetails && (
             <PricingTier
               name={packageDetails.name}
-              price={packageDetails.total_price || 0}
+              price={(packageDetails.total_price || packageDetails.government_fee + packageDetails.service_fee) || 0}
               governmentFee={packageDetails.government_fee || 0}
               serviceFee={packageDetails.service_fee || 0}
-              processingDays={packageDetails.processing_days}
+              processingDays={packageDetails.processing_days || 15}
             />
           )}
 

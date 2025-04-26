@@ -18,7 +18,6 @@ import { supabase } from '@/integrations/supabase/client';
 import AdminComponentTester from '@/components/admin/AdminComponentTester';
 import AdminLegalPages from '@/pages/admin/LegalPages';
 
-// Create a simple queryClient instance for admin pages
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -28,7 +27,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Fallback component for errors in admin components
 const ErrorFallback = () => (
   <div className="p-6 bg-amber-50 rounded-xl border border-amber-200">
     <div className="flex items-start mb-4">
@@ -51,13 +49,11 @@ const ErrorFallback = () => (
   </div>
 );
 
-// Wrap routes with error handling
 const SafeComponent = ({ component: Component }) => {
   const [hasError, setHasError] = useState(false);
   const [errorDetails, setErrorDetails] = useState(null);
   
   useEffect(() => {
-    // Reset error state when component changes
     setHasError(false);
     setErrorDetails(null);
     console.log('SafeComponent: Loading component:', Component.name || 'Unknown');
@@ -122,13 +118,11 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [verifyingAdmin, setVerifyingAdmin] = useState(true);
 
-  // Verify admin status on component mount
   useEffect(() => {
     const verifyAdminStatus = async () => {
       try {
         console.log('AdminDashboard: Verifying admin status...');
         
-        // Get current session
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -155,7 +149,6 @@ const AdminDashboard = () => {
         
         console.log('User session found:', sessionData.session.user.id);
         
-        // Check if user has admin role
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role, full_name')
@@ -183,7 +176,6 @@ const AdminDashboard = () => {
             variant: "destructive",
           });
           
-          // Sign out the non-admin user
           await supabase.auth.signOut();
           window.location.href = '/admin-login';
           return;
@@ -205,7 +197,6 @@ const AdminDashboard = () => {
     verifyAdminStatus();
   }, []);
 
-  // Global refresh function
   const refreshAllData = () => {
     queryClient.invalidateQueries();
     toast({
@@ -214,7 +205,6 @@ const AdminDashboard = () => {
     });
   };
   
-  // Show loading state while verifying admin access
   if (verifyingAdmin) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -229,12 +219,10 @@ const AdminDashboard = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen bg-gray-100">
-        {/* Sidebar for desktop */}
         <div className="hidden md:block w-64 bg-navy-800 text-white">
           <AdminNav />
         </div>
         
-        {/* Mobile sidebar */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
             <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
@@ -244,9 +232,7 @@ const AdminDashboard = () => {
           </div>
         )}
         
-        {/* Main content */}
         <div className="flex-1">
-          {/* Top bar - Mobile */}
           <div className="md:hidden bg-white p-4 border-b flex items-center justify-between">
             <button 
               onClick={() => setSidebarOpen(true)}
@@ -263,11 +249,10 @@ const AdminDashboard = () => {
             </button>
           </div>
           
-          {/* Content */}
           <div className="p-6">
             <Routes>
               <Route path="/" element={<SafeComponent component={AdminHome} />} />
-              <Route path="/countries" element={<SafeComponent component={() => <CountriesManager queryClient={queryClient} />} />} />
+              <Route path="/countries" element={<SafeComponent component={CountriesManager} />} />
               <Route path="/packages" element={<Navigate to="/admin/countries" replace />} />
               <Route path="/visa-types" element={<SafeComponent component={VisaTypesManager} />} />
               <Route path="/applications" element={<SafeComponent component={ApplicationsManager} />} />

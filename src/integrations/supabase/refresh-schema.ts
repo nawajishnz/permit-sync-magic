@@ -1,93 +1,63 @@
 
 import { supabase } from './client';
-import { fixVisaPackagesSchema, testVisaPackagesOperations } from './fix-schema';
+import { useToast } from '@/hooks/use-toast';
 
 /**
- * Refreshes the schema cache to detect new tables and columns
+ * Attempts to fix database schema issues automatically
  */
-export async function refreshSchemaCache() {
-  console.log('Refreshing schema cache...');
-  
+export const autoFixSchema = async (): Promise<{ success: boolean, message: string }> => {
   try {
-    // First attempt: force schema refresh by querying tables
-    await supabase.from('countries').select('count(*)').limit(1);
+    console.log('Running schema auto-fix script...');
     
-    // Try to access visa_packages, which might trigger schema refresh
-    try {
-      await supabase.from('visa_packages').select('count(*)').limit(1);
-    } catch (err) {
-      console.log('visa_packages table might not exist yet:', err);
+    // Check visa_packages table structure
+    const { data: tableInfo, error: tableError } = await supabase.rpc('get_table_info', {
+      p_table_name: 'visa_packages'
+    });
+    
+    if (tableError) {
+      console.error('Error checking table info:', tableError);
+      
+      // Try to apply the fix directly
+      console.log('Attempting direct schema fix...');
+      
+      // First check if the table exists
+      const { data: tableExists } = await supabase
+        .from('visa_packages')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+      
+      if (tableExists !== null) {
+        // Table exists but might be missing columns
+        // Try to add the government_fee column
+        try {
+          const { data: fixResult } = await supabase.rpc('fix_visa_packages_schema');
+          console.log('Schema fix attempted, result:', fixResult);
+        } catch (err) {
+          console.error('Failed to fix schema:', err);
+        }
+      }
     }
     
-    return {
-      success: true,
-      message: 'Schema refresh attempted'
-    };
-  } catch (err: any) {
-    console.error('Schema refresh error:', err);
-    
-    return {
-      success: false,
-      message: `Schema refresh error: ${err.message}`,
-      error: err
-    };
+    return { success: true, message: 'Schema fix attempted' };
+  } catch (err) {
+    console.error('Schema fix error:', err);
+    return { success: false, message: 'Failed to fix schema' };
   }
-}
+};
 
 /**
- * Automatically attempts to fix schema issues on application load
+ * Create a fallback pricing object to handle situations where the
+ * database schema is not yet complete
  */
-export async function autoFixSchema() {
-  console.log('Auto-fixing schema...');
-  
-  try {
-    // First, refresh the schema cache
-    await refreshSchemaCache();
-    
-    // Then attempt to fix visa_packages schema issues
-    const fixResult = await fixVisaPackagesSchema();
-    
-    console.log('Schema auto-fix result:', fixResult);
-    
-    return fixResult;
-  } catch (err: any) {
-    console.error('Schema auto-fix error:', err);
-    
-    return {
-      success: false,
-      message: `Auto-fix error: ${err.message}`,
-      error: err
-    };
-  }
-}
-
-/**
- * Run diagnostics on visa packages for a specific country
- */
-export async function runVisaPackagesDiagnostic(countryId: string) {
-  console.log('Running visa packages diagnostic...');
-  
-  try {
-    // First, refresh the schema
-    await refreshSchemaCache();
-    
-    // Then run specific operations tests
-    const testResults = await testVisaPackagesOperations(countryId);
-    
-    console.log('Visa packages diagnostic results:', testResults);
-    
-    return {
-      success: testResults.success,
-      message: 'Diagnostic completed',
-      results: testResults
-    };
-  } catch (err: any) {
-    console.error('Diagnostic error:', err);
-    
-    return {
-      success: false,
-      message: `Diagnostic error: ${err.message}`,
-      error: err
-    };
-  }
-}
+export const createFallbackPricing = (countryId: string) => {
+  return {
+    id: `fallback-${countryId}`,
+    name: 'Visa Package',
+    country_id: countryId,
+    government_fee: 0,
+    service_fee: 0,
+    processing_days: 15,
+    total_price: 0
+  };
+};

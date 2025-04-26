@@ -11,18 +11,21 @@ export interface PricingTierProps {
 }
 
 const PricingTier: React.FC<PricingTierProps> = ({
-  name,
-  price,
-  governmentFee,
-  serviceFee,
-  processingDays
+  name = 'Visa Package',
+  price = 0,
+  governmentFee = 0,
+  serviceFee = 0,
+  processingDays = 15
 }) => {
+  // Calculate total if not provided directly
+  const totalPrice = price || (governmentFee + serviceFee);
+  
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       <div className="p-6">
         <h3 className="text-lg font-semibold">{name}</h3>
         <div className="mt-2">
-          <p className="text-3xl font-bold text-gray-900">${price.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-gray-900">${totalPrice.toFixed(2)}</p>
           <p className="text-sm text-gray-500 mt-1">Processing time: {processingDays} days</p>
         </div>
         
