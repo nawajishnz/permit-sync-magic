@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,35 +48,27 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       try {
         console.log('Fetching pricing data for country:', countryId);
         
-        // First check if the visa_packages table exists
-        const { data: tableInfo, error: tableError } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_name', 'visa_packages')
-          .eq('table_schema', 'public')
-          .single();
-          
-        if (tableError) {
-          console.error('Error checking for visa_packages table:', tableError);
-          throw new Error('Unable to verify database schema. Please run the schema fix SQL script.');
-        }
-        
-        // First try RPC function (most reliable method)
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
-          p_country_id: countryId
-        });
-        
-        if (!rpcError && rpcData && rpcData.length > 0) {
-          console.log('Package data loaded via RPC:', rpcData);
-          const packageData = rpcData[0];
-          setFormData({
-            government_fee: packageData.government_fee?.toString() || '0',
-            service_fee: packageData.service_fee?.toString() || '0',
-            processing_days: packageData.processing_days?.toString() || '15'
+        // Check if visa_packages table exists by trying to query it directly
+        try {
+          // First try RPC function (most reliable method)
+          const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
+            p_country_id: countryId
           });
-          return;
-        } else if (rpcError) {
-          console.warn('RPC method failed, trying direct query:', rpcError);
+          
+          if (!rpcError && rpcData && rpcData.length > 0) {
+            console.log('Package data loaded via RPC:', rpcData);
+            const packageData = rpcData[0];
+            setFormData({
+              government_fee: packageData.government_fee?.toString() || '0',
+              service_fee: packageData.service_fee?.toString() || '0',
+              processing_days: packageData.processing_days?.toString() || '15'
+            });
+            return;
+          } else if (rpcError) {
+            console.warn('RPC method failed, trying direct query:', rpcError);
+          }
+        } catch (rpcErr) {
+          console.warn('RPC call failed, falling back to direct query:', rpcErr);
         }
         
         // Fall back to direct query if RPC fails

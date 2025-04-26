@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import SimplePricingManager from './SimplePricingManager';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { fixVisaPackagesSchema } from '@/integrations/supabase/fix-schema';
 
 interface CountryPricingTabProps {
   countries: any[];
@@ -16,6 +17,23 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   const [refreshKey, setRefreshKey] = useState(0); // Used to force refresh
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Fix database schema on component mount
+  useEffect(() => {
+    const runSchemaFix = async () => {
+      try {
+        const result = await fixVisaPackagesSchema();
+        console.log('Schema fix result:', result);
+        if (!result.success) {
+          console.warn('Schema fix warning:', result.message);
+        }
+      } catch (error) {
+        console.error('Error running schema fix:', error);
+      }
+    };
+
+    runSchemaFix();
+  }, []);
   
   const handleCountryChange = (value: string) => {
     setSelectedCountryId(value);

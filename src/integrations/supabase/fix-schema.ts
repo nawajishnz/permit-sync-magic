@@ -8,113 +8,147 @@ export const fixVisaPackagesSchema = async (): Promise<{ success: boolean; messa
   try {
     console.log('Running schema fix for visa_packages table...');
     
-    // Check if the table exists
-    const { data: tableExists, error: tableError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_name', 'visa_packages')
-      .eq('table_schema', 'public')
-      .single();
-    
-    if (tableError) {
-      console.error('Error checking if visa_packages table exists:', tableError);
+    // Use try/catch to check if the table exists instead of querying information_schema
+    try {
+      // Try a simple query to see if table exists
+      const { count, error } = await supabase
+        .from('visa_packages')
+        .select('*', { count: 'exact', head: true });
       
-      // Try to create the visa_packages table
-      const { error: createError } = await supabase.rpc('execute_sql', {
-        sql: `
-        CREATE TABLE IF NOT EXISTS visa_packages (
-          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-          country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
-          name TEXT NOT NULL DEFAULT 'Visa Package',
-          government_fee NUMERIC NOT NULL DEFAULT 0,
-          service_fee NUMERIC NOT NULL DEFAULT 0,
-          processing_days INTEGER NOT NULL DEFAULT 15,
-          created_at TIMESTAMPTZ DEFAULT NOW(),
-          updated_at TIMESTAMPTZ DEFAULT NOW()
-        );
+      console.log('Visa packages table check result:', { count, error });
+      
+      if (error && error.code === '42P01') {  // Table doesn't exist
+        console.log('Visa packages table does not exist, creating it...');
         
-        -- Add computed total_price column if it doesn't exist
-        DO $$
-        BEGIN
-          IF NOT EXISTS (
-            SELECT FROM information_schema.columns 
-            WHERE table_schema = 'public' 
-            AND table_name = 'visa_packages' 
-            AND column_name = 'total_price'
-          ) THEN
-            ALTER TABLE public.visa_packages ADD COLUMN total_price NUMERIC 
-            GENERATED ALWAYS AS (government_fee + service_fee) STORED;
-          END IF;
-        END $$;
-        `
-      });
-      
-      if (createError) {
-        console.error('Error creating visa_packages table:', createError);
+        // Try to create the visa_packages table via RPC
+        const { error: createError } = await supabase.rpc('execute_sql', {
+          sql: `
+          CREATE TABLE IF NOT EXISTS visa_packages (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
+            name TEXT NOT NULL DEFAULT 'Visa Package',
+            government_fee NUMERIC NOT NULL DEFAULT 0,
+            service_fee NUMERIC NOT NULL DEFAULT 0,
+            processing_days INTEGER NOT NULL DEFAULT 15,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+          
+          -- Add computed total_price column if it doesn't exist
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'visa_packages' 
+              AND column_name = 'total_price'
+            ) THEN
+              ALTER TABLE public.visa_packages ADD COLUMN total_price NUMERIC 
+              GENERATED ALWAYS AS (government_fee + service_fee) STORED;
+            END IF;
+          END $$;
+          `
+        });
+        
+        if (createError) {
+          console.error('Error creating visa_packages table:', createError);
+          return {
+            success: false,
+            message: `Failed to create visa_packages table: ${createError.message}`
+          };
+        }
+        
+        console.log('Created visa_packages table');
         return {
-          success: false,
-          message: `Failed to create visa_packages table: ${createError.message}`
+          success: true,
+          message: 'Created visa_packages table'
         };
       }
-      
-      console.log('Created visa_packages table');
-      return {
-        success: true,
-        message: 'Created visa_packages table'
-      };
+    } catch (tableCheckError) {
+      console.error('Error checking if table exists:', tableCheckError);
     }
     
-    // Check if the columns exist
-    const { data: columns, error: columnsError } = await supabase
-      .from('information_schema.columns')
-      .select('column_name')
-      .eq('table_name', 'visa_packages')
-      .eq('table_schema', 'public');
+    // Check if required columns exist by trying to query them
+    try {
+      const { data, error } = await supabase
+        .from('visa_packages')
+        .select('government_fee, service_fee, processing_days, total_price')
+        .limit(1);
       
-    if (columnsError) {
-      console.error('Error checking visa_packages columns:', columnsError);
-      return {
-        success: false,
-        message: `Failed to check visa_packages columns: ${columnsError.message}`
-      };
-    }
-    
-    const columnNames = columns?.map(c => c.column_name) || [];
-    console.log('Existing columns:', columnNames);
-    
-    // Check for missing required columns
-    const requiredColumns = ['government_fee', 'service_fee', 'processing_days', 'total_price'];
-    const missingColumns = requiredColumns.filter(col => !columnNames.includes(col));
-    
-    if (missingColumns.length > 0) {
-      console.log('Missing columns:', missingColumns);
+      // If we can query these columns, they exist
+      console.log('Column check result:', { data, error });
       
-      // Add missing columns
-      for (const column of missingColumns) {
-        let sql = '';
+      if (error) {
+        console.log('Error querying columns, they may not exist:', error);
         
-        if (column === 'government_fee') {
-          sql = `ALTER TABLE visa_packages ADD COLUMN government_fee NUMERIC NOT NULL DEFAULT 0;`;
-        } else if (column === 'service_fee') {
-          sql = `ALTER TABLE visa_packages ADD COLUMN service_fee NUMERIC NOT NULL DEFAULT 0;`;
-        } else if (column === 'processing_days') {
-          sql = `ALTER TABLE visa_packages ADD COLUMN processing_days INTEGER NOT NULL DEFAULT 15;`;
-        } else if (column === 'total_price') {
-          sql = `
-          ALTER TABLE visa_packages ADD COLUMN total_price NUMERIC 
-          GENERATED ALWAYS AS (government_fee + service_fee) STORED;
-          `;
-        }
+        // Try to add the missing columns via RPC
+        const { error: alterError } = await supabase.rpc('execute_sql', {
+          sql: `
+          -- Add government_fee if it doesn't exist
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'visa_packages' 
+              AND column_name = 'government_fee'
+            ) THEN
+              ALTER TABLE visa_packages ADD COLUMN government_fee NUMERIC NOT NULL DEFAULT 0;
+            END IF;
+          END $$;
+          
+          -- Add service_fee if it doesn't exist
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'visa_packages' 
+              AND column_name = 'service_fee'
+            ) THEN
+              ALTER TABLE visa_packages ADD COLUMN service_fee NUMERIC NOT NULL DEFAULT 0;
+            END IF;
+          END $$;
+          
+          -- Add processing_days if it doesn't exist
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'visa_packages' 
+              AND column_name = 'processing_days'
+            ) THEN
+              ALTER TABLE visa_packages ADD COLUMN processing_days INTEGER NOT NULL DEFAULT 15;
+            END IF;
+          END $$;
+          
+          -- Add total_price if it doesn't exist
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'visa_packages' 
+              AND column_name = 'total_price'
+            ) THEN
+              ALTER TABLE visa_packages ADD COLUMN total_price NUMERIC 
+              GENERATED ALWAYS AS (government_fee + service_fee) STORED;
+            END IF;
+          END $$;
+          `
+        });
         
-        if (sql) {
-          const { error } = await supabase.rpc('execute_sql', { sql });
-          if (error) {
-            console.error(`Error adding column ${column}:`, error);
-          } else {
-            console.log(`Added column ${column}`);
-          }
+        if (alterError) {
+          console.error('Error adding columns:', alterError);
+          return {
+            success: false,
+            message: `Failed to add required columns: ${alterError.message}`
+          };
         }
       }
+    } catch (columnCheckError) {
+      console.error('Error checking columns:', columnCheckError);
     }
     
     return {
