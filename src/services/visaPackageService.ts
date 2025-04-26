@@ -1,6 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { VisaPackage } from '@/types/visaPackage';
+import { runDiagnostic as runVisaDiagnostic } from '@/services/visaDiagnosticService';
+
+// Export the diagnostic function from the visaPackageService
+export const runDiagnostic = runVisaDiagnostic;
 
 export const getCountryVisaPackage = async (countryId: string): Promise<VisaPackage | null> => {
   try {
