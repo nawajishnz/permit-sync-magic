@@ -10,20 +10,19 @@ import CountryTable from './CountryTable';
 import CountryDialog, { CountryFormData, CountrySubmitData } from './CountryDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DocumentChecklistManager from './DocumentChecklistManager';
-import PricingTierManager from './PricingTierManager';
+import CountryPricingTab from './CountryPricingTab';
 import VisaTypesManager from './VisaTypesManager';
 import VisaPackagesManager from './VisaPackagesManager';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { z } from 'zod';
 import { refreshSchemaCache } from '@/integrations/supabase/refresh-schema';
 
-// Initial empty form data structure
 const getInitialFormData = (): CountryFormData => ({
   name: '',
   flag: '',
   banner: '',
   description: '',
-  entry_type: 'Tourist Visa', // Default entry type
+  entry_type: 'Tourist Visa',
   validity: '',
   processing_time: '',
   length_of_stay: '',
@@ -41,7 +40,6 @@ interface CountriesManagerProps {
   queryClient?: any;
 }
 
-// Define a form schema using zod
 const formSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Country name is required"),
@@ -73,13 +71,10 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
   const navigate = useNavigate();
   const localQueryClient = useQueryClient();
   
-  // Use the passed queryClient or the local one
   const activeQueryClient = queryClient || localQueryClient;
   
-  // Single source of truth for form data
   const [formData, setFormData] = useState<CountryFormData>(getInitialFormData());
 
-  // Fetch countries data with enhanced error handling and debugging
   const { 
     data: countries = [], 
     isLoading: countriesLoading, 
@@ -104,20 +99,16 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
       
       return data || [];
     },
-    // Disable stale time to ensure fresh data
     staleTime: 0
   });
 
-  // Debug log countries when data changes
   useEffect(() => {
     console.log('Countries data in admin component:', countries);
   }, [countries]);
 
-  // Add a manual refresh capability for testing
   const handleRefresh = () => {
     console.log('Manually refreshing countries data...');
     
-    // Invalidate ALL country-related queries to ensure complete refresh
     invalidateAllCountryQueries();
     
     toast({
@@ -126,9 +117,7 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
     });
   };
 
-  // Helper function to invalidate all country-related queries
   const invalidateAllCountryQueries = () => {
-    // Invalidate all the country queries
     activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
     activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
     activeQueryClient.invalidateQueries({ queryKey: ['popularCountries'] });
@@ -137,7 +126,6 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
     activeQueryClient.invalidateQueries({ queryKey: ['countryDetails'] });
     activeQueryClient.invalidateQueries({ queryKey: ['visaPackages'] });
     
-    // Force refetch after a slight delay to ensure we have fresh data
     setTimeout(() => {
       refetch();
     }, 300);
@@ -210,7 +198,6 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         description: "Country has been successfully removed",
       });
       
-      // Refresh all country queries
       invalidateAllCountryQueries();
     } catch (error: any) {
       console.error('Error deleting country:', error);
@@ -231,7 +218,6 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
       let flagUrl = submitData.flag;
       let bannerUrl = submitData.banner;
 
-      // 1. Handle Image Uploads (if new files provided)
       if (submitData.flagFile) {
         const flagFilename = `flag-${Date.now()}-${submitData.flagFile.name}`;
         const { data, error } = await supabase.storage.from('country-images').upload(flagFilename, submitData.flagFile);
@@ -245,13 +231,12 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         bannerUrl = supabase.storage.from('country-images').getPublicUrl(bannerFilename).data.publicUrl;
       }
       
-      // 2. Prepare Country Data for Save
       const { 
         pricing, 
         documents, 
         flagFile, 
         bannerFile,
-        id, // Exclude id from direct data save object
+        id, 
         ...countryFields 
       } = submitData;
       
@@ -264,74 +249,57 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
           updated_at: new Date().toISOString()
       };
 
-      // 3. Validate (basic example)
       if (!dataToSave.name || !dataToSave.flag || !dataToSave.banner || !dataToSave.description) {
         throw new Error("Missing required fields: Name, Flag, Banner, Description.");
       }
 
-      // 4. Save Country Data (Insert or Update)
-      let countryError = null;
       if (isEditMode && countryId) {
         console.log(`Updating country ${countryId} with data:`, dataToSave);
         const { error } = await supabase.from('countries').update(dataToSave).eq('id', countryId);
-        countryError = error;
+        if (error) throw error;
       } else {
         console.log("Creating new country with data:", dataToSave);
         const { data: newData, error } = await supabase.from('countries').insert(dataToSave).select('id').single();
-        countryError = error;
-        if (!error && newData) {
+        if (error) throw error;
+        if (newData) {
           countryId = newData.id;
         }
       }
 
-      if (countryError) {
-         console.error("Error saving country:", countryError);
-         throw new Error(`Failed to save country: ${countryError.message}`);
-      }
-      
-      toast({ title: isEditMode ? "Country Updated" : "Country Created", description: `${savedCountryName} saved successfully.` });
-
-      // 5. Save Pricing Data via RPC (if country save succeeded and pricing exists)
       if (countryId && pricing && (pricing.government_fee || pricing.service_fee || pricing.processing_days)) {
-          try {
-            // console.log('Attempting to refresh schema cache before saving pricing...');
-            // await refreshSchemaCache(); // <-- Temporarily remove this call
-            // console.log('Schema cache refresh attempted.');
+        try {
+          const govFee = parseFloat(pricing.government_fee) || 0;
+          const serviceFee = parseFloat(pricing.service_fee) || 0;
+          const processingDays = parseInt(pricing.processing_days) || 0;
+          
+          if (govFee > 0 || serviceFee > 0 || processingDays > 0) {
+              console.log(`Calling save_visa_package for country ${countryId} using positional arguments`);
+              const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', 
+                  [countryId, 'Visa Package', govFee, serviceFee, processingDays]
+              );
 
-            const govFee = parseFloat(pricing.government_fee) || 0;
-            const serviceFee = parseFloat(pricing.service_fee) || 0;
-            const processingDays = parseInt(pricing.processing_days) || 0;
-            
-            if (govFee > 0 || serviceFee > 0 || processingDays > 0) {
-                console.log(`Calling save_visa_package for country ${countryId} using positional arguments`);
-                const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', 
-                    [countryId, 'Visa Package', govFee, serviceFee, processingDays]
-                );
-
-                if (rpcError) {
-                    console.error("Error saving visa package via RPC:", rpcError);
-                    throw new Error(`Failed to save pricing: ${rpcError.message}`);
-                } else {
-                    console.log("Visa package saved successfully via RPC:", rpcData);
-                    toast({ title: "Pricing Saved", description: `Default pricing for ${savedCountryName} saved.` });
-                }
-            }
-          } catch (pricingError: any) {
-            console.error("Error processing pricing data:", pricingError);
-            toast({ 
-                title: "Warning: Pricing Issue", 
-                description: `Country ${savedCountryName} saved, but pricing failed: ${pricingError.message}`, 
-                variant: "destructive" 
-            });
+              if (rpcError) {
+                  console.error("Error saving visa package via RPC:", rpcError);
+                  throw new Error(`Failed to save pricing: ${rpcError.message}`);
+              } else {
+                  console.log("Visa package saved successfully via RPC:", rpcData);
+                  toast({ title: "Pricing Saved", description: `Default pricing for ${savedCountryName} saved.` });
+              }
           }
-      }
-      
-      // 6. Handle Documents (Example, can be expanded)
-      if (documents && documents.length > 0 && countryId) {
-          console.log("Document handling logic would go here.");
+        } catch (pricingError: any) {
+          console.error("Error processing pricing data:", pricingError);
+          toast({ 
+              title: "Warning: Pricing Issue", 
+              description: `Country ${savedCountryName} saved, but pricing failed: ${pricingError.message}`, 
+              variant: "destructive" 
+          });
+        }
       }
 
-      // 7. Close Dialog & Refresh Queries
+      if (documents && documents.length > 0 && countryId) {
+        console.log("Document handling logic would go here.");
+      }
+
       setIsDialogOpen(false);
       invalidateAllCountryQueries();
 
@@ -402,12 +370,7 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         </TabsContent>
         
         <TabsContent value="pricing">
-          <PricingTierManager
-            countries={countries}
-            selectedCountryId={selectedCountryIdForTabs}
-            onSelectCountry={handleSelectCountryForTabs}
-            queryClient={activeQueryClient}
-          />
+          <CountryPricingTab countries={countries} />
         </TabsContent>
         
         <TabsContent value="visatypes">
@@ -420,7 +383,6 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         </TabsContent>
       </Tabs>
 
-      {/* Dialog - Pass simplified props */}
       <CountryDialog
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
