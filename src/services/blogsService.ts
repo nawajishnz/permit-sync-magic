@@ -7,7 +7,7 @@ const mockBlogs: Blog[] = [
     id: '1',
     title: 'Complete Guide to Tourist Visas',
     slug: 'complete-guide-tourist-visas',
-    content: 'Tourist visas are entry permits issued to individuals who want to visit a country for leisure, sightseeing, and recreational activities. Most tourist visas are valid for a short period, typically ranging from 30 to 90 days, depending on the country's regulations.',
+    content: 'Tourist visas are entry permits issued to individuals who want to visit a country for leisure, sightseeing, and recreational activities. Most tourist visas are valid for a short period, typically ranging from 30 to 90 days, depending on the country\'s regulations.',
     excerpt: 'Everything you need to know about applying for a tourist visa',
     featured_image: 'https://images.pexels.com/photos/2325446/pexels-photo-2325446.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
     author_id: 'auth0|123456789',
