@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Loader2, Database, CheckCircle, XCircle, RefreshCw, PlusCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getCountryVisaPackage, saveVisaPackage, runDiagnostic } from '@/services/visaPackageService';
+import { getCountryVisaPackage, saveVisaPackage, runDiagnostic, toggleVisaPackageStatus } from '@/services/visaPackageService';
 import { VisaPackage } from '@/types/visaPackage';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { useApiMutation } from '@/hooks/useApiMutations';
+import { Switch } from '@/components/ui/switch';
 
 interface PricingTierManagerProps {
   countries: any[];
@@ -72,7 +72,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           processing_days: packageData.processing_days?.toString() || '15'
         });
       } else {
-        // This should never happen now since getCountryVisaPackage always returns a package or default template
         console.log("No package data found, setting defaults");
         setPackageData(null);
         setFormData({
@@ -125,7 +124,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         variant: result.success ? "default" : "destructive"
       });
       
-      // If diagnostic was successful, refresh the data
       if (result.success) {
         await fetchPricingData();
       }
@@ -163,7 +161,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     setError(null);
     
     try {
-      // Make sure to parse the numerical values correctly
       const packageToSave: VisaPackage = {
         id: packageData?.id,
         country_id: selectedCountryId,
@@ -187,10 +184,8 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           description: `Pricing for ${countryName} has been updated successfully`,
         });
         
-        // Refetch the data to update our UI
         await fetchPricingData();
         
-        // Invalidate all related queries to ensure data consistency
         activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
@@ -222,13 +217,42 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     }
   };
   
+  const handleToggleStatus = async (isActive: boolean) => {
+    if (!selectedCountryId) return;
+    
+    try {
+      const result = await toggleVisaPackageStatus(selectedCountryId, isActive);
+      
+      if (result.success) {
+        toast({
+          title: isActive ? "Country Activated" : "Country Deactivated",
+          description: result.message
+        });
+        
+        await fetchPricingData();
+        queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+      } else {
+        toast({
+          title: "Status Update Failed",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update status",
+        variant: "destructive"
+      });
+    }
+  };
+  
   const getPackageStatus = () => {
     if (!selectedCountryId) return null;
     
     if (loading) return <Badge variant="outline" className="bg-gray-100">Loading...</Badge>;
     
     if (packageData) {
-      // Check if this is a default package (newly created) or a saved package with pricing
       const hasPricing = packageData.id && (packageData.government_fee > 0 || packageData.service_fee > 0);
       const isNewPackage = !packageData.id;
       
@@ -309,12 +333,25 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           {selectedCountryId && (
             <div className="space-y-4 border p-4 rounded-md">
               <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4">
                   <h3 className="text-lg font-medium">
                     Pricing for {selectedCountry?.name}
                   </h3>
-                  {getPackageStatus()}
+                  {packageData && (
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="status-toggle" className="mr-2">Status:</Label>
+                      <Switch
+                        id="status-toggle"
+                        checked={packageData.is_active}
+                        onCheckedChange={handleToggleStatus}
+                      />
+                      <span className={packageData.is_active ? "text-green-600" : "text-gray-500"}>
+                        {packageData.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  )}
                 </div>
+                
                 <div className="flex space-x-2">
                   <Button 
                     variant="outline" 
