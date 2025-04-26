@@ -69,6 +69,11 @@ const Footer: React.FC = () => {
                   Admin Login
                 </Link>
               </li>
+              <li>
+                <Link to="/blog" className="text-gray-500 hover:text-gray-800 transition-colors text-sm">
+                  Blog
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -20,6 +20,7 @@ import AddonServicesSection from '@/components/countries/AddonServicesSection';
 import { getAddonServices, AddonService } from '@/models/addon_services';
 import ApprovedVisas from '@/components/ApprovedVisas';
 import { supabase } from '@/integrations/supabase/client';
+import { RecentBlogs } from '@/components/RecentBlogs';
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -52,7 +53,6 @@ const Index = () => {
     fetchServices();
   }, []);
 
-  // Sample add-on services data as fallback
   const sampleAddonServices: AddonService[] = [
     {
       id: '1',
@@ -128,15 +128,11 @@ const Index = () => {
       <Header />
       <main className="flex-grow pt-20 md:pt-24">
         <Hero />
-        
-        {/* Popular Destinations Section - Moved above Why Travelers Trust Permitsy */}
         <div className="pt-2 pb-4 md:pt-4 md:pb-10 bg-white px-4">
           <PopularDestinations />
         </div>
         
-        {/* Why Travelers Trust Permitsy - Modern Redesign */}
         <section className="py-20 relative overflow-hidden">
-          {/* Decorative background elements */}
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/80 via-blue-50/50 to-white/90"></div>
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-200 rounded-full opacity-20 blur-3xl"></div>
           <div className="absolute -bottom-20 -left-40 w-96 h-96 bg-blue-200 rounded-full opacity-20 blur-3xl"></div>
@@ -247,22 +243,20 @@ const Index = () => {
 
         <ApplicationSteps />
         
-        {/* Document Checklist - New Section */}
         <VisaDocumentChecklist />
         
         <HowItWorks />
         
-        {/* Visa Comparison - New Section */}
         <VisaComparisonSection />
         
         <WhyChooseUs />
         
         <TravelTipsSection />
-
-        {/* Addon Services Section */}
+        
+        <RecentBlogs />
+        
         <AddonServicesSection />
         
-        {/* Approved Visas Section */}
         <div className="bg-white py-4">
           <ApprovedVisas />
         </div>
@@ -275,7 +269,6 @@ const Index = () => {
           <PopularCountries />
         </div>
         
-        {/* Admin login section */}
         <motion.div 
           className="py-12 bg-gray-50 border-t border-gray-200 px-4"
           initial={{ opacity: 0 }}

@@ -12,6 +12,7 @@ import FAQsManager from '@/components/admin/FAQsManager';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import AddonServicesManager from '@/components/admin/AddonServicesManager';
 import TestimonialsManager from '@/components/admin/TestimonialsManager';
+import BlogsManager from '@/components/admin/BlogsManager';
 import { useToast } from '@/hooks/use-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -259,6 +260,7 @@ const AdminDashboard = () => {
               <Route path="/users" element={<SafeComponent component={UsersManager} />} />
               <Route path="/faqs" element={<SafeComponent component={FAQsManager} />} />
               <Route path="/testimonials" element={<SafeComponent component={TestimonialsManager} />} />
+              <Route path="/blogs" element={<SafeComponent component={BlogsManager} />} />
               <Route path="/legal-pages/*" element={<SafeComponent component={AdminLegalPages} />} />
               <Route path="/analytics" element={<SafeComponent component={AnalyticsDashboard} />} />
               <Route path="/addons" element={<SafeComponent component={AddonServicesManager} />} />

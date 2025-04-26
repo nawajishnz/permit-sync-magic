@@ -1,4 +1,3 @@
-
 export type Database = {
   public: {
     Tables: {
@@ -141,6 +140,40 @@ export type Database = {
           document_name?: string;
           document_description?: string;
           required?: boolean;
+        };
+      };
+      blogs: {
+        Row: {
+          id: string;
+          title: string;
+          slug: string;
+          content: string;
+          excerpt: string;
+          featured_image: string;
+          author_id: string;
+          published_at: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          slug: string;
+          content: string;
+          excerpt: string;
+          featured_image: string;
+          author_id: string;
+          published_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          slug?: string;
+          content?: string;
+          excerpt?: string;
+          featured_image?: string;
+          author_id?: string;
+          published_at?: string;
         };
       };
     };
