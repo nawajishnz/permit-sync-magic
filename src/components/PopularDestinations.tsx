@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getCountryVisaPackage } from '@/services/visaPackageService';
 
 type Destination = {
   id: string;
@@ -41,20 +42,14 @@ const PopularDestinations = () => {
 
         const destinationsWithPricing = await Promise.all(
           countriesData.map(async (country) => {
-            const { data: packageData } = await supabase
-              .from('visa_packages')
-              .select('total_price, processing_days')
-              .eq('country_id', country.id)
-              .limit(1);
-
-            const visaPackage = packageData && packageData[0];
-
+            const packageData = await getCountryVisaPackage(country.id);
+            
             return {
               id: country.id,
               name: country.name,
               imageUrl: country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
-              totalPrice: visaPackage?.total_price || 1999,
-              processingDays: visaPackage?.processing_days || 15,
+              totalPrice: packageData?.total_price || packageData?.service_fee + packageData?.government_fee || 1999,
+              processingDays: packageData?.processing_days || 15,
               hasSpecialVisa: country.name === 'Japan'
             };
           })
@@ -87,26 +82,6 @@ const PopularDestinations = () => {
     
     const isoCode = countryIsoMap[countryName] || 'xx';
     return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
-  };
-
-  const getContinent = (countryName: string) => {
-    const continentMap: {[key: string]: string} = {
-      'United States': 'North America',
-      'Canada': 'North America',
-      'United Kingdom': 'Europe',
-      'Australia': 'Oceania',
-      'Japan': 'Asia',
-      'Germany': 'Europe',
-      'France': 'Europe',
-      'Singapore': 'Asia',
-      'UAE': 'Asia',
-      'India': 'Asia',
-      'China': 'Asia',
-      'Italy': 'Europe',
-      'Spain': 'Europe'
-    };
-    
-    return continentMap[countryName] || 'Unknown';
   };
 
   return (

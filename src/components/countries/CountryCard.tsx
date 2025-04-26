@@ -7,18 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Plane, BadgeCheck, MapPin, Heart, ChevronRight, Check, Clock, Globe, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-
-type VisaPackage = {
-  id: string;
-  country_id: string;
-  name: string;
-  government_fee: number;
-  service_fee: number;
-  processing_days: number;
-  total_price: number;
-  created_at: string;
-  updated_at: string;
-};
+import { VisaPackage } from '@/types/visaPackage';
+import { getCountryVisaPackage } from '@/services/visaPackageService';
 
 type CountryCardProps = {
   country: any;
@@ -38,18 +28,8 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
       
       setIsLoadingPackage(true);
       try {
-        const { data, error } = await supabase
-          .from('visa_packages')
-          .select('*')
-          .eq('country_id', country.id)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching visa package:', error);
-          setVisaPackage(null);
-        } else {
-          setVisaPackage(data);
-        }
+        const packageData = await getCountryVisaPackage(country.id);
+        setVisaPackage(packageData);
       } catch (err) {
         console.error('Failed to fetch visa package:', err);
         setVisaPackage(null);
@@ -90,25 +70,26 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
     return ['Tourist Visa'];
   };
 
-  const getCountryDetails = (country: any) => {
-    const visaPackage = country.visa_packages?.[0];
+  const getFormattedPrice = () => {
+    if (isLoadingPackage) {
+      return <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 text-gray-400" />;
+    }
+    
     if (visaPackage) {
       const totalPrice = visaPackage.total_price || 
         (visaPackage.government_fee || 0) + (visaPackage.service_fee || 0);
-      
-      return {
-        price: `₹${totalPrice.toLocaleString('en-IN')}`,
-        processingTime: `${visaPackage.processing_days || 7} business days`
-      };
+      return `₹${totalPrice.toLocaleString('en-IN')}`;
     }
     
-    return {
-      price: '₹1,999',
-      processingTime: '7-10 business days'
-    };
+    return '₹1,999';
   };
 
-  const { price, processingTime } = getCountryDetails(country);
+  const getProcessingDays = () => {
+    if (visaPackage?.processing_days) {
+      return `${visaPackage.processing_days} business days`;
+    }
+    return '7-10 business days';
+  };
 
   if (viewMode === 'grid') {
     return (
@@ -176,7 +157,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center text-xs text-gray-500">
                 <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
-                <span className="truncate">{processingTime}</span>
+                <span className="truncate">{getProcessingDays()}</span>
               </div>
               {isLoadingPackage ? (
                 <div className="flex items-center">
@@ -184,7 +165,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
                   <span className="text-gray-400">Loading...</span>
                 </div>
               ) : (
-                <span className="font-bold text-indigo-600">{price}</span>
+                <span className="font-bold text-indigo-600">{getFormattedPrice()}</span>
               )}
             </div>
             
@@ -280,7 +261,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
             <div className="mt-3 md:mt-0 md:w-1/3">
               <div className="flex items-center text-sm text-gray-600 mb-1">
                 <Clock className="h-4 w-4 mr-1 flex-shrink-0 text-indigo-500" />
-                <span>{processingTime}</span>
+                <span>{getProcessingDays()}</span>
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Globe className="h-4 w-4 mr-1 flex-shrink-0 text-indigo-500" />
@@ -295,7 +276,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
                   <span className="text-gray-400">Loading...</span>
                 </div>
               ) : (
-                <span className="font-bold text-lg text-indigo-600">{price}</span>
+                <span className="font-bold text-lg text-indigo-600">{getFormattedPrice()}</span>
               )}
               <Button 
                 size="sm" 
