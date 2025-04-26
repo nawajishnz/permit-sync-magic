@@ -76,7 +76,13 @@ export const refreshSchemaCache = async (): Promise<{ success: boolean, message:
     if (result.success) {
       // Attempt a simple query to refresh the schema cache
       await supabase.from('countries').select('id').limit(1);
-      await supabase.from('visa_packages').select('id').limit(1).catch(() => null);
+      
+      // We can't use .catch() on PostgrestFilterBuilder, so use try/catch instead
+      try {
+        await supabase.from('visa_packages').select('id').limit(1);
+      } catch (e) {
+        console.log('Error querying visa_packages, this is expected if the table doesn\'t exist yet');
+      }
       
       console.log('Schema cache refreshed');
       return { success: true, message: 'Schema cache refreshed successfully' };

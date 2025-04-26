@@ -22,7 +22,7 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Manage Country Pricing</CardTitle>
+          <CardTitle>Manage Country Pricing (INR)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">

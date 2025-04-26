@@ -55,8 +55,27 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
           .single();
           
         if (error) {
-          console.log('No existing package found, using defaults');
+          console.log('No existing package found or error:', error.message);
+          // Try RPC function as fallback
+          try {
+            const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
+              p_country_id: countryId
+            });
+            
+            if (!rpcError && rpcData && rpcData.length > 0) {
+              const packageData = rpcData[0];
+              setFormData({
+                government_fee: packageData.government_fee?.toString() || '0',
+                service_fee: packageData.service_fee?.toString() || '0',
+                processing_days: packageData.processing_days?.toString() || '15'
+              });
+              console.log('Package data loaded via RPC:', packageData);
+            }
+          } catch (rpcErr) {
+            console.error('RPC fallback error:', rpcErr);
+          }
         } else if (data) {
+          console.log('Package data loaded directly:', data);
           setFormData({
             government_fee: data.government_fee?.toString() || '0',
             service_fee: data.service_fee?.toString() || '0',
@@ -102,6 +121,44 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         processing_days: parseInt(formData.processing_days) || 15
       };
       
+      console.log('Saving package data:', packageToSave);
+      
+      // First try RPC approach - more reliable
+      try {
+        const { data: rpcResult, error: rpcError } = await supabase.rpc(
+          'save_visa_package',
+          {
+            p_country_id: countryId,
+            p_name: 'Visa Package',
+            p_government_fee: parseFloat(formData.government_fee) || 0,
+            p_service_fee: parseFloat(formData.service_fee) || 0,
+            p_processing_days: parseInt(formData.processing_days) || 15
+          }
+        );
+        
+        if (!rpcError) {
+          console.log('Package saved with RPC:', rpcResult);
+          setSuccess(`Pricing for ${countryName} has been updated successfully via RPC`);
+          
+          // Call the onSaved callback if provided
+          if (onSaved) {
+            onSaved();
+          }
+          
+          toast({
+            title: "Pricing saved",
+            description: `Pricing for ${countryName} has been updated successfully`,
+          });
+          
+          return; // Success via RPC, no need for fallback
+        } else {
+          console.warn('RPC save failed, using fallback method:', rpcError);
+        }
+      } catch (rpcErr) {
+        console.warn('RPC save threw exception, using fallback method:', rpcErr);
+      }
+      
+      // Fallback to direct database operations
       // Check if a package already exists for this country
       const { data: existingPackage, error: checkError } = await supabase
         .from('visa_packages')
@@ -112,6 +169,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       let result;
       if (existingPackage) {
         // Update existing package
+        console.log('Updating existing package:', existingPackage.id);
         result = await supabase
           .from('visa_packages')
           .update({
@@ -121,13 +179,18 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
             processing_days: packageToSave.processing_days,
             updated_at: new Date().toISOString()
           })
-          .eq('id', existingPackage.id);
+          .eq('id', existingPackage.id)
+          .select();
       } else {
         // Create new package
+        console.log('Creating new package');
         result = await supabase
           .from('visa_packages')
-          .insert(packageToSave);
+          .insert(packageToSave)
+          .select();
       }
+      
+      console.log('Direct database operation result:', result);
       
       if (result.error) {
         throw new Error(result.error.message);
@@ -189,7 +252,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="government_fee">Government Fee ($)</Label>
+                <Label htmlFor="government_fee">Government Fee (₹)</Label>
                 <Input
                   id="government_fee"
                   name="government_fee"
@@ -201,7 +264,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="service_fee">Service Fee ($)</Label>
+                <Label htmlFor="service_fee">Service Fee (₹)</Label>
                 <Input
                   id="service_fee"
                   name="service_fee"
@@ -246,7 +309,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
             </div>
             
             <div className="text-sm text-gray-500 mt-2">
-              <p>Total Price: ${(parseFloat(formData.government_fee) || 0 + parseFloat(formData.service_fee) || 0).toFixed(2)}</p>
+              <p>Total Price: ₹{(parseFloat(formData.government_fee) || 0 + parseFloat(formData.service_fee) || 0).toFixed(2)}</p>
             </div>
           </div>
         )}

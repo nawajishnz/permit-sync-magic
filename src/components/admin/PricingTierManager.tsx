@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
   const localQueryClient = useQueryClient();
   const activeQueryClient = propQueryClient || localQueryClient;
   
-  // Fetch pricing data for the selected country
   const fetchPricingData = async () => {
     if (!selectedCountryId) return;
     
@@ -62,7 +60,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         console.log("Found package data:", packageData);
         setPackageData(packageData);
         
-        // Update form with package data
         setFormData({
           name: packageData.name || 'Visa Package',
           government_fee: packageData.government_fee?.toString() || '0',
@@ -146,7 +143,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     setError(null);
     
     try {
-      // Convert form values to appropriate types
       const packageToSave: VisaPackage = {
         id: packageData?.id,
         country_id: selectedCountryId,
@@ -156,7 +152,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         processing_days: parseInt(formData.processing_days) || 15
       };
       
-      // Get the selected country name for the success message
       const country = countries.find(c => c.id === selectedCountryId);
       const countryName = country?.name || "country";
       
@@ -168,10 +163,8 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           description: `Pricing for ${countryName} has been updated successfully`,
         });
         
-        // Refresh the data
         await fetchPricingData();
         
-        // Invalidate relevant queries
         activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] });
@@ -287,7 +280,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                 <>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="government_fee">Government Fee ($)</Label>
+                      <Label htmlFor="government_fee">Government Fee (₹)</Label>
                       <Input
                         id="government_fee"
                         name="government_fee"
@@ -299,7 +292,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="service_fee">Service Fee ($)</Label>
+                      <Label htmlFor="service_fee">Service Fee (₹)</Label>
                       <Input
                         id="service_fee"
                         name="service_fee"
@@ -341,7 +334,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                   {packageData && (
                     <div className="pt-4 text-sm text-gray-500">
                       <p>Last updated: {new Date(packageData.updated_at || Date.now()).toLocaleString()}</p>
-                      <p>Total Price: ${(Number(packageData.government_fee || 0) + Number(packageData.service_fee || 0)).toFixed(2)}</p>
+                      <p>Total Price: ₹{(Number(packageData.government_fee || 0) + Number(packageData.service_fee || 0)).toFixed(2)}</p>
                     </div>
                   )}
                 </>

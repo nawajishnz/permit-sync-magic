@@ -25,18 +25,18 @@ const PricingTier: React.FC<PricingTierProps> = ({
       <div className="p-6">
         <h3 className="text-lg font-semibold">{name}</h3>
         <div className="mt-2">
-          <p className="text-3xl font-bold text-gray-900">${totalPrice.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-gray-900">₹{totalPrice.toFixed(2)}</p>
           <p className="text-sm text-gray-500 mt-1">Processing time: {processingDays} days</p>
         </div>
         
         <ul className="mt-6 space-y-4">
           <li className="flex items-start">
             <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-            <span>Government Fee: ${governmentFee.toFixed(2)}</span>
+            <span>Government Fee: ₹{governmentFee.toFixed(2)}</span>
           </li>
           <li className="flex items-start">
             <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-            <span>Service Fee: ${serviceFee.toFixed(2)}</span>
+            <span>Service Fee: ₹{serviceFee.toFixed(2)}</span>
           </li>
           <li className="flex items-start">
             <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
