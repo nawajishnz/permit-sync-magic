@@ -1,7 +1,7 @@
 
 import { supabase } from './client';
 import { useToast } from '@/hooks/use-toast';
-import { fixVisaPackagesSchema, testVisaPackagesOperations } from './fix-schema';
+import { fixVisaPackagesSchema } from './fix-schema';
 
 /**
  * Attempts to fix database schema issues automatically
@@ -102,13 +102,54 @@ export const runVisaPackagesDiagnostic = async (countryId: string): Promise<{ su
   console.log(`Running diagnostics for country ${countryId}...`);
   
   try {
-    // Use the testVisaPackagesOperations function from fix-schema.ts
-    const results = await testVisaPackagesOperations(countryId);
+    // Instead of calling a non-existent function, implement the diagnostic here
+    const results: any = { diagnosticRun: true };
+    
+    // Check if the country exists
+    const { data: country, error: countryError } = await supabase
+      .from('countries')
+      .select('id, name')
+      .eq('id', countryId)
+      .single();
+      
+    if (countryError) {
+      return {
+        success: false,
+        message: `Country not found: ${countryError.message}`,
+        results: {}
+      };
+    }
+    
+    // Check if the visa package exists
+    const { data: visaPackage, error: packageError } = await supabase
+      .from('visa_packages')
+      .select('*')
+      .eq('country_id', countryId)
+      .maybeSingle();
+      
+    results.countryExists = !!country;
+    results.packageExists = !!visaPackage;
+    results.packageData = visaPackage || null;
+    
+    if (packageError && packageError.code !== 'PGRST116') {
+      results.packageError = packageError.message;
+    }
+    
+    // Get column information if possible
+    try {
+      const { data: columnInfo } = await supabase.rpc('get_table_info', {
+        p_table_name: 'visa_packages'
+      });
+      
+      results.tableInfo = columnInfo;
+    } catch (err: any) {
+      results.tableInfoError = err.message;
+    }
     
     return {
-      success: results.success,
-      message: results.message,
-      results: results.results || {}
+      success: true,
+      message: `Diagnostics complete for country ${country?.name || countryId}`,
+      results
     };
   } catch (err: any) {
     console.error('Diagnostic error:', err);
