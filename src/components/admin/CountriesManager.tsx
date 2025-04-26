@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,13 +45,30 @@ const CountriesManager = () => {
   } = useQuery({
     queryKey: ['adminCountries'],
     queryFn: async () => {
+      console.log('Fetching countries with pricing details');
       const { data, error } = await supabase
         .from('countries')
-        .select('*, visa_packages(*)');
+        .select(`
+          *,
+          visa_packages(
+            id, 
+            name, 
+            government_fee, 
+            service_fee, 
+            processing_days,
+            total_price
+          )
+        `);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching countries:', error);
+        throw error;
+      }
+      
+      console.log('Countries data with packages:', data);
       return data || [];
-    }
+    },
+    staleTime: 0
   });
 
   const handleRefresh = () => {
@@ -70,36 +86,76 @@ const CountriesManager = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (country: any) => {
+  const handleEdit = async (country: any) => {
+    console.log('Editing country with data:', country);
+    
+    let countryWithPackages = country;
+    
+    if (!country.visa_packages || country.visa_packages.length === 0) {
+      console.log('Fetching fresh visa package data for country:', country.id);
+      try {
+        const { data: freshData, error } = await supabase
+          .from('countries')
+          .select(`
+            *,
+            visa_packages(
+              id, 
+              name, 
+              government_fee, 
+              service_fee, 
+              processing_days,
+              total_price
+            )
+          `)
+          .eq('id', country.id)
+          .single();
+          
+        if (!error && freshData) {
+          countryWithPackages = freshData;
+          console.log('Fetched fresh data:', freshData);
+        }
+      } catch (err) {
+        console.error('Error fetching fresh country data:', err);
+      }
+    }
+    
+    const packageData = countryWithPackages.visa_packages?.[0];
+    console.log('Package data for form:', packageData);
+    
     setFormData({
-      id: country.id,
-      name: country.name || '',
-      flag: country.flag || '',
-      banner: country.banner || '',
-      description: country.description || '',
-      entry_type: country.entry_type || 'Tourist Visa',
-      validity: country.validity || '',
-      processing_time: country.processing_time || '',
-      length_of_stay: country.length_of_stay || '',
-      requirements_description: country.requirements_description || '',
-      visa_includes: country.visa_includes || [],
-      visa_assistance: country.visa_assistance || [],
-      processing_steps: country.processing_steps || [],
-      faq: country.faq || [],
-      embassy_details: country.embassy_details || {
+      id: countryWithPackages.id,
+      name: countryWithPackages.name || '',
+      flag: countryWithPackages.flag || '',
+      banner: countryWithPackages.banner || '',
+      description: countryWithPackages.description || '',
+      entry_type: countryWithPackages.entry_type || 'Tourist Visa',
+      validity: countryWithPackages.validity || '',
+      processing_time: countryWithPackages.processing_time || '',
+      length_of_stay: countryWithPackages.length_of_stay || '',
+      requirements_description: countryWithPackages.requirements_description || '',
+      visa_includes: countryWithPackages.visa_includes || [],
+      visa_assistance: countryWithPackages.visa_assistance || [],
+      processing_steps: countryWithPackages.processing_steps || [],
+      faq: countryWithPackages.faq || [],
+      embassy_details: countryWithPackages.embassy_details || {
         address: '',
         phone: '',
         email: '',
         hours: ''
       },
-      documents: country.documents || [],
-      pricing: country.visa_packages?.[0] ? {
-        government_fee: country.visa_packages[0].government_fee?.toString() || '',
-        service_fee: country.visa_packages[0].service_fee?.toString() || '',
-        processing_days: country.visa_packages[0].processing_days?.toString() || ''
-      } : { government_fee: '', service_fee: '', processing_days: '' }
+      documents: countryWithPackages.documents || [],
+      pricing: packageData ? {
+        government_fee: packageData.government_fee?.toString() || '',
+        service_fee: packageData.service_fee?.toString() || '',
+        processing_days: packageData.processing_days?.toString() || ''
+      } : { 
+        government_fee: '', 
+        service_fee: '', 
+        processing_days: '' 
+      }
     });
-    setCurrentCountryId(country.id);
+    
+    setCurrentCountryId(countryWithPackages.id);
     setIsEditMode(true);
     setIsDialogOpen(true);
   };
@@ -189,9 +245,9 @@ const CountriesManager = () => {
         if (data) countryId = data.id;
       }
 
-      // Handle visa package pricing
       if (countryId && submitData.pricing) {
         const { government_fee, service_fee, processing_days } = submitData.pricing;
+        
         if (government_fee || service_fee || processing_days) {
           const packageData = {
             country_id: countryId,
@@ -201,27 +257,50 @@ const CountriesManager = () => {
             processing_days: parseInt(processing_days) || 15
           };
 
-          const { data: existingPackage } = await supabase
-            .from('visa_packages')
-            .select('id')
-            .eq('country_id', countryId)
-            .single();
+          try {
+            const { data: existingPackage, error: checkError } = await supabase
+              .from('visa_packages')
+              .select('id')
+              .eq('country_id', countryId)
+              .maybeSingle();
 
-          if (existingPackage) {
-            await supabase
-              .from('visa_packages')
-              .update(packageData)
-              .eq('id', existingPackage.id);
-          } else {
-            await supabase
-              .from('visa_packages')
-              .insert(packageData);
+            if (checkError) {
+              console.warn('Error checking for existing package:', checkError);
+            }
+
+            let result;
+            if (existingPackage?.id) {
+              result = await supabase
+                .from('visa_packages')
+                .update(packageData)
+                .eq('id', existingPackage.id);
+            } else {
+              result = await supabase
+                .from('visa_packages')
+                .insert(packageData);
+            }
+
+            if (result.error) {
+              console.error('Error saving pricing:', result.error);
+              throw result.error;
+            }
+            
+            console.log('Pricing saved successfully');
+          } catch (pricingError) {
+            console.error('Failed to save pricing:', pricingError);
           }
         }
       }
 
       setIsDialogOpen(false);
+      
       queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+      queryClient.invalidateQueries({ queryKey: ['countries'] });
+      if (countryId) {
+        queryClient.invalidateQueries({ queryKey: ['country', countryId] });
+        queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
+      }
+      
       toast({
         title: isEditMode ? "Country updated" : "Country created",
         description: `${savedCountryName} has been successfully ${isEditMode ? 'updated' : 'created'}.`

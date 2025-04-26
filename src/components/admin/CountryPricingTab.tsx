@@ -7,6 +7,9 @@ import SimplePricingManager from './SimplePricingManager';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { fixVisaPackagesSchema } from '@/integrations/supabase/fix-schema';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface CountryPricingTabProps {
   countries: any[];
@@ -15,6 +18,7 @@ interface CountryPricingTabProps {
 const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   const [selectedCountryId, setSelectedCountryId] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState(0); // Used to force refresh
+  const [countryPackages, setCountryPackages] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -35,8 +39,46 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
     runSchemaFix();
   }, []);
   
+  // Fetch packages when country changes
+  useEffect(() => {
+    if (!selectedCountryId) return;
+    
+    const fetchPackages = async () => {
+      try {
+        console.log('Fetching packages for:', selectedCountryId);
+        const { data, error } = await supabase
+          .from('visa_packages')
+          .select('*')
+          .eq('country_id', selectedCountryId);
+          
+        if (error) throw error;
+        console.log('Fetched packages:', data);
+        setCountryPackages(data && data.length > 0 ? data[0] : null);
+      } catch (err) {
+        console.error('Error fetching packages:', err);
+      }
+    };
+    
+    fetchPackages();
+  }, [selectedCountryId, refreshKey]);
+  
   const handleCountryChange = (value: string) => {
     setSelectedCountryId(value);
+  };
+  
+  const handleRefreshData = () => {
+    if (!selectedCountryId) return;
+    
+    // Force refresh by incrementing key and invalidating queries
+    setRefreshKey(prev => prev + 1);
+    queryClient.invalidateQueries({ queryKey: ['countries'] });
+    queryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
+    queryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
+    
+    toast({
+      title: "Refreshing data",
+      description: "Fetching the latest pricing information",
+    });
   };
   
   const handlePricingSaved = () => {
@@ -45,7 +87,7 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
     queryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
     queryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
     
-    // Force refresh the pricing manager component
+    // Force refresh the pricing manager component and fetch packages again
     setRefreshKey(prev => prev + 1);
     
     // Extra cache invalidation for good measure
@@ -64,8 +106,14 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Manage Country Pricing (₹)</CardTitle>
+          {selectedCountryId && (
+            <Button variant="outline" size="sm" onClick={handleRefreshData}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh Data
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -90,6 +138,7 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
                 <SimplePricingManager
                   countryId={selectedCountryId}
                   countryName={selectedCountry.name}
+                  existingPackage={countryPackages}
                   onSaved={handlePricingSaved}
                 />
               </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 interface SimplePricingManagerProps {
   countryId: string;
   countryName: string;
+  existingPackage?: any;
   onSaved?: () => void;
 }
 
@@ -25,6 +25,7 @@ interface PricingData {
 const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
   countryId,
   countryName,
+  existingPackage,
   onSaved
 }) => {
   const [loading, setLoading] = useState(false);
@@ -40,8 +41,17 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch existing pricing data
   useEffect(() => {
+    if (existingPackage) {
+      console.log('Using provided package data:', existingPackage);
+      setFormData({
+        government_fee: existingPackage.government_fee?.toString() || '0',
+        service_fee: existingPackage.service_fee?.toString() || '0',
+        processing_days: existingPackage.processing_days?.toString() || '15'
+      });
+      return;
+    }
+    
     const fetchPricingData = async () => {
       if (!countryId) return;
       
@@ -51,7 +61,6 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       try {
         console.log('Fetching pricing data for country:', countryId);
         
-        // Try a direct query first (most reliable method)
         try {
           const { data, error } = await supabase
             .from('visa_packages')
@@ -74,23 +83,33 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
           console.warn('Direct query threw error:', directErr);
         }
         
-        // Fall back to RPC function if direct query fails
         try {
-          const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
-            p_country_id: countryId
+          const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', {
+            p_country_id: countryId,
+            p_name: 'Visa Package',
+            p_government_fee: 0,
+            p_service_fee: 0,
+            p_processing_days: 15
           });
           
-          if (!rpcError && rpcData && rpcData.length > 0) {
-            console.log('Package data loaded via RPC:', rpcData);
-            const packageData = rpcData[0];
-            setFormData({
-              government_fee: packageData.government_fee?.toString() || '0',
-              service_fee: packageData.service_fee?.toString() || '0',
-              processing_days: packageData.processing_days?.toString() || '15'
-            });
-            return;
-          } else if (rpcError) {
+          if (rpcError) {
             console.warn('RPC method failed:', rpcError);
+          } else {
+            console.log('Package created via RPC:', rpcData);
+            
+            const { data: newPackage } = await supabase
+              .from('visa_packages')
+              .select('*')
+              .eq('country_id', countryId)
+              .single();
+              
+            if (newPackage) {
+              setFormData({
+                government_fee: newPackage.government_fee?.toString() || '0',
+                service_fee: newPackage.service_fee?.toString() || '0',
+                processing_days: newPackage.processing_days?.toString() || '15'
+              });
+            }
           }
         } catch (rpcErr) {
           console.warn('RPC call failed:', rpcErr);
@@ -104,7 +123,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
     };
     
     fetchPricingData();
-  }, [countryId]);
+  }, [countryId, existingPackage]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -126,7 +145,6 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
     setSuccess(null);
     
     try {
-      // Convert form values to numbers
       const governmentFee = parseFloat(formData.government_fee) || 0;
       const serviceFee = parseFloat(formData.service_fee) || 0;
       const processingDays = parseInt(formData.processing_days) || 15;
@@ -138,9 +156,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         processingDays 
       });
       
-      // First try direct insert/upsert approach (most reliable)
       try {
-        // Check if a package already exists
         const { data: existingPackage } = await supabase
           .from('visa_packages')
           .select('id')
@@ -149,7 +165,6 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
           
         let result;
         if (existingPackage?.id) {
-          // Update existing package
           result = await supabase
             .from('visa_packages')
             .update({
@@ -161,7 +176,6 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
             })
             .eq('id', existingPackage.id);
         } else {
-          // Create new package
           result = await supabase
             .from('visa_packages')
             .insert({
@@ -175,12 +189,10 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         
         if (result.error) throw result.error;
         
-        // Invalidate all relevant queries to force refetch
         queryClient.invalidateQueries({ queryKey: ['countries'] });
         queryClient.invalidateQueries({ queryKey: ['country', countryId] });
         queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
         
-        // Verify the data was saved by fetching it back
         const { data: verifyData, error: verifyError } = await supabase
           .from('visa_packages')
           .select('*')
@@ -193,31 +205,27 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         
         console.log('Verified saved data:', verifyData);
         
-        // Update the form with the verified data
         setFormData({
           government_fee: verifyData.government_fee?.toString() || '0',
           service_fee: verifyData.service_fee?.toString() || '0',
           processing_days: verifyData.processing_days?.toString() || '15'
         });
         
-        // Show success message
         setSuccess(`Pricing for ${countryName} has been updated successfully`);
         toast({
           title: "Pricing saved",
           description: `Pricing for ${countryName} has been updated successfully`,
         });
         
-        // Call the onSaved callback if provided
         if (onSaved) {
           onSaved();
         }
         
-        return; // Early return on success
+        return;
       } catch (directErr) {
         console.warn('Direct database update failed, trying RPC function:', directErr);
       }
       
-      // Try RPC function as fallback
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
         'save_visa_package',
         {
@@ -233,39 +241,16 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       
       console.log('Package saved with RPC:', rpcResult);
       
-      // Invalidate all relevant queries to force refetch
       queryClient.invalidateQueries({ queryKey: ['countries'] });
       queryClient.invalidateQueries({ queryKey: ['country', countryId] });
       queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
       
-      // Verify the data was saved by fetching it back
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('visa_packages')
-        .select('*')
-        .eq('country_id', countryId)
-        .single();
-        
-      if (verifyError || !verifyData) {
-        throw new Error('Failed to verify saved data');
-      }
-      
-      console.log('Verified saved data:', verifyData);
-      
-      // Update the form with the verified data
-      setFormData({
-        government_fee: verifyData.government_fee?.toString() || '0',
-        service_fee: verifyData.service_fee?.toString() || '0',
-        processing_days: verifyData.processing_days?.toString() || '15'
-      });
-      
-      // Show success message
       setSuccess(`Pricing for ${countryName} has been updated successfully`);
       toast({
         title: "Pricing saved",
         description: `Pricing for ${countryName} has been updated successfully`,
       });
       
-      // Call the onSaved callback if provided
       if (onSaved) {
         onSaved();
       }
@@ -284,7 +269,6 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
     }
   };
   
-  // Calculate total price
   const totalPrice = parseFloat(formData.government_fee) + parseFloat(formData.service_fee) || 0;
   
   return (
