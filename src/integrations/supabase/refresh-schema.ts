@@ -1,6 +1,7 @@
 
 import { supabase } from './client';
 import { useToast } from '@/hooks/use-toast';
+import { fixVisaPackagesSchema, testVisaPackagesOperations } from './fix-schema';
 
 /**
  * Attempts to fix database schema issues automatically
@@ -60,4 +61,55 @@ export const createFallbackPricing = (countryId: string) => {
     processing_days: 15,
     total_price: 0
   };
+};
+
+/**
+ * Refresh the schema cache to ensure all updated tables and columns are visible
+ */
+export const refreshSchemaCache = async (): Promise<{ success: boolean, message: string }> => {
+  console.log('Refreshing schema cache...');
+  
+  try {
+    // Use the fixVisaPackagesSchema function from fix-schema.ts
+    const result = await fixVisaPackagesSchema();
+    
+    if (result.success) {
+      // Attempt a simple query to refresh the schema cache
+      await supabase.from('countries').select('id').limit(1);
+      await supabase.from('visa_packages').select('id').limit(1).catch(() => null);
+      
+      console.log('Schema cache refreshed');
+      return { success: true, message: 'Schema cache refreshed successfully' };
+    }
+    
+    return result;
+  } catch (err: any) {
+    console.error('Schema cache refresh error:', err);
+    return { success: false, message: `Failed to refresh schema: ${err.message}` };
+  }
+};
+
+/**
+ * Run diagnostics on visa packages for a specific country
+ */
+export const runVisaPackagesDiagnostic = async (countryId: string): Promise<{ success: boolean, message: string, results: any }> => {
+  console.log(`Running diagnostics for country ${countryId}...`);
+  
+  try {
+    // Use the testVisaPackagesOperations function from fix-schema.ts
+    const results = await testVisaPackagesOperations(countryId);
+    
+    return {
+      success: results.success,
+      message: results.message,
+      results: results.results || {}
+    };
+  } catch (err: any) {
+    console.error('Diagnostic error:', err);
+    return {
+      success: false, 
+      message: `Failed to run diagnostics: ${err.message}`,
+      results: {}
+    };
+  }
 };
