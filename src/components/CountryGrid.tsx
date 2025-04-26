@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, BadgeCheck, Loader2 } from 'lucide-react';
+import { BadgeCheck, Clock, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
@@ -27,7 +26,6 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
     queryKey: ['countries'],
     queryFn: async () => {
       try {
-        // First get countries
         const query = supabase
           .from('countries')
           .select('id, name, banner')
@@ -46,7 +44,6 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
         
         if (!countriesData) return [];
         
-        // Then fetch visa packages for each country
         const countriesWithData = await Promise.all(
           countriesData.map(async (country) => {
             const { data: packageData } = await supabase
@@ -151,16 +148,11 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
               
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center text-xs text-gray-500 mb-2">
-                    <Calendar className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                    <span className="truncate">{country.entry_date}</span>
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
+                    <span>{country.processing_days} business days</span>
                   </div>
                   <span className="font-bold text-blue-600">₹{country.total_price.toLocaleString('en-IN')}</span>
-                </div>
-                
-                <div className="flex items-center text-xs text-gray-500">
-                  <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                  <span>{country.processing_days} business days</span>
                 </div>
               </CardContent>
             </Card>

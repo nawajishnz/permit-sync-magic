@@ -107,6 +107,14 @@ const PopularDestinations = () => {
     }
   }, [error, toast]);
 
+  const getCountryDetails = (country: any) => {
+    return {
+      price: `₹${country.startingPrice.toLocaleString('en-IN')}`,
+      visaCount: country.visaCount,
+      processingDays: country.processingDays,
+    };
+  };
+
   return (
     <section className="pt-2 pb-8">
       <div className="container mx-auto">
@@ -134,67 +142,66 @@ const PopularDestinations = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-0">
-            {destinations.map((destination, index) => (
-              <motion.div
-                key={destination.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <Link to={`/country/${destination.id}`}>
-                  <Card className="overflow-hidden h-full rounded-xl border-0 shadow-md hover:shadow-xl transition-all duration-300 group">
-                    <div className="relative">
-                      <AspectRatio ratio={16/9} className="bg-gray-100">
-                        <img 
-                          src={destination.imageUrl} 
-                          alt={destination.name}
-                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          loading="lazy"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
-                      </AspectRatio>
-                      
-                      <Badge className="absolute top-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white border-0 py-1.5 px-3 rounded-full">
-                        {destination.visaCount} Visas on Time
-                      </Badge>
-                      
-                      {destination.hasSpecialVisa && (
-                        <div className="absolute top-3 right-3">
-                          <div className="bg-yellow-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-navy-900 flex items-center">
-                            <BadgeCheck className="w-3.5 h-3.5 mr-1" /> 
-                            Sticker Visa
+            {destinations.map((destination, index) => {
+              const { price, visaCount, processingDays } = getCountryDetails(destination);
+              
+              return (
+                <motion.div
+                  key={destination.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <Link to={`/country/${destination.id}`}>
+                    <Card className="overflow-hidden h-full rounded-xl border-0 shadow-md hover:shadow-xl transition-all duration-300 group">
+                      <div className="relative">
+                        <AspectRatio ratio={16/9} className="bg-gray-100">
+                          <img 
+                            src={destination.imageUrl} 
+                            alt={destination.name}
+                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            loading="lazy"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+                        </AspectRatio>
+                        
+                        <Badge className="absolute top-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white border-0 py-1.5 px-3 rounded-full">
+                          {visaCount} Visas on Time
+                        </Badge>
+                        
+                        {destination.hasSpecialVisa && (
+                          <div className="absolute top-3 right-3">
+                            <div className="bg-yellow-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-navy-900 flex items-center">
+                              <BadgeCheck className="w-3.5 h-3.5 mr-1" /> 
+                              Sticker Visa
+                            </div>
                           </div>
+                        )}
+                        
+                        <div className="absolute bottom-3 left-3 z-20">
+                          <h3 className="font-semibold text-xl text-white">{destination.name}</h3>
                         </div>
-                      )}
-                      
-                      <div className="absolute bottom-3 left-3 z-20">
-                        <h3 className="font-semibold text-xl text-white">{destination.name}</h3>
-                      </div>
-                    </div>
-                    
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center text-xs text-gray-500 mb-2">
-                          <Calendar className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                          <span className="truncate">{destination.date}</span>
-                        </div>
-                        <span className="font-bold text-blue-600">₹{destination.startingPrice.toLocaleString('en-IN')}</span>
                       </div>
                       
-                      <div className="flex items-center text-xs text-gray-500">
-                        <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                        <span>{destination.processingDays} business days</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center text-xs text-gray-500">
+                            <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
+                            <span>{processingDays} business days</span>
+                          </div>
+                          <span className="font-bold text-blue-600">{price}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         )}
         
