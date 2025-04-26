@@ -6,6 +6,9 @@ import { BlogCard } from './blog/BlogCard';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
+import { Database } from '@/types/supabase';
+
+type Blog = Database['public']['Tables']['blogs']['Row'];
 
 export const RecentBlogs = () => {
   const { data: blogs, isLoading } = useQuery({
@@ -18,7 +21,7 @@ export const RecentBlogs = () => {
         .limit(3);
       
       if (error) throw error;
-      return data;
+      return data as Blog[];
     },
   });
 
