@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Loader2, Database } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getCountryVisaPackage, saveVisaPackage, runDiagnostic, VisaPackage } from '@/services/visaPackageService';
+import { getCountryVisaPackage, saveVisaPackage, runDiagnostic } from '@/services/visaPackageService';
+import { VisaPackage } from '@/types/visaPackage';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface PricingTierManagerProps {
@@ -163,10 +164,8 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           description: `Pricing for ${countryName} has been updated successfully`,
         });
         
-        // Force refetch immediately
         await fetchPricingData();
         
-        // Invalidate all relevant queries to ensure data consistency
         activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
