@@ -17,13 +17,13 @@ export async function fixVisaPackagesSchema(): Promise<{ success: boolean; messa
         console.log('RPC function create_visa_packages_table might not exist, continuing...');
       });
 
-      // Check if the visa_packages table exists
+      // Check if the visa_packages table exists using RPC instead of direct query
       const { data: tableExists, error: tableCheckError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .eq('table_name', 'visa_packages')
-        .maybeSingle();
+        .rpc('check_table_exists', { table_name: 'visa_packages' })
+        .catch(err => {
+          console.log('RPC check_table_exists might not exist, continuing...', err);
+          return { data: null, error: err };
+        });
         
       if (tableCheckError) {
         console.warn('Error checking if table exists:', tableCheckError);
@@ -127,31 +127,27 @@ export async function fixVisaPackagesSchema(): Promise<{ success: boolean; messa
         if (error) {
           console.error('Error creating table with RPC:', error);
           
-          // Try direct SQL
+          // Try API call to fix schema without accessing protected properties
           try {
-            // Note: This method may not work with Supabase's permissions,
-            // but it's worth trying as a last resort
-            await fetch(`${supabase.supabaseUrl}/rest/v1/rpc/create_table`, {
+            // Use fetch with the base URL and settings from environment
+            const apiUrl = new URL('/rest/v1/rpc/create_table', window.location.origin).toString();
+            console.log('Attempting API call to:', apiUrl);
+            
+            // Use the REST API without accessing protected client properties
+            const response = await fetch('/api/admin/fix-schema', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabase.supabaseKey}`,
-                'apikey': supabase.supabaseKey
               },
               body: JSON.stringify({
-                table_name: 'visa_packages',
-                columns: `
-                  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-                  country_id uuid REFERENCES countries(id) ON DELETE CASCADE,
-                  name text NOT NULL DEFAULT 'Visa Package',
-                  government_fee numeric NOT NULL DEFAULT 0,
-                  service_fee numeric NOT NULL DEFAULT 0,
-                  processing_days integer NOT NULL DEFAULT 15,
-                  created_at timestamptz DEFAULT now(),
-                  updated_at timestamptz DEFAULT now()
-                `
+                action: 'create_visa_packages_table'
               })
             });
+            
+            if (!response.ok) {
+              throw new Error(`API call failed with status: ${response.status}`);
+            }
+            
           } catch (directErr) {
             console.error('Direct API call failed too:', directErr);
             return { success: false, message: `Error creating table: ${error.message}` };
