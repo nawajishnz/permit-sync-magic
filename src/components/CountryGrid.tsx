@@ -2,10 +2,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, BadgeCheck, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface CountryGridProps {
   limit?: number;
@@ -14,8 +16,10 @@ interface CountryGridProps {
 interface CountryData {
   id: string;
   name: string;
-  flag?: string;
-  min_price?: number | null;
+  banner: string;
+  total_price: number;
+  processing_days: number;
+  has_special_visa: boolean;
 }
 
 const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
@@ -23,37 +27,50 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
     queryKey: ['countries'],
     queryFn: async () => {
       try {
+        // First get countries
         const query = supabase
           .from('countries')
-          .select('id, name, flag');
+          .select('id, name, banner')
+          .order('name');
         
         if (limit) {
           query.limit(limit);
         }
         
-        const { data, error } = await query;
+        const { data: countriesData, error: countriesError } = await query;
         
-        if (error) {
-          console.error("Supabase query error:", error);
-          throw error;
+        if (countriesError) {
+          console.error("Supabase query error:", countriesError);
+          throw countriesError;
         }
         
-        if (!data) return [];
+        if (!countriesData) return [];
         
-        // Transform the data to include min_price with a default value
-        return data.map(country => {
-          if (!country || typeof country !== 'object') {
-            console.warn("Invalid country data item:", country);
-            return null;
-          }
-          
-          return {
-            id: country.id,
-            name: country.name,
-            flag: country.flag,
-            min_price: 99 // Default price if not available
-          } as CountryData;
-        }).filter(Boolean) as CountryData[]; // Filter out any null values
+        // Then fetch visa packages for each country
+        const countriesWithData = await Promise.all(
+          countriesData.map(async (country) => {
+            const { data: packageData } = await supabase
+              .from('visa_packages')
+              .select('total_price, processing_days')
+              .eq('country_id', country.id)
+              .limit(1);
+            
+            const visaPackage = packageData && packageData[0];
+            const processingDays = visaPackage?.processing_days || 15;
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + processingDays);
+            
+            return {
+              ...country,
+              total_price: visaPackage?.total_price || 1999,
+              processing_days: processingDays,
+              entry_date: `Get on ${futureDate.getDate()} ${futureDate.toLocaleString('en-US', { month: 'short' })}`,
+              has_special_visa: country.name === 'Japan'
+            };
+          })
+        );
+        
+        return countriesWithData;
       } catch (err) {
         console.error("Error in countries query:", err);
         throw err;
@@ -63,13 +80,15 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: limit || 6 }).map((_, i) => (
           <Card key={i} className="animate-pulse">
-            <div className="h-24 bg-gray-200 rounded-t-lg" />
+            <AspectRatio ratio={16/9}>
+              <div className="w-full h-full bg-gray-200 rounded-t-lg" />
+            </AspectRatio>
             <CardContent className="p-4">
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-4 bg-gray-200 rounded mb-2 w-2/3"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
             </CardContent>
           </Card>
         ))}
@@ -86,29 +105,67 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      {countries?.map((country) => (
-        <Link to={`/countries/${country.id}`} key={country.id}>
-          <Card className="overflow-hidden h-full transition-shadow hover:shadow-md">
-            {country.flag && (
-              <div className="h-24 overflow-hidden relative">
-                <img 
-                  src={country.flag} 
-                  alt={`Flag of ${country.name}`}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20"></div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {countries.map((country, index) => (
+        <motion.div
+          key={country.id}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: index * 0.1 }}
+        >
+          <Link to={`/country/${country.id}`}>
+            <Card className="overflow-hidden h-full rounded-xl border-0 shadow-md hover:shadow-xl transition-all duration-300 group">
+              <div className="relative">
+                <AspectRatio ratio={16/9} className="bg-gray-100">
+                  <img 
+                    src={country.banner} 
+                    alt={country.name}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+                </AspectRatio>
+                
+                <Badge className="absolute top-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white border-0 py-1.5 px-3 rounded-full">
+                  15K+ Visas on Time
+                </Badge>
+                
+                {country.has_special_visa && (
+                  <div className="absolute top-3 right-3">
+                    <div className="bg-yellow-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-navy-900 flex items-center">
+                      <BadgeCheck className="w-3.5 h-3.5 mr-1" /> 
+                      Sticker Visa
+                    </div>
+                  </div>
+                )}
+                
+                <div className="absolute bottom-3 left-3 z-20">
+                  <h3 className="font-semibold text-xl text-white">{country.name}</h3>
+                </div>
               </div>
-            )}
-            <CardContent className="p-4">
-              <h3 className="font-medium text-gray-900 flex items-center justify-between">
-                {country.name}
-                <ExternalLink className="h-3 w-3 text-gray-400" />
-              </h3>
-              <p className="text-sm text-gray-500">From ${country.min_price || 99}</p>
-            </CardContent>
-          </Card>
-        </Link>
+              
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center text-xs text-gray-500 mb-2">
+                    <Calendar className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                    <span className="truncate">{country.entry_date}</span>
+                  </div>
+                  <span className="font-bold text-blue-600">₹{country.total_price.toLocaleString('en-IN')}</span>
+                </div>
+                
+                <div className="flex items-center text-xs text-gray-500">
+                  <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                  <span>{country.processing_days} business days</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </motion.div>
       ))}
     </div>
   );
