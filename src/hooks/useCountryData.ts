@@ -102,10 +102,18 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
         }
 
         // Fetch document checklist using the dedicated service 
-        const documents = await getDocumentChecklist(countryId);
-        console.log("[useCountryData] Fetched documents:", documents);
+        const documentsData = await getDocumentChecklist(countryId);
+        console.log("[useCountryData] Fetched documents:", documentsData);
+        
+        // Ensure documents match the required DocumentChecklistItem interface
+        const documents: DocumentChecklistItem[] = documentsData.map(doc => ({
+          id: doc.id || '', // Ensure id is never undefined
+          document_name: doc.document_name,
+          document_description: doc.document_description || '',
+          required: !!doc.required // Ensure it's a boolean
+        }));
 
-        if (!documents) {
+        if (!documents || documents.length === 0) {
           console.warn('[useCountryData] No documents found for country');
         }
 

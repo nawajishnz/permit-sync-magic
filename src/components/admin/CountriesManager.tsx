@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -303,6 +302,7 @@ const CountriesManager = () => {
         description: submitData.description,
         entry_type: submitData.entry_type || 'Tourist Visa',
         validity: submitData.validity,
+        processing_time: submitData.processing_time || '',
         length_of_stay: submitData.length_of_stay,
         requirements_description: submitData.requirements_description,
         visa_includes: submitData.visa_includes,

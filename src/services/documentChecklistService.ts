@@ -2,8 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { refreshDocumentSchema } from '@/integrations/supabase/refresh-schema';
 
-interface DocumentItem {
-  id?: string;
+export interface DocumentItem {
+  id: string; // Changed from optional to required to match DocumentChecklistItem
   country_id: string;
   document_name: string;
   document_description?: string;
@@ -168,7 +168,16 @@ export async function getDocumentChecklist(countryId: string): Promise<DocumentI
       throw error;
     }
     
-    return data || [];
+    // Ensure all document items have the required fields
+    const documents: DocumentItem[] = (data || []).map(doc => ({
+      id: doc.id,
+      country_id: doc.country_id,
+      document_name: doc.document_name,
+      document_description: doc.document_description || '',
+      required: !!doc.required
+    }));
+    
+    return documents;
   } catch (error) {
     console.error('Error in getDocumentChecklist:', error);
     return [];
