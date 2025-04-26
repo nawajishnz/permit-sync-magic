@@ -2,186 +2,240 @@
 import { supabase } from './client';
 
 /**
- * Fix common schema issues with visa_packages table
+ * Fix the structure of the visa_packages table
  */
-export async function fixVisaPackagesSchema() {
-  console.log('Attempting to fix visa_packages schema...');
-  
+export const fixVisaPackagesSchema = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    // Step 1: Check if the table exists using a custom RPC function
-    console.log('Checking if visa_packages table exists...');
-    const { data: tablesData, error: tablesError } = await supabase.rpc(
-      'get_table_info', 
-      { p_table_name: 'visa_packages' }
-    ).catch(() => ({ data: null, error: { message: 'Function get_table_info not available' } }));
-      
-    console.log('Table check result:', { tablesData, tablesError });
-    const tableExists = tablesData && Array.isArray(tablesData) && tablesData.length > 0;
+    console.log('Running schema fix for visa_packages table...');
     
-    // Step 2: Create a default package if none exists
-    try {
-      if (tableExists) {
-        console.log('Testing visa_packages table with save_visa_package RPC...');
-        
-        // Try to use the RPC function that's defined in fix-visa-packages.sql
-        const { data: testSave, error: saveError } = await supabase.rpc(
-          'save_visa_package',
-          {
-            p_country_id: '00000000-0000-0000-0000-000000000000',
-            p_name: 'Test Default Package',
-            p_government_fee: 0,
-            p_service_fee: 0, 
-            p_processing_days: 15
-          }
+    // Check if the table exists
+    const { data: tableExists, error: tableError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_name', 'visa_packages')
+      .eq('table_schema', 'public')
+      .single();
+    
+    if (tableError) {
+      console.error('Error checking if visa_packages table exists:', tableError);
+      
+      // Try to create the visa_packages table
+      const { error: createError } = await supabase.rpc('execute_sql', {
+        sql: `
+        CREATE TABLE IF NOT EXISTS visa_packages (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
+          name TEXT NOT NULL DEFAULT 'Visa Package',
+          government_fee NUMERIC NOT NULL DEFAULT 0,
+          service_fee NUMERIC NOT NULL DEFAULT 0,
+          processing_days INTEGER NOT NULL DEFAULT 15,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         
-        console.log('RPC test result:', { testSave, saveError });
+        -- Add computed total_price column if it doesn't exist
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'visa_packages' 
+            AND column_name = 'total_price'
+          ) THEN
+            ALTER TABLE public.visa_packages ADD COLUMN total_price NUMERIC 
+            GENERATED ALWAYS AS (government_fee + service_fee) STORED;
+          END IF;
+        END $$;
+        `
+      });
+      
+      if (createError) {
+        console.error('Error creating visa_packages table:', createError);
+        return {
+          success: false,
+          message: `Failed to create visa_packages table: ${createError.message}`
+        };
       }
-    } catch (saveErr) {
-      console.log('RPC test exception:', saveErr);
+      
+      console.log('Created visa_packages table');
+      return {
+        success: true,
+        message: 'Created visa_packages table'
+      };
     }
     
-    // Step 3: Try to refresh schema cache
-    console.log('Attempting to refresh schema cache...');
-    try {
-      // Create a function to safely query a table or view
-      const safeQuery = async (tableName: string) => {
-        try {
-          // Use rpc instead of direct table access for type safety
-          if (tableName === 'countries') {
-            const result = await supabase
-              .from('countries')
-              .select('count(*)')
-              .limit(1);
-            return { success: !result.error, error: result.error };  
-          }
-          
-          if (tableName === 'visa_packages') {
-            const result = await supabase
-              .from('visa_packages')
-              .select('count(*)')
-              .limit(1);
-            return { success: !result.error, error: result.error };
-          }
-          
-          return { success: false, error: new Error(`Unknown table: ${tableName}`) };
-        } catch (err) {
-          return { success: false, error: err };
-        }
+    // Check if the columns exist
+    const { data: columns, error: columnsError } = await supabase
+      .from('information_schema.columns')
+      .select('column_name')
+      .eq('table_name', 'visa_packages')
+      .eq('table_schema', 'public');
+      
+    if (columnsError) {
+      console.error('Error checking visa_packages columns:', columnsError);
+      return {
+        success: false,
+        message: `Failed to check visa_packages columns: ${columnsError.message}`
       };
+    }
+    
+    const columnNames = columns?.map(c => c.column_name) || [];
+    console.log('Existing columns:', columnNames);
+    
+    // Check for missing required columns
+    const requiredColumns = ['government_fee', 'service_fee', 'processing_days', 'total_price'];
+    const missingColumns = requiredColumns.filter(col => !columnNames.includes(col));
+    
+    if (missingColumns.length > 0) {
+      console.log('Missing columns:', missingColumns);
       
-      // Try to query tables/views to refresh schema
-      await safeQuery('countries');
-      await safeQuery('visa_packages');
-      
-      // Try an RPC to get country packages instead of direct view access
-      await supabase.rpc('get_country_packages', { p_country_id: '00000000-0000-0000-0000-000000000000' })
-        .catch(() => ({ data: null, error: { message: 'Function not available' } }));
-    } catch (refreshErr) {
-      console.log('Schema refresh exception:', refreshErr);
+      // Add missing columns
+      for (const column of missingColumns) {
+        let sql = '';
+        
+        if (column === 'government_fee') {
+          sql = `ALTER TABLE visa_packages ADD COLUMN government_fee NUMERIC NOT NULL DEFAULT 0;`;
+        } else if (column === 'service_fee') {
+          sql = `ALTER TABLE visa_packages ADD COLUMN service_fee NUMERIC NOT NULL DEFAULT 0;`;
+        } else if (column === 'processing_days') {
+          sql = `ALTER TABLE visa_packages ADD COLUMN processing_days INTEGER NOT NULL DEFAULT 15;`;
+        } else if (column === 'total_price') {
+          sql = `
+          ALTER TABLE visa_packages ADD COLUMN total_price NUMERIC 
+          GENERATED ALWAYS AS (government_fee + service_fee) STORED;
+          `;
+        }
+        
+        if (sql) {
+          const { error } = await supabase.rpc('execute_sql', { sql });
+          if (error) {
+            console.error(`Error adding column ${column}:`, error);
+          } else {
+            console.log(`Added column ${column}`);
+          }
+        }
+      }
     }
     
     return {
       success: true,
-      message: 'Schema fix attempted. See console for results.',
-      details: 'Run the SQL script in supabase/fix-visa-packages.sql for a permanent fix.',
-      tableExists
+      message: 'Schema fixed successfully'
     };
   } catch (err: any) {
-    console.error('Error in fixVisaPackagesSchema:', err);
+    console.error('Schema fix error:', err);
     return {
       success: false,
-      message: `Error fixing schema: ${err.message}`,
-      error: err
+      message: `Schema fix failed: ${err.message}`
     };
   }
-}
+};
 
 /**
- * Function to attempt direct DB operations to test what's working
+ * Test operations on the visa_packages table for a specific country
  */
-export async function testVisaPackagesOperations(countryId: string) {
-  console.log(`Testing visa_packages operations for country ${countryId}...`);
-  
-  const results: any = {
-    select: { success: false },
-    insert: { success: false },
-    update: { success: false },
-    rpc: { success: false },
-    view: { success: false }
-  };
-  
+export const testVisaPackagesOperations = async (countryId: string): Promise<{ success: boolean; message: string; results?: any }> => {
   try {
-    // Test VIEW via RPC instead of direct view access
+    console.log(`Running diagnostics for country ${countryId}...`);
+    
+    // Test direct select
+    const { data: directData, error: directError } = await supabase
+      .from('visa_packages')
+      .select('*')
+      .eq('country_id', countryId)
+      .maybeSingle();
+      
+    // Test RPC function
+    let rpcData = null;
+    let rpcError = null;
+    
     try {
-      const { data, error } = await supabase.rpc('get_country_packages', {
+      const rpcResult = await supabase.rpc('get_country_packages', {
         p_country_id: countryId
       });
-        
-      results.view = {
-        success: !error && data,
-        data,
-        error: error?.message
-      };
+      rpcData = rpcResult.data;
+      rpcError = rpcResult.error;
     } catch (err: any) {
-      results.view = {
-        success: false,
-        error: err.message
+      rpcError = {
+        message: err.message
       };
     }
     
-    // Test SELECT on visa_packages
-    try {
-      const { data, error } = await supabase
+    // Test insert and update
+    let insertResult = null;
+    let updateResult = null;
+    let insertError = null;
+    let updateError = null;
+    
+    if (directData) {
+      // Test update
+      const updateResponse = await supabase
         .from('visa_packages')
-        .select('*')
-        .eq('country_id', countryId);
+        .update({
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', directData.id)
+        .select()
+        .single();
         
-      results.select = {
-        success: !error,
-        data,
-        error: error?.message
-      };
-    } catch (err: any) {
-      results.select = {
-        success: false,
-        error: err.message
-      };
-    }
-    
-    // Test RPC function
-    try {
-      const { data, error } = await supabase.rpc('save_visa_package', {
-        p_country_id: countryId,
-        p_name: 'RPC Test Package',
-        p_government_fee: 20,
-        p_service_fee: 20,
-        p_processing_days: 20
-      });
+      updateResult = updateResponse.data;
+      updateError = updateResponse.error;
+    } else {
+      // Test insert
+      const insertResponse = await supabase
+        .from('visa_packages')
+        .insert({
+          country_id: countryId,
+          name: 'Test Package',
+          government_fee: 100,
+          service_fee: 50,
+          processing_days: 10
+        })
+        .select()
+        .single();
+        
+      insertResult = insertResponse.data;
+      insertError = insertResponse.error;
       
-      results.rpc = {
-        success: !error,
-        data,
-        error: error?.message
-      };
-    } catch (err: any) {
-      results.rpc = {
-        success: false,
-        error: err.message
-      };
+      // Clean up test data
+      if (insertResult) {
+        await supabase
+          .from('visa_packages')
+          .delete()
+          .eq('id', insertResult.id);
+      }
     }
     
     return {
-      success: results.view.success || results.select.success || results.rpc.success,
-      message: 'Tests completed. See results for details.',
-      results
+      success: !directError || !rpcError || !insertError || !updateError,
+      message: 'Diagnostics completed',
+      results: {
+        direct: {
+          success: !directError,
+          error: directError?.message,
+          data: directData
+        },
+        rpc: {
+          success: !rpcError,
+          error: rpcError?.message,
+          data: rpcData
+        },
+        insert: {
+          success: !insertError,
+          error: insertError?.message,
+          data: insertResult
+        },
+        update: {
+          success: !updateError,
+          error: updateError?.message,
+          data: updateResult
+        }
+      }
     };
   } catch (err: any) {
-    console.error('Error in testVisaPackagesOperations:', err);
+    console.error('Diagnostic error:', err);
     return {
       success: false,
-      message: `Error testing operations: ${err.message}`,
-      error: err
+      message: `Failed to run diagnostics: ${err.message}`
     };
   }
-}
+};

@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import SimplePricingManager from './SimplePricingManager';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CountryPricingTabProps {
   countries: any[];
@@ -11,9 +13,26 @@ interface CountryPricingTabProps {
 
 const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   const [selectedCountryId, setSelectedCountryId] = useState<string>('');
+  const [refreshKey, setRefreshKey] = useState(0); // Used to force refresh
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const handleCountryChange = (value: string) => {
     setSelectedCountryId(value);
+  };
+  
+  const handlePricingSaved = () => {
+    // Invalidate any relevant queries
+    queryClient.invalidateQueries({ queryKey: ['countries'] });
+    queryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
+    
+    // Force refresh the pricing manager component
+    setRefreshKey(prev => prev + 1);
+    
+    toast({
+      title: "Pricing Updated",
+      description: "The pricing information has been successfully updated.",
+    });
   };
   
   const selectedCountry = countries.find(c => c.id === selectedCountryId);
@@ -22,7 +41,7 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Manage Country Pricing (INR)</CardTitle>
+          <CardTitle>Manage Country Pricing (₹)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -43,10 +62,13 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
             </div>
             
             {selectedCountryId && selectedCountry && (
-              <SimplePricingManager
-                countryId={selectedCountryId}
-                countryName={selectedCountry.name}
-              />
+              <div key={`pricing-manager-${selectedCountryId}-${refreshKey}`}>
+                <SimplePricingManager
+                  countryId={selectedCountryId}
+                  countryName={selectedCountry.name}
+                  onSaved={handlePricingSaved}
+                />
+              </div>
             )}
           </div>
         </CardContent>

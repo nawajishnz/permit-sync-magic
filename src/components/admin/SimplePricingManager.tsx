@@ -47,7 +47,40 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       setError(null);
       
       try {
-        // First try direct query to visa_packages table
+        console.log('Fetching pricing data for country:', countryId);
+        
+        // First check if the visa_packages table exists
+        const { data: tableInfo, error: tableError } = await supabase
+          .from('information_schema.tables')
+          .select('table_name')
+          .eq('table_name', 'visa_packages')
+          .eq('table_schema', 'public')
+          .single();
+          
+        if (tableError) {
+          console.error('Error checking for visa_packages table:', tableError);
+          throw new Error('Unable to verify database schema. Please run the schema fix SQL script.');
+        }
+        
+        // First try RPC function (most reliable method)
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
+          p_country_id: countryId
+        });
+        
+        if (!rpcError && rpcData && rpcData.length > 0) {
+          console.log('Package data loaded via RPC:', rpcData);
+          const packageData = rpcData[0];
+          setFormData({
+            government_fee: packageData.government_fee?.toString() || '0',
+            service_fee: packageData.service_fee?.toString() || '0',
+            processing_days: packageData.processing_days?.toString() || '15'
+          });
+          return;
+        } else if (rpcError) {
+          console.warn('RPC method failed, trying direct query:', rpcError);
+        }
+        
+        // Fall back to direct query if RPC fails
         const { data, error } = await supabase
           .from('visa_packages')
           .select('*')
@@ -55,27 +88,13 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
           .single();
           
         if (error) {
-          console.log('No existing package found or error:', error.message);
-          // Try RPC function as fallback
-          try {
-            const { data: rpcData, error: rpcError } = await supabase.rpc('get_country_packages', {
-              p_country_id: countryId
-            });
-            
-            if (!rpcError && rpcData && rpcData.length > 0) {
-              const packageData = rpcData[0];
-              setFormData({
-                government_fee: packageData.government_fee?.toString() || '0',
-                service_fee: packageData.service_fee?.toString() || '0',
-                processing_days: packageData.processing_days?.toString() || '15'
-              });
-              console.log('Package data loaded via RPC:', packageData);
-            }
-          } catch (rpcErr) {
-            console.error('RPC fallback error:', rpcErr);
-          }
-        } else if (data) {
-          console.log('Package data loaded directly:', data);
+          console.warn('Direct query failed:', error.message);
+          // No existing pricing data - use defaults
+          return;
+        } 
+        
+        if (data) {
+          console.log('Package data loaded via direct query:', data);
           setFormData({
             government_fee: data.government_fee?.toString() || '0',
             service_fee: data.service_fee?.toString() || '0',
@@ -84,6 +103,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         }
       } catch (err: any) {
         console.error('Error fetching pricing data:', err);
+        setError(err.message || 'Failed to fetch pricing data');
       } finally {
         setLoading(false);
       }
@@ -113,88 +133,126 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
     
     try {
       // Convert form values to numbers
-      const packageToSave = {
-        country_id: countryId,
-        name: 'Visa Package',
-        government_fee: parseFloat(formData.government_fee) || 0,
-        service_fee: parseFloat(formData.service_fee) || 0,
-        processing_days: parseInt(formData.processing_days) || 15
-      };
+      const governmentFee = parseFloat(formData.government_fee) || 0;
+      const serviceFee = parseFloat(formData.service_fee) || 0;
+      const processingDays = parseInt(formData.processing_days) || 15;
       
-      console.log('Saving package data:', packageToSave);
+      console.log('Saving package data:', { 
+        countryId, 
+        governmentFee, 
+        serviceFee, 
+        processingDays 
+      });
       
-      // First try RPC approach - more reliable
+      // First try direct insert/upsert approach (most reliable)
       try {
-        const { data: rpcResult, error: rpcError } = await supabase.rpc(
-          'save_visa_package',
-          {
-            p_country_id: countryId,
-            p_name: 'Visa Package',
-            p_government_fee: parseFloat(formData.government_fee) || 0,
-            p_service_fee: parseFloat(formData.service_fee) || 0,
-            p_processing_days: parseInt(formData.processing_days) || 15
-          }
-        );
-        
-        if (!rpcError) {
-          console.log('Package saved with RPC:', rpcResult);
-          setSuccess(`Pricing for ${countryName} has been updated successfully via RPC`);
+        // Check if a package already exists
+        const { data: existingPackage } = await supabase
+          .from('visa_packages')
+          .select('id')
+          .eq('country_id', countryId)
+          .single();
           
-          // Call the onSaved callback if provided
-          if (onSaved) {
-            onSaved();
-          }
-          
-          toast({
-            title: "Pricing saved",
-            description: `Pricing for ${countryName} has been updated successfully`,
-          });
-          
-          return; // Success via RPC, no need for fallback
+        let result;
+        if (existingPackage?.id) {
+          // Update existing package
+          result = await supabase
+            .from('visa_packages')
+            .update({
+              name: 'Visa Package',
+              government_fee: governmentFee,
+              service_fee: serviceFee,
+              processing_days: processingDays,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingPackage.id);
         } else {
-          console.warn('RPC save failed, using fallback method:', rpcError);
+          // Create new package
+          result = await supabase
+            .from('visa_packages')
+            .insert({
+              country_id: countryId,
+              name: 'Visa Package',
+              government_fee: governmentFee,
+              service_fee: serviceFee,
+              processing_days: processingDays
+            });
         }
-      } catch (rpcErr) {
-        console.warn('RPC save threw exception, using fallback method:', rpcErr);
+        
+        if (result.error) throw result.error;
+        
+        // Verify the data was saved by fetching it back
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('visa_packages')
+          .select('*')
+          .eq('country_id', countryId)
+          .single();
+          
+        if (verifyError || !verifyData) {
+          throw new Error('Failed to verify saved data');
+        }
+        
+        console.log('Verified saved data:', verifyData);
+        
+        // Update the form with the verified data
+        setFormData({
+          government_fee: verifyData.government_fee?.toString() || '0',
+          service_fee: verifyData.service_fee?.toString() || '0',
+          processing_days: verifyData.processing_days?.toString() || '15'
+        });
+        
+        // Show success message
+        setSuccess(`Pricing for ${countryName} has been updated successfully`);
+        toast({
+          title: "Pricing saved",
+          description: `Pricing for ${countryName} has been updated successfully`,
+        });
+        
+        // Call the onSaved callback if provided
+        if (onSaved) {
+          onSaved();
+        }
+        
+        return; // Early return on success
+      } catch (directErr) {
+        console.warn('Direct database update failed, trying RPC function:', directErr);
       }
       
-      // Fallback to direct database operations
-      // Check if a package already exists for this country
-      const { data: existingPackage, error: checkError } = await supabase
+      // Try RPC function as fallback
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        'save_visa_package',
+        {
+          p_country_id: countryId,
+          p_name: 'Visa Package',
+          p_government_fee: governmentFee,
+          p_service_fee: serviceFee,
+          p_processing_days: processingDays
+        }
+      );
+      
+      if (rpcError) throw rpcError;
+      
+      console.log('Package saved with RPC:', rpcResult);
+      
+      // Verify the data was saved by fetching it back
+      const { data: verifyData, error: verifyError } = await supabase
         .from('visa_packages')
-        .select('id')
+        .select('*')
         .eq('country_id', countryId)
         .single();
         
-      let result;
-      if (existingPackage) {
-        // Update existing package
-        console.log('Updating existing package:', existingPackage.id);
-        result = await supabase
-          .from('visa_packages')
-          .update({
-            name: packageToSave.name,
-            government_fee: packageToSave.government_fee,
-            service_fee: packageToSave.service_fee,
-            processing_days: packageToSave.processing_days,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPackage.id)
-          .select();
-      } else {
-        // Create new package
-        console.log('Creating new package');
-        result = await supabase
-          .from('visa_packages')
-          .insert(packageToSave)
-          .select();
+      if (verifyError || !verifyData) {
+        throw new Error('Failed to verify saved data');
       }
       
-      console.log('Direct database operation result:', result);
+      console.log('Verified saved data:', verifyData);
       
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
+      // Update the form with the verified data
+      setFormData({
+        government_fee: verifyData.government_fee?.toString() || '0',
+        service_fee: verifyData.service_fee?.toString() || '0',
+        processing_days: verifyData.processing_days?.toString() || '15'
+      });
       
       // Show success message
       setSuccess(`Pricing for ${countryName} has been updated successfully`);
@@ -221,6 +279,9 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       setSaving(false);
     }
   };
+  
+  // Calculate total price
+  const totalPrice = parseFloat(formData.government_fee) + parseFloat(formData.service_fee) || 0;
   
   return (
     <Card className="shadow-sm">
@@ -288,7 +349,11 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
               </div>
             </div>
             
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-700 font-medium">
+                Total Price: ₹{totalPrice.toFixed(2)}
+              </div>
+              
               <Button 
                 onClick={handleSave} 
                 disabled={saving}
@@ -306,10 +371,6 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
                   </>
                 )}
               </Button>
-            </div>
-            
-            <div className="text-sm text-gray-500 mt-2">
-              <p>Total Price: ₹{(parseFloat(formData.government_fee) || 0 + parseFloat(formData.service_fee) || 0).toFixed(2)}</p>
             </div>
           </div>
         )}
