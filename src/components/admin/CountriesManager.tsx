@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CountryTable from './CountryTable';
 import CountryDialog, { CountryFormData, CountrySubmitData } from './CountryDialog';
+import { fixVisaPackagesSchema } from '@/integrations/supabase/fix-schema';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const getInitialFormData = (): CountryFormData => ({
   name: '',
@@ -35,6 +37,32 @@ const CountriesManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<CountryFormData>(getInitialFormData());
+  const [schemaFixAttempted, setSchemaFixAttempted] = useState(false);
+  const [schemaFixing, setSchemaFixing] = useState(false);
+
+  useEffect(() => {
+    const attemptSchemaFix = async () => {
+      if (!schemaFixAttempted) {
+        setSchemaFixing(true);
+        try {
+          console.log('Attempting to fix visa_packages schema...');
+          const result = await fixVisaPackagesSchema();
+          console.log('Schema fix result:', result);
+          
+          if (result.success) {
+            queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+          }
+        } catch (err) {
+          console.error('Schema fix error:', err);
+        } finally {
+          setSchemaFixAttempted(true);
+          setSchemaFixing(false);
+        }
+      }
+    };
+    
+    attemptSchemaFix();
+  }, [schemaFixAttempted, queryClient]);
 
   const { 
     data: countries = [], 
@@ -45,38 +73,79 @@ const CountriesManager = () => {
   } = useQuery({
     queryKey: ['adminCountries'],
     queryFn: async () => {
-      console.log('Fetching countries with pricing details');
-      const { data, error } = await supabase
-        .from('countries')
-        .select(`
-          *,
-          visa_packages(
-            id, 
-            name, 
-            government_fee, 
-            service_fee, 
-            processing_days,
-            total_price
-          )
-        `);
-        
-      if (error) {
-        console.error('Error fetching countries:', error);
-        throw error;
-      }
+      console.log('Fetching countries data');
       
-      console.log('Countries data with packages:', data);
-      return data || [];
+      try {
+        const { data: countriesData, error: countriesError } = await supabase
+          .from('countries')
+          .select('*');
+          
+        if (countriesError) {
+          console.error('Error fetching countries:', countriesError);
+          throw countriesError;
+        }
+        
+        if (!countriesData) {
+          return [];
+        }
+        
+        const countriesWithPackages = await Promise.all(
+          countriesData.map(async (country) => {
+            try {
+              const { data: packageData } = await supabase
+                .from('visa_packages')
+                .select('*')
+                .eq('country_id', country.id)
+                .maybeSingle();
+                
+              return {
+                ...country,
+                visa_packages: packageData ? [packageData] : []
+              };
+            } catch (err) {
+              console.warn(`Could not fetch package for country ${country.id}:`, err);
+              return {
+                ...country,
+                visa_packages: []
+              };
+            }
+          })
+        );
+        
+        console.log('Fetched countries with packages:', countriesWithPackages);
+        return countriesWithPackages;
+      } catch (err) {
+        console.error('Error in countries query function:', err);
+        throw err;
+      }
     },
-    staleTime: 0
+    staleTime: 0,
+    retry: 1
   });
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
-    toast({
-      title: "Refreshing data",
-      description: "Fetching the latest countries data",
-    });
+  const handleRefresh = async () => {
+    setSchemaFixing(true);
+    
+    try {
+      const result = await fixVisaPackagesSchema();
+      console.log('Schema fix result on refresh:', result);
+      
+      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+      
+      toast({
+        title: "Refreshing data",
+        description: `Schema check completed. ${result.message} Fetching the latest countries data.`,
+      });
+    } catch (error) {
+      console.error('Error fixing schema during refresh:', error);
+      toast({
+        title: "Schema check failed",
+        description: "There was an issue checking the database schema.",
+        variant: "destructive"
+      });
+    } finally {
+      setSchemaFixing(false);
+    }
   };
 
   const handleAddNew = () => {
@@ -322,14 +391,37 @@ const CountriesManager = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Countries Manager</h1>
         <div className="flex gap-2">
-          <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" /> Refresh Data
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            className="flex items-center gap-2"
+            disabled={schemaFixing}
+          >
+            {schemaFixing ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" /> Fixing Schema...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" /> Refresh Data
+              </>
+            )}
           </Button>
           <Button onClick={handleAddNew} className="bg-teal hover:bg-teal-600">
             <Plus className="mr-2 h-4 w-4" /> Add Country
           </Button>
         </div>
       </div>
+      
+      {isError && error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Error loading countries</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Unknown error occurred'}. 
+            Try using the Refresh Data button to fix schema issues.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Card>
         <CardHeader>
@@ -340,7 +432,7 @@ const CountriesManager = () => {
             countries={countries}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            isLoading={countriesLoading}
+            isLoading={countriesLoading || schemaFixing}
             isError={isError}
             error={error as Error | null}
           />
