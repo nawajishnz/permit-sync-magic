@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 type Destination = {
   id: string;
@@ -49,7 +51,6 @@ const PopularDestinations = () => {
         
         const destinationsWithPricing = await Promise.all(
           countriesData.map(async (country) => {
-            // Fetch accurate pricing from visa_packages table
             const { data: packageData, error: packageError } = await supabase
               .from('visa_packages')
               .select('total_price, processing_days')
@@ -60,7 +61,6 @@ const PopularDestinations = () => {
               console.warn(`Could not fetch packages for country ${country.id}:`, packageError);
             }
             
-            // If we have package data, use it; otherwise use defaults
             const visaPackage = packageData && packageData.length > 0 ? packageData[0] : null;
             const processingDays = visaPackage?.processing_days || 15;
             
@@ -123,8 +123,18 @@ const PopularDestinations = () => {
         </motion.div>
         
         {isLoading ? (
-          <div className="flex justify-center items-center py-16">
-            Loading destinations...
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <AspectRatio ratio={16/9}>
+                  <div className="w-full h-full bg-gray-200 rounded-t-lg" />
+                </AspectRatio>
+                <CardContent className="p-4">
+                  <div className="h-4 bg-gray-200 rounded mb-2 w-2/3"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : destinations.length === 0 ? (
           <div className="text-center py-16 px-4">
@@ -134,7 +144,7 @@ const PopularDestinations = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {destinations.map((destination, index) => {
               const { price, processingDays } = getCountryDetails(destination);
               
@@ -162,6 +172,10 @@ const PopularDestinations = () => {
                           />
                           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
                         </AspectRatio>
+                        
+                        <Badge className="absolute top-3 left-3 bg-blue-600/90 text-white border-0 py-1.5 px-3 rounded-full backdrop-blur-sm">
+                          25K+ Visas on Time
+                        </Badge>
                         
                         {destination.hasSpecialVisa && (
                           <div className="absolute top-3 right-3">
