@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plane, BadgeCheck, MapPin, Heart, ChevronRight, Check, Clock, Globe, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -98,7 +97,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
 
   // Generate pricing and details
   const getCountryDetails = (country: any) => {
-    // Use visa package data if available
     const visaPackage = country.visa_packages?.[0];
     if (visaPackage) {
       const totalPrice = visaPackage.total_price || 
@@ -106,9 +104,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
       
       return {
         price: `₹${totalPrice.toLocaleString('en-IN')}`,
-        visaCount: '25K+', // Keep a default high count for now
-        entryDate: `Get in ${visaPackage.processing_days || 7} days`,
-        flightInfo: '2 direct flights from ₹60k',
         processingTime: `${visaPackage.processing_days || 7} business days`
       };
     }
@@ -116,14 +111,11 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
     // Fallback values if no visa package is available
     return {
       price: '₹1,999',
-      visaCount: '15K+',
-      entryDate: 'Get in 7 days',
-      flightInfo: '5 direct flights from ₹60k',
       processingTime: '7-10 business days'
     };
   };
 
-  const { price, visaCount, entryDate, flightInfo, processingTime } = getCountryDetails(country);
+  const { price, processingTime } = getCountryDetails(country);
 
   // Grid view card
   if (viewMode === 'grid') {
@@ -144,12 +136,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70"></div>
             </AspectRatio>
             
-            {/* Visa count badge */}
-            <Badge className="absolute top-3 left-3 bg-blue-600/90 text-white border-0 py-1.5 px-3 rounded-full backdrop-blur-sm">
-              {visaCount} Visas on Time
-            </Badge>
-            
-            {/* Special label for certain countries */}
             {country.name === 'Japan' && (
               <div className="absolute top-3 right-3">
                 <div className="bg-amber-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-gray-900 flex items-center backdrop-blur-sm">
@@ -217,11 +203,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
               )}
             </div>
             
-            <div className="flex items-center text-xs text-gray-500 mb-3">
-              <Plane className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
-              <span className="truncate">{flightInfo}</span>
-            </div>
-            
             <div className="mt-auto">
               <div className="flex flex-wrap gap-1 mb-3">
                 {getVisaTypes(country).map((type, i) => (
@@ -245,7 +226,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
     );
   }
   
-  // List view card
+  // List view card (same modifications for the list view)
   return (
     <Link to={`/country/${country.id}`} className="block">
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm group">
@@ -325,7 +306,7 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Globe className="h-4 w-4 mr-1 flex-shrink-0 text-indigo-500" />
-                <span>{visaCount} visas processed</span>
+                <span>visas processed</span>
               </div>
             </div>
             

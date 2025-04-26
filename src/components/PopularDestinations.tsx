@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Heart, Clock, Plane, MapPin, ChevronRight, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -170,10 +168,6 @@ const PopularDestinations = () => {
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
                       </AspectRatio>
                       
-                      <Badge className="absolute top-3 left-3 bg-blue-600/90 text-white border-0 py-1.5 px-3 rounded-full backdrop-blur-sm">
-                        25K+ Visas on Time
-                      </Badge>
-                      
                       {destination.hasSpecialVisa && (
                         <div className="absolute top-3 right-3">
                           <div className="bg-yellow-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-navy-900 flex items-center">
@@ -225,11 +219,6 @@ const PopularDestinations = () => {
                           <span>{destination.processingDays} business days</span>
                         </div>
                         <span className="font-bold text-blue-600">₹{destination.totalPrice.toLocaleString('en-IN')}</span>
-                      </div>
-                      
-                      <div className="flex items-center text-xs text-gray-500 mb-3">
-                        <Plane className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
-                        <span className="truncate">5 direct flights from ₹60k</span>
                       </div>
                       
                       <div className="mt-auto">
