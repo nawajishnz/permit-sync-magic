@@ -315,49 +315,27 @@ const CountriesManager = () => {
       }
 
       if (countryId && submitData.pricing) {
-        const { government_fee, service_fee, processing_days } = submitData.pricing;
-        
-        if (government_fee || service_fee || processing_days) {
-          const packageData = {
+        try {
+          console.log('Handling pricing data for country:', countryId);
+          const { government_fee, service_fee, processing_days } = submitData.pricing;
+          
+          const { saveVisaPackage } = await import('@/services/visaPackageService');
+          
+          const pricingResult = await saveVisaPackage({
             country_id: countryId,
             name: 'Visa Package',
             government_fee: parseFloat(government_fee) || 0,
             service_fee: parseFloat(service_fee) || 0,
             processing_days: parseInt(processing_days) || 15
-          };
-
-          try {
-            const { data: existingPackage, error: checkError } = await supabase
-              .from('visa_packages')
-              .select('id')
-              .eq('country_id', countryId)
-              .maybeSingle();
-
-            if (checkError) {
-              console.warn('Error checking for existing package:', checkError);
-            }
-
-            let result;
-            if (existingPackage?.id) {
-              result = await supabase
-                .from('visa_packages')
-                .update(packageData)
-                .eq('id', existingPackage.id);
-            } else {
-              result = await supabase
-                .from('visa_packages')
-                .insert(packageData);
-            }
-
-            if (result.error) {
-              console.error('Error saving pricing:', result.error);
-              throw result.error;
-            }
-            
-            console.log('Pricing saved successfully');
-          } catch (pricingError) {
-            console.error('Failed to save pricing:', pricingError);
+          });
+          
+          if (!pricingResult.success) {
+            console.error('Error saving pricing:', pricingResult.message);
+          } else {
+            console.log('Pricing saved successfully:', pricingResult.data);
           }
+        } catch (pricingError) {
+          console.error('Failed to save pricing:', pricingError);
         }
       }
 
@@ -365,6 +343,7 @@ const CountriesManager = () => {
       
       queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       queryClient.invalidateQueries({ queryKey: ['countries'] });
+      queryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] }); 
       if (countryId) {
         queryClient.invalidateQueries({ queryKey: ['country', countryId] });
         queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });

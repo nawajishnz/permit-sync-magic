@@ -198,6 +198,15 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
       processing_steps: (formData.processing_steps || []).filter(step => step?.title?.trim()),
       faq: (formData.faq || []).filter(item => item?.question?.trim())
     };
+    
+    if (formData.pricing) {
+      submitData.pricing = {
+        government_fee: formData.pricing.government_fee || '0',
+        service_fee: formData.pricing.service_fee || '0',
+        processing_days: formData.pricing.processing_days || '15'
+      };
+    }
+    
     onSubmit(submitData);
   };
 

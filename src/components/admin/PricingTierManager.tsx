@@ -165,9 +165,14 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         
         await fetchPricingData();
         
+        activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] });
+        if (selectedCountryId) {
+          activeQueryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
+          activeQueryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
+        }
       } else {
         setError(result.message);
         toast({

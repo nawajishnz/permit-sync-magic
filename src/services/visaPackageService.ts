@@ -93,13 +93,20 @@ export async function saveVisaPackage(packageData: VisaPackage): Promise<{ succe
       return { success: false, message: "Country ID is required" };
     }
     
+    // Calculate total price
+    const governmentFee = Number(packageData.government_fee) || 0;
+    const serviceFee = Number(packageData.service_fee) || 0;
+    const totalPrice = governmentFee + serviceFee;
+    
     // Ensure numeric fields are properly formatted
     const sanitizedData = {
       country_id: packageData.country_id,
       name: packageData.name || 'Visa Package',
-      government_fee: Number(packageData.government_fee) || 0,
-      service_fee: Number(packageData.service_fee) || 0,
-      processing_days: Number(packageData.processing_days) || 15
+      government_fee: governmentFee,
+      service_fee: serviceFee,
+      processing_days: Number(packageData.processing_days) || 15,
+      total_price: totalPrice,
+      updated_at: new Date().toISOString()
     };
     
     console.log('Saving visa package with data:', sanitizedData);
