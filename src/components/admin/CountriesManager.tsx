@@ -376,9 +376,13 @@ const CountriesManager = () => {
           console.log('Handling documents for country:', countryId, submitData.documents);
           
           const documentsToSave: DocumentItem[] = submitData.documents.map(doc => ({
-            ...doc,
             id: doc.id || `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-            country_id: countryId as string
+            country_id: countryId as string,
+            document_name: doc.document_name,
+            document_description: doc.document_description || '',
+            required: !!doc.required,
+            isNew: doc.isNew,
+            modified: doc.modified
           }));
           
           const docsResult = await saveDocumentChecklist(countryId, documentsToSave);

@@ -1,10 +1,11 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
 import { useEffect } from 'react';
 import { autoFixSchema } from '@/integrations/supabase/fix-schema';
-import { getDocumentChecklist } from '@/services/documentChecklistService';
+import { getDocumentChecklist, DocumentItem } from '@/services/documentChecklistService';
 
 export interface DocumentChecklistItem {
   id: string;
@@ -107,7 +108,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
         
         // Ensure documents match the required DocumentChecklistItem interface
         const documents: DocumentChecklistItem[] = documentsData.map(doc => ({
-          id: doc.id || '', // Ensure id is never undefined
+          id: doc.id, // ID is now required in DocumentItem
           document_name: doc.document_name,
           document_description: doc.document_description || '',
           required: !!doc.required // Ensure it's a boolean
