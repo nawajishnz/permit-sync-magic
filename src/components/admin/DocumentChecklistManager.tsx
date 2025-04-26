@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,11 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash, Save, Loader2 } from 'lucide-react';
+import { Plus, Trash, Save, Loader2, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient, QueryClient } from '@tanstack/react-query';
-import { saveDocumentChecklist } from '@/services/documentChecklistService';
+import { saveDocumentChecklist, getDocumentChecklist } from '@/services/documentChecklistService';
+import { refreshDocumentSchema } from '@/integrations/supabase/refresh-schema';
 
 interface DocumentChecklistManagerProps {
   countries: any[];
@@ -28,6 +30,7 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
 }) => {
   const [documents, setDocuments] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const localQueryClient = useQueryClient();
   
@@ -41,18 +44,7 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
     queryKey: ['documents', selectedCountryId],
     queryFn: async () => {
       if (!selectedCountryId) return [];
-
-      const { data, error } = await supabase
-        .from('document_checklist')
-        .select('*')
-        .eq('country_id', selectedCountryId);
-        
-      if (error) {
-        console.error('Error fetching documents:', error);
-        throw error;
-      }
-      
-      return data || [];
+      return await getDocumentChecklist(selectedCountryId);
     },
     enabled: !!selectedCountryId,
   });
@@ -109,6 +101,39 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
       modified: true 
     };
     setDocuments(newDocuments);
+  };
+
+  const handleRefreshSchema = async () => {
+    setIsRefreshing(true);
+    try {
+      const result = await refreshDocumentSchema();
+      
+      if (result.success) {
+        toast({
+          title: "Schema refreshed",
+          description: "Document schema cache has been refreshed successfully",
+        });
+      } else {
+        toast({
+          title: "Schema refresh failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+      
+      // Refetch the data after schema refresh
+      if (selectedCountryId) {
+        refetch();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error refreshing schema",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const saveDocuments = async () => {
@@ -182,6 +207,20 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              onClick={handleRefreshSchema}
+              variant="outline"
+              size="sm"
+              disabled={isRefreshing}
+              className="flex items-center gap-1"
+            >
+              {isRefreshing ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4 mr-1" />
+              )}
+              Refresh Schema
+            </Button>
             <Button 
               onClick={handleAddDocument} 
               variant="outline" 

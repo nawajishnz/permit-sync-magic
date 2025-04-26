@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -264,6 +265,7 @@ const CountriesManager = () => {
       let flagUrl = submitData.flag;
       let bannerUrl = submitData.banner;
 
+      // Handle file uploads if needed
       if (submitData.flagFile) {
         const flagFilename = `flag-${Date.now()}-${submitData.flagFile.name}`;
         const { error: flagError } = await supabase.storage
@@ -282,6 +284,7 @@ const CountriesManager = () => {
         bannerUrl = supabase.storage.from('country-images').getPublicUrl(bannerFilename).data.publicUrl;
       }
 
+      // Important: Remove the documents field from dataToSave as it doesn't exist in the countries table
       const dataToSave = {
         name: submitData.name,
         flag: flagUrl,
@@ -297,10 +300,10 @@ const CountriesManager = () => {
         processing_steps: submitData.processing_steps,
         faq: submitData.faq,
         embassy_details: submitData.embassy_details,
-        documents: submitData.documents,
         updated_at: new Date().toISOString()
       };
 
+      // Save or update the country data
       if (isEditMode && countryId) {
         const { error } = await supabase
           .from('countries')
@@ -317,12 +320,11 @@ const CountriesManager = () => {
         if (data) countryId = data.id;
       }
 
+      // Handle pricing data if available
       if (countryId && submitData.pricing) {
         try {
           console.log('Handling pricing data for country:', countryId, submitData.pricing);
           const { government_fee, service_fee, processing_days } = submitData.pricing;
-          
-          const { saveVisaPackage } = await import('@/services/visaPackageService');
           
           const pricingResult = await saveVisaPackage({
             country_id: countryId,
@@ -352,6 +354,7 @@ const CountriesManager = () => {
         }
       }
 
+      // Handle documents separately using the document checklist service
       if (countryId && submitData.documents && submitData.documents.length > 0) {
         try {
           console.log('Handling documents for country:', countryId, submitData.documents);
@@ -385,6 +388,7 @@ const CountriesManager = () => {
 
       setIsDialogOpen(false);
       
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       queryClient.invalidateQueries({ queryKey: ['countries'] });
       queryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] }); 

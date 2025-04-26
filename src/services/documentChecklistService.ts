@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { refreshDocumentSchema } from '@/integrations/supabase/refresh-schema';
 
 interface DocumentItem {
   id?: string;
@@ -30,6 +31,9 @@ export async function saveDocumentChecklist(
         message: 'Country ID is required to save documents' 
       };
     }
+
+    // Refresh schema cache first to avoid schema-related errors
+    await refreshDocumentSchema();
 
     // Filter out any invalid documents
     const validDocuments = documents.filter(doc => doc.document_name?.trim());
@@ -138,5 +142,35 @@ export async function saveDocumentChecklist(
       success: false, 
       message: `Error saving documents: ${error.message}` 
     };
+  }
+}
+
+/**
+ * Fetches document checklist items for a country
+ * @param countryId The country ID
+ * @returns List of document items
+ */
+export async function getDocumentChecklist(countryId: string): Promise<DocumentItem[]> {
+  if (!countryId) return [];
+  
+  try {
+    // Refresh schema cache first
+    await refreshDocumentSchema();
+    
+    const { data, error } = await supabase
+      .from('document_checklist')
+      .select('*')
+      .eq('country_id', countryId)
+      .order('document_name');
+      
+    if (error) {
+      console.error('Error fetching document checklist:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in getDocumentChecklist:', error);
+    return [];
   }
 }

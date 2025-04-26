@@ -118,6 +118,31 @@ export type Database = {
           min_price?: number;
         };
       };
+      document_checklist: {
+        Row: {
+          id: string;
+          country_id: string;
+          document_name: string;
+          document_description?: string;
+          required: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Insert: {
+          id?: string;
+          country_id: string;
+          document_name: string;
+          document_description?: string;
+          required?: boolean;
+        };
+        Update: {
+          id?: string;
+          country_id?: string;
+          document_name?: string;
+          document_description?: string;
+          required?: boolean;
+        };
+      };
     };
     Views: {
       countries_with_packages: {
