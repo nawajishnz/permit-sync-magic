@@ -12,6 +12,7 @@ import { fixVisaPackagesSchema } from '@/integrations/supabase/fix-schema';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { saveVisaPackage } from '@/services/visaPackageService';
 import { saveDocumentChecklist } from '@/services/documentChecklistService';
+import { getDocumentChecklist } from '@/services/documentChecklistService';
 
 const getInitialFormData = (): CountryFormData => ({
   name: '',
@@ -194,6 +195,16 @@ const CountriesManager = () => {
     const packageData = countryWithPackages.visa_packages?.[0];
     console.log('Package data for form:', packageData);
     
+    // Fetch document checklist data
+    let documents = [];
+    try {
+      documents = await getDocumentChecklist(country.id);
+      console.log('Fetched documents for country:', documents);
+    } catch (err) {
+      console.error('Error fetching documents:', err);
+      // Continue even if documents can't be fetched
+    }
+    
     setFormData({
       id: countryWithPackages.id,
       name: countryWithPackages.name || '',
@@ -215,7 +226,7 @@ const CountriesManager = () => {
         email: '',
         hours: ''
       },
-      documents: countryWithPackages.documents || [],
+      documents: documents || [],
       pricing: packageData ? {
         government_fee: packageData.government_fee?.toString() || '',
         service_fee: packageData.service_fee?.toString() || '',
@@ -292,7 +303,6 @@ const CountriesManager = () => {
         description: submitData.description,
         entry_type: submitData.entry_type || 'Tourist Visa',
         validity: submitData.validity,
-        processing_time: submitData.processing_time,
         length_of_stay: submitData.length_of_stay,
         requirements_description: submitData.requirements_description,
         visa_includes: submitData.visa_includes,
@@ -328,7 +338,7 @@ const CountriesManager = () => {
           
           const pricingResult = await saveVisaPackage({
             country_id: countryId,
-            name: 'Visa Package',
+            name: isEditMode ? 'Updated Visa Package' : 'Visa Package',
             government_fee: parseFloat(government_fee) || 0,
             service_fee: parseFloat(service_fee) || 0,
             processing_days: parseInt(processing_days) || 15

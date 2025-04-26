@@ -1,10 +1,10 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
 import { useEffect } from 'react';
 import { autoFixSchema } from '@/integrations/supabase/fix-schema';
+import { getDocumentChecklist } from '@/services/documentChecklistService';
 
 export interface DocumentChecklistItem {
   id: string;
@@ -101,14 +101,12 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
           return null;
         }
 
-        // Fetch document checklist
-        const { data: documents, error: documentsError } = await supabase
-          .from('document_checklist')
-          .select('*')
-          .eq('country_id', countryId);
+        // Fetch document checklist using the dedicated service 
+        const documents = await getDocumentChecklist(countryId);
+        console.log("[useCountryData] Fetched documents:", documents);
 
-        if (documentsError) {
-          console.warn('[useCountryData] Error fetching documents:', documentsError);
+        if (!documents) {
+          console.warn('[useCountryData] No documents found for country');
         }
 
         // Fetch visa package data using direct service call
