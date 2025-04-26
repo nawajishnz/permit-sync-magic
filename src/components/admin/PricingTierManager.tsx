@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Loader2, Database, CheckCircle, XCircle } from 'lucide-react';
+import { AlertCircle, Loader2, Database, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getCountryVisaPackage, saveVisaPackage, runDiagnostic } from '@/services/visaPackageService';
 import { VisaPackage } from '@/types/visaPackage';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
+import { useApiMutation } from '@/hooks/useApiMutations';
 
 interface PricingTierManagerProps {
   countries: any[];
@@ -122,6 +123,11 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         description: result.message,
         variant: result.success ? "default" : "destructive"
       });
+      
+      // If diagnostic was successful, refresh the data
+      if (result.success) {
+        await fetchPricingData();
+      }
     } catch (err: any) {
       toast({
         title: "Diagnostic failed",
@@ -131,6 +137,15 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     } finally {
       setRunningDiagnostic(false);
     }
+  };
+  
+  const handleRefresh = async () => {
+    if (!selectedCountryId) return;
+    await fetchPricingData();
+    toast({
+      title: "Data refreshed",
+      description: "Pricing data has been refreshed"
+    });
   };
   
   const handleSave = async () => {
@@ -222,6 +237,9 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
   };
   
   const selectedCountry = countries.find(c => c.id === selectedCountryId);
+  const totalPrice = 
+    (parseFloat(formData.government_fee) || 0) + 
+    (parseFloat(formData.service_fee) || 0);
   
   return (
     <Card>
@@ -286,24 +304,35 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                   </h3>
                   {getPackageStatus()}
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleRunDiagnostic}
-                  disabled={runningDiagnostic}
-                >
-                  {runningDiagnostic ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Running...
-                    </>
-                  ) : (
-                    <>
-                      <Database className="mr-2 h-4 w-4" />
-                      Run Diagnostic
-                    </>
-                  )}
-                </Button>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={loading}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleRunDiagnostic}
+                    disabled={runningDiagnostic}
+                  >
+                    {runningDiagnostic ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Running...
+                      </>
+                    ) : (
+                      <>
+                        <Database className="mr-2 h-4 w-4" />
+                        Run Diagnostic
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               
               {loading ? (
@@ -350,7 +379,11 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                     </div>
                   </div>
                   
-                  <div className="flex justify-end pt-4">
+                  <div className="flex justify-between items-center pt-4">
+                    <div className="text-sm text-gray-700 font-medium">
+                      Total Price: ₹{totalPrice.toFixed(2)}
+                    </div>
+                    
                     <Button 
                       onClick={handleSave} 
                       disabled={saving}
@@ -368,7 +401,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                   {packageData && (
                     <div className="pt-4 text-sm text-gray-500">
                       <p>Last updated: {new Date(packageData.updated_at || Date.now()).toLocaleString()}</p>
-                      <p>Total Price: ₹{(Number(packageData.government_fee || 0) + Number(packageData.service_fee || 0)).toFixed(2)}</p>
                     </div>
                   )}
                 </>

@@ -74,7 +74,13 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       };
     }
 
-    // First check if a package already exists for this country
+    // First, try the direct method
+    let result;
+    let saveSuccess = false;
+    let errorMessage = '';
+    let savedData = null;
+
+    // Check if a package already exists for this country
     const { data: existingPackage, error: checkError } = await supabase
       .from('visa_packages')
       .select('id')
@@ -83,69 +89,107 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       
     if (checkError) {
       console.warn('Error checking for existing package:', checkError);
-    }
-    
-    let result;
-    
-    if (existingPackage) {
-      // Update existing package
-      console.log('Updating existing package:', existingPackage.id);
-      
-      result = await supabase
-        .from('visa_packages')
-        .update({
-          name: packageData.name || 'Visa Package',
-          government_fee: packageData.government_fee || 0,
-          service_fee: packageData.service_fee || 0,
-          processing_days: packageData.processing_days || 15,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingPackage.id);
-        
-      if (result.error) {
-        console.error('Error updating existing package:', result.error);
-        return {
-          success: false,
-          message: `Failed to update visa package: ${result.error.message}`
-        };
-      }
-      
-      return {
-        success: true,
-        message: 'Visa package updated successfully',
-        data: { id: existingPackage.id, action: 'updated' }
-      };
-      
+      errorMessage = checkError.message;
     } else {
-      // Create new package
-      console.log('Creating new package for country:', packageData.country_id);
-      
-      result = await supabase
-        .from('visa_packages')
-        .insert({
-          country_id: packageData.country_id,
-          name: packageData.name || 'Visa Package',
-          government_fee: packageData.government_fee || 0,
-          service_fee: packageData.service_fee || 0,
-          processing_days: packageData.processing_days || 15
-        })
-        .select();
-        
-      if (result.error) {
-        console.error('Error creating new package:', result.error);
+      try {
+        if (existingPackage) {
+          // Update existing package
+          console.log('Updating existing package:', existingPackage.id);
+          
+          const { data: updateData, error: updateError } = await supabase
+            .from('visa_packages')
+            .update({
+              name: packageData.name || 'Visa Package',
+              government_fee: packageData.government_fee || 0,
+              service_fee: packageData.service_fee || 0,
+              processing_days: packageData.processing_days || 15,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingPackage.id)
+            .select();
+            
+          if (updateError) {
+            console.error('Error updating existing package:', updateError);
+            errorMessage = updateError.message;
+          } else {
+            console.log('Successfully updated package:', updateData);
+            saveSuccess = true;
+            savedData = { id: existingPackage.id, action: 'updated' };
+          }
+        } else {
+          // Create new package
+          console.log('Creating new package for country:', packageData.country_id);
+          
+          const { data: insertData, error: insertError } = await supabase
+            .from('visa_packages')
+            .insert({
+              country_id: packageData.country_id,
+              name: packageData.name || 'Visa Package',
+              government_fee: packageData.government_fee || 0,
+              service_fee: packageData.service_fee || 0,
+              processing_days: packageData.processing_days || 15
+            })
+            .select();
+            
+          if (insertError) {
+            console.error('Error creating new package:', insertError);
+            errorMessage = insertError.message;
+          } else {
+            console.log('Successfully created package:', insertData);
+            saveSuccess = true;
+            savedData = { id: insertData[0]?.id, action: 'created' };
+          }
+        }
+      } catch (directSaveErr: any) {
+        console.error('Error in direct save:', directSaveErr);
+        errorMessage = directSaveErr.message;
+      }
+    }
+
+    // If direct method failed, try using RPC function
+    if (!saveSuccess) {
+      console.log('Direct save failed, trying RPC method...');
+      try {
+        const { data: rpcResult, error: rpcError } = await supabase.rpc(
+          'save_visa_package',
+          {
+            p_country_id: packageData.country_id,
+            p_name: packageData.name || 'Visa Package',
+            p_government_fee: packageData.government_fee || 0,
+            p_service_fee: packageData.service_fee || 0, 
+            p_processing_days: packageData.processing_days || 15
+          }
+        );
+
+        if (rpcError) {
+          console.error('RPC save method failed:', rpcError);
+          return {
+            success: false,
+            message: `Failed to save visa package: ${errorMessage || rpcError.message}`
+          };
+        } else {
+          console.log('RPC save successful:', rpcResult);
+          return {
+            success: true, 
+            message: `Visa package ${rpcResult.action || 'saved'} successfully`,
+            data: rpcResult
+          };
+        }
+      } catch (rpcErr: any) {
+        console.error('RPC save threw an error:', rpcErr);
         return {
           success: false,
-          message: `Failed to create visa package: ${result.error.message}`
+          message: `Failed to save visa package: ${errorMessage || rpcErr.message}`
         };
       }
-      
+    } else {
+      // Direct save was successful
       return {
         success: true,
-        message: 'Visa package created successfully',
-        data: { id: result.data?.[0]?.id, action: 'created' }
+        message: `Visa package ${savedData?.action || 'saved'} successfully`,
+        data: savedData
       };
     }
-    
   } catch (error: any) {
     console.error('Error in saveVisaPackage:', error);
     return {
