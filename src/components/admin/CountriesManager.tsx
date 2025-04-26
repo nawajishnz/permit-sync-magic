@@ -194,7 +194,6 @@ const CountriesManager = () => {
     const packageData = countryWithPackages.visa_packages?.[0];
     console.log('Package data for form:', packageData);
     
-    // Fetch document checklist data
     let documents = [];
     try {
       documents = await getDocumentChecklist(country.id);
@@ -275,7 +274,6 @@ const CountriesManager = () => {
       let flagUrl = submitData.flag;
       let bannerUrl = submitData.banner;
 
-      // Handle file uploads if needed
       if (submitData.flagFile) {
         const flagFilename = `flag-${Date.now()}-${submitData.flagFile.name}`;
         const { error: flagError } = await supabase.storage
@@ -294,7 +292,6 @@ const CountriesManager = () => {
         bannerUrl = supabase.storage.from('country-images').getPublicUrl(bannerFilename).data.publicUrl;
       }
 
-      // Important: Remove the documents field from dataToSave as it doesn't exist in the countries table
       const dataToSave = {
         name: submitData.name,
         flag: flagUrl,
@@ -313,7 +310,6 @@ const CountriesManager = () => {
         updated_at: new Date().toISOString()
       };
 
-      // Save or update the country data
       if (isEditMode && countryId) {
         const { error } = await supabase
           .from('countries')
@@ -330,19 +326,30 @@ const CountriesManager = () => {
         if (data) countryId = data.id;
       }
 
-      // Handle pricing data if available
       if (countryId && submitData.pricing) {
         try {
           console.log('Handling pricing data for country:', countryId, submitData.pricing);
           const { government_fee, service_fee, processing_days } = submitData.pricing;
           
+          const governmentFee = parseFloat(government_fee) || 0;
+          const serviceFee = parseFloat(service_fee) || 0;
+          const processingDaysValue = parseInt(processing_days) || 15;
+          
+          console.log('Formatted pricing values:', {
+            governmentFee,
+            serviceFee,
+            processingDaysValue
+          });
+          
           const pricingResult = await saveVisaPackage({
             country_id: countryId,
             name: isEditMode ? 'Updated Visa Package' : 'Visa Package',
-            government_fee: parseFloat(government_fee) || 0,
-            service_fee: parseFloat(service_fee) || 0,
-            processing_days: parseInt(processing_days) || 15
+            government_fee: governmentFee,
+            service_fee: serviceFee,
+            processing_days: processingDaysValue
           });
+          
+          console.log('Pricing save result:', pricingResult);
           
           if (!pricingResult.success) {
             console.error('Error saving pricing:', pricingResult.message);
@@ -364,12 +371,10 @@ const CountriesManager = () => {
         }
       }
 
-      // Handle documents separately using the document checklist service
       if (countryId && submitData.documents && submitData.documents.length > 0) {
         try {
           console.log('Handling documents for country:', countryId, submitData.documents);
           
-          // Ensure all documents have an id - generate UUID-like ids for new documents
           const documentsToSave: DocumentItem[] = submitData.documents.map(doc => ({
             ...doc,
             id: doc.id || `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -400,7 +405,6 @@ const CountriesManager = () => {
 
       setIsDialogOpen(false);
       
-      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       queryClient.invalidateQueries({ queryKey: ['countries'] });
       queryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] }); 
