@@ -5,9 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useSupabaseDelete, useSupabaseInsert, useSupabaseUpdate } from '@/hooks/useSupabaseMutation';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/types/supabase';
-
-type Blog = Database['public']['Tables']['blogs']['Row'];
+import { Blog, transformToBlogs } from '@/types/blog';
 
 const BlogsManager = () => {
   const { toast } = useToast();
@@ -21,7 +19,7 @@ const BlogsManager = () => {
         .order('published_at', { ascending: false });
       
       if (error) throw error;
-      return data as Blog[];
+      return transformToBlogs(data || []) as Blog[];
     },
   });
 

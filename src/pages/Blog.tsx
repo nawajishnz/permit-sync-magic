@@ -3,9 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogCard } from '@/components/blog/BlogCard';
-import { Database } from '@/types/supabase';
-
-type Blog = Database['public']['Tables']['blogs']['Row'];
+import { Blog as BlogType, transformToBlogs } from '@/types/blog';
 
 const Blog = () => {
   const { data: blogs, isLoading } = useQuery({
@@ -17,7 +15,7 @@ const Blog = () => {
         .order('published_at', { ascending: false });
       
       if (error) throw error;
-      return data as Blog[];
+      return transformToBlogs(data || []) as BlogType[];
     },
   });
 

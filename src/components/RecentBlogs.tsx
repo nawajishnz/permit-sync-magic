@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,9 +5,7 @@ import { BlogCard } from './blog/BlogCard';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
-import { Database } from '@/types/supabase';
-
-type Blog = Database['public']['Tables']['blogs']['Row'];
+import { Blog, transformToBlogs } from '@/types/blog';
 
 export const RecentBlogs = () => {
   const { data: blogs, isLoading } = useQuery({
@@ -21,7 +18,7 @@ export const RecentBlogs = () => {
         .limit(3);
       
       if (error) throw error;
-      return data as Blog[];
+      return transformToBlogs(data || []) as Blog[];
     },
   });
 
