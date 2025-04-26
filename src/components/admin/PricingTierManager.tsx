@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Loader2, Database, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, Loader2, Database, CheckCircle, XCircle, RefreshCw, PlusCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getCountryVisaPackage, saveVisaPackage, runDiagnostic } from '@/services/visaPackageService';
 import { VisaPackage } from '@/types/visaPackage';
@@ -72,7 +72,8 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           processing_days: packageData.processing_days?.toString() || '15'
         });
       } else {
-        console.log("No package data found for this country");
+        // This should never happen now since getCountryVisaPackage always returns a package or default template
+        console.log("No package data found, setting defaults");
         setPackageData(null);
         setFormData({
           name: 'Visa Package',
@@ -148,7 +149,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     });
   };
   
-  const handleSave = async () => {
+  const handleCreateOrUpdate = async () => {
     if (!selectedCountryId) {
       toast({
         title: "No country selected",
@@ -227,10 +228,17 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     if (loading) return <Badge variant="outline" className="bg-gray-100">Loading...</Badge>;
     
     if (packageData) {
-      const hasPricing = packageData.government_fee > 0 || packageData.service_fee > 0;
-      return hasPricing ? 
-        <Badge className="bg-green-100 text-green-800 border-green-300">Active</Badge> : 
-        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Inactive</Badge>;
+      // Check if this is a default package (newly created) or a saved package with pricing
+      const hasPricing = packageData.id && (packageData.government_fee > 0 || packageData.service_fee > 0);
+      const isNewPackage = !packageData.id;
+      
+      if (hasPricing) {
+        return <Badge className="bg-green-100 text-green-800 border-green-300">Active</Badge>;
+      } else if (isNewPackage) {
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">New - Not Saved</Badge>;
+      } else {
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Inactive</Badge>;
+      }
     }
     
     return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Not configured</Badge>;
@@ -240,6 +248,9 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
   const totalPrice = 
     (parseFloat(formData.government_fee) || 0) + 
     (parseFloat(formData.service_fee) || 0);
+  
+  const isNewPackage = packageData && !packageData.id;
+  const buttonText = isNewPackage ? 'Create Package' : 'Save Pricing';
   
   return (
     <Card>
@@ -385,20 +396,25 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                     </div>
                     
                     <Button 
-                      onClick={handleSave} 
+                      onClick={handleCreateOrUpdate} 
                       disabled={saving}
-                      className="bg-teal hover:bg-teal-600"
+                      className={isNewPackage ? "bg-blue-600 hover:bg-blue-700" : "bg-teal hover:bg-teal-600"}
                     >
                       {saving ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Saving...
                         </>
-                      ) : 'Save Pricing'}
+                      ) : (
+                        <>
+                          {isNewPackage && <PlusCircle className="mr-2 h-4 w-4" />}
+                          {buttonText}
+                        </>
+                      )}
                     </Button>
                   </div>
                   
-                  {packageData && (
+                  {packageData?.updated_at && (
                     <div className="pt-4 text-sm text-gray-500">
                       <p>Last updated: {new Date(packageData.updated_at || Date.now()).toLocaleString()}</p>
                     </div>

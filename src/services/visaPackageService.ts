@@ -49,9 +49,18 @@ export const getCountryVisaPackage = async (countryId: string): Promise<VisaPack
       console.error('RPC function threw an error:', rpcErr);
     }
     
-    // If we get here, no package was found
-    console.log('No package found for country:', countryId);
-    return null;
+    // If we get here, no package was found - return an empty default package
+    // This allows the UI to show and edit data for inactive countries
+    console.log('No package found for country, returning default template:', countryId);
+    return {
+      country_id: countryId,
+      name: 'Visa Package',
+      government_fee: 0,
+      service_fee: 0,
+      processing_days: 15,
+      total_price: 0,
+      updated_at: new Date().toISOString()
+    };
     
   } catch (error) {
     console.error('Error in getCountryVisaPackage:', error);
@@ -127,7 +136,8 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
               name: packageData.name || 'Visa Package',
               government_fee: packageData.government_fee || 0,
               service_fee: packageData.service_fee || 0,
-              processing_days: packageData.processing_days || 15
+              processing_days: packageData.processing_days || 15,
+              updated_at: new Date().toISOString()
             })
             .select();
             
@@ -239,7 +249,8 @@ export const runDiagnostic = async (countryId: string) => {
               name: 'Diagnostic Test',
               government_fee: 100,
               service_fee: 50,
-              processing_days: 10
+              processing_days: 10,
+              updated_at: new Date().toISOString()
             })
             .select();
             
