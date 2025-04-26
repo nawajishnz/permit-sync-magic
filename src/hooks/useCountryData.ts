@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -112,24 +111,25 @@ export const useCountryData = (countryId: string | undefined) => {
         let packageError = null;
         
         try {
-          // Instead of using 'countries_with_packages' view, which may not be registered in TypeScript,
-          // use a simpler approach for type safety
-          const { data: viewData, error: viewError } = await supabase
+          const { data: packageData, error: rpcError } = await supabase
             .rpc('get_country_packages', { p_country_id: countryId })
-            .maybeSingle()
-            .catch(() => {
-              // Fallback if RPC doesn't exist
-              return { data: null, error: { message: 'Function not available' } };
+            .then(response => ({ 
+              data: response.data ? response.data[0] : null, 
+              error: response.error 
+            }))
+            .catch((err) => {
+              console.error('[useCountryData] RPC error:', err);
+              return { data: null, error: err };
             });
             
-          if (!viewError && viewData) {
+          if (!rpcError && packageData) {
             visaPackages = [{
-              id: viewData.package_id,
-              name: viewData.package_name,
-              government_fee: viewData.government_fee || 0,
-              service_fee: viewData.service_fee || 0,
-              processing_days: viewData.processing_days || 15,
-              country_id: viewData.country_id
+              id: packageData.package_id,
+              name: packageData.package_name,
+              government_fee: packageData.government_fee || 0,
+              service_fee: packageData.service_fee || 0,
+              processing_days: packageData.processing_days || 15,
+              country_id: packageData.country_id
             }];
           } else {
             const { data: basicPackages, error } = await supabase

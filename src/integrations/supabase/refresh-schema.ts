@@ -3,63 +3,91 @@ import { supabase } from './client';
 import { fixVisaPackagesSchema, testVisaPackagesOperations } from './fix-schema';
 
 /**
- * Refresh the Supabase schema cache to ensure we have the latest table definitions
+ * Refreshes the schema cache to detect new tables and columns
  */
 export async function refreshSchemaCache() {
+  console.log('Refreshing schema cache...');
+  
   try {
-    console.log('Refreshing schema cache...');
+    // First attempt: force schema refresh by querying tables
+    await supabase.from('countries').select('count(*)').limit(1);
     
-    // First try to fix any visa packages schema issues
-    const fixResult = await fixVisaPackagesSchema();
-    console.log('Fix result:', fixResult);
-    
-    // Force a query to refresh schema
-    const { data, error } = await supabase
-      .from('visa_packages')
-      .select('count(*)')
-      .limit(1);
-      
-    if (error) {
-      console.error('Error refreshing schema cache:', error);
-      return { success: false, error: error.message, fixResult };
+    // Try to access visa_packages, which might trigger schema refresh
+    try {
+      await supabase.from('visa_packages').select('count(*)').limit(1);
+    } catch (err) {
+      console.log('visa_packages table might not exist yet:', err);
     }
     
-    console.log('Schema refresh completed successfully');
-    return { success: true, fixResult };
+    return {
+      success: true,
+      message: 'Schema refresh attempted'
+    };
   } catch (err: any) {
-    console.error('Error in refreshSchemaCache:', err);
-    return { success: false, error: err.message };
+    console.error('Schema refresh error:', err);
+    
+    return {
+      success: false,
+      message: `Schema refresh error: ${err.message}`,
+      error: err
+    };
   }
 }
 
 /**
- * Run a full database diagnostic for visa packages
+ * Automatically attempts to fix schema issues on application load
  */
-export async function runVisaPackagesDiagnostic(countryId: string) {
+export async function autoFixSchema() {
+  console.log('Auto-fixing schema...');
+  
   try {
-    // Step 1: Fix schema issues
+    // First, refresh the schema cache
+    await refreshSchemaCache();
+    
+    // Then attempt to fix visa_packages schema issues
     const fixResult = await fixVisaPackagesSchema();
     
-    // Step 2: Test operations
-    const testResult = await testVisaPackagesOperations(countryId);
+    console.log('Schema auto-fix result:', fixResult);
+    
+    return fixResult;
+  } catch (err: any) {
+    console.error('Schema auto-fix error:', err);
     
     return {
-      success: fixResult.success && testResult.success,
-      schemaFix: fixResult,
-      operationsTest: testResult
-    };
-  } catch (err: any) {
-    return {
-      success: false, 
-      error: err.message,
-      message: 'Diagnostic failed'
+      success: false,
+      message: `Auto-fix error: ${err.message}`,
+      error: err
     };
   }
 }
 
-// Auto-run schema fix on import for critical components
-export const autoFixSchema = async () => {
-  console.log('Auto-fixing schema on component load...');
-  const result = await refreshSchemaCache();
-  return result;
-};
+/**
+ * Run diagnostics on visa packages for a specific country
+ */
+export async function runVisaPackagesDiagnostic(countryId: string) {
+  console.log('Running visa packages diagnostic...');
+  
+  try {
+    // First, refresh the schema
+    await refreshSchemaCache();
+    
+    // Then run specific operations tests
+    const testResults = await testVisaPackagesOperations(countryId);
+    
+    console.log('Visa packages diagnostic results:', testResults);
+    
+    return {
+      success: testResults.success,
+      message: 'Diagnostic completed',
+      results: testResults
+    };
+  } catch (err: any) {
+    console.error('Diagnostic error:', err);
+    
+    return {
+      success: false,
+      message: `Diagnostic error: ${err.message}`,
+      error: err
+    };
+  }
+}

@@ -47,11 +47,24 @@ export async function fixVisaPackagesSchema() {
       // Create a function to safely query a table or view
       const safeQuery = async (tableName: string) => {
         try {
-          const result = await supabase
-            .from(tableName)
-            .select('count(*)')
-            .limit(1);
-          return { success: !result.error, error: result.error };
+          // Use rpc instead of direct table access for type safety
+          if (tableName === 'countries') {
+            const result = await supabase
+              .from('countries')
+              .select('count(*)')
+              .limit(1);
+            return { success: !result.error, error: result.error };  
+          }
+          
+          if (tableName === 'visa_packages') {
+            const result = await supabase
+              .from('visa_packages')
+              .select('count(*)')
+              .limit(1);
+            return { success: !result.error, error: result.error };
+          }
+          
+          return { success: false, error: new Error(`Unknown table: ${tableName}`) };
         } catch (err) {
           return { success: false, error: err };
         }
@@ -99,20 +112,6 @@ export async function testVisaPackagesOperations(countryId: string) {
   };
   
   try {
-    // Create a function to safely query a table or view
-    const safeQuery = async (tableName: string, condition: any) => {
-      try {
-        const result = await supabase
-          .from(tableName)
-          .select('*')
-          .eq(condition.column, condition.value)
-          .limit(1);
-        return { success: !result.error, data: result.data, error: result.error };
-      } catch (err) {
-        return { success: false, error: err };
-      }
-    };
-    
     // Test VIEW via RPC instead of direct view access
     try {
       const { data, error } = await supabase.rpc('get_country_packages', {
@@ -133,13 +132,13 @@ export async function testVisaPackagesOperations(countryId: string) {
     
     // Test SELECT on visa_packages
     try {
-      const { success, data, error } = await safeQuery('visa_packages', {
-        column: 'country_id',
-        value: countryId
-      });
+      const { data, error } = await supabase
+        .from('visa_packages')
+        .select('*')
+        .eq('country_id', countryId);
         
       results.select = {
-        success,
+        success: !error,
         data,
         error: error?.message
       };

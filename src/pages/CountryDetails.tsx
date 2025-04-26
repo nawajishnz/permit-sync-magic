@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -14,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Globe, MapPin, Plane } from 'lucide-react';
+import { Calendar, Clock, Globe, MapPin } from 'lucide-react';
 import PricingTier from '@/components/country/PricingTier';
 import ProcessStep from '@/components/country/ProcessStep';
 import FAQSection from '@/components/country/FAQSection';
@@ -46,37 +47,42 @@ const CountryDetails = () => {
     queryFn: async () => {
       console.log('Fetching visa package for country ID:', id);
       try {
-        // Try the view first (which should be created by our SQL script)
-        const { data: viewData, error: viewError } = await supabase
-          .from('countries_with_packages')
-          .select('*')
-          .eq('country_id', id)
-          .maybeSingle();
+        // Use RPC function instead of direct view query
+        const { data, error } = await supabase
+          .rpc('get_country_packages', { p_country_id: id })
+          .then(response => ({ 
+            data: response.data?.[0] || null, 
+            error: response.error 
+          }))
+          .catch(err => ({ 
+            data: null, 
+            error: err 
+          }));
           
-        if (!viewError && viewData) {
+        if (!error && data) {
           return {
-            id: viewData.package_id,
-            name: viewData.package_name,
-            government_fee: viewData.government_fee || 0,
-            service_fee: viewData.service_fee || 0,
-            processing_days: viewData.processing_days || 15,
-            total_price: viewData.total_price || 0
+            id: data.package_id,
+            name: data.package_name,
+            government_fee: data.government_fee || 0,
+            service_fee: data.service_fee || 0,
+            processing_days: data.processing_days || 15,
+            total_price: data.total_price || 0
           };
         }
         
         // Fallback to direct query
-        const { data, error } = await supabase
+        const { data: packageData, error: packageError } = await supabase
           .from('visa_packages')
           .select('*')
           .eq('country_id', id)
           .single();
           
-        if (error) {
-          console.error('Error fetching visa package:', error);
+        if (packageError) {
+          console.error('Error fetching visa package:', packageError);
           return null;
         }
         
-        return data;
+        return packageData;
       } catch (err) {
         console.error('Failed to fetch visa package:', err);
         return null;

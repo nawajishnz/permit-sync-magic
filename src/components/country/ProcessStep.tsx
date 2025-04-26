@@ -1,59 +1,47 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { FileText } from 'lucide-react'; // Adding a default icon
+import { FileText } from 'lucide-react';
 
-interface ProcessStepProps {
+interface Step {
   step: number;
   title: string;
   description: string;
-  isLast?: boolean;
-  icon?: React.ReactNode; // Making icon optional
 }
 
-const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, description, icon, isLast = false }) => {
-  // Don't render if title is empty (handles empty process steps)
-  if (!title.trim()) {
+interface ProcessStepProps {
+  steps: Step[];
+}
+
+const ProcessStep: React.FC<ProcessStepProps> = ({ steps }) => {
+  if (!steps || steps.length === 0) {
     return null;
   }
   
-  // Default icon if none provided
-  const displayIcon = icon || <FileText className="h-6 w-6" />;
-  
   return (
-    <motion.div 
-      className="relative"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.4, delay: 0.1 * step }}
-    >
-      <div className="flex items-start gap-4 relative z-10">
-        <div className="flex flex-col items-center">
-          <motion.div
-            className="w-16 h-16 rounded-full bg-teal-500 flex items-center justify-center shadow-md relative"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <span className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-teal-600 text-sm font-bold shadow-sm">
-              {step}
-            </span>
-            <div className="text-white">
-              {displayIcon}
+    <div className="my-6">
+      <h3 className="text-xl font-semibold mb-4">Application Process</h3>
+      <div className="space-y-8">
+        {steps.map((step, index) => (
+          <div key={index} className="relative">
+            {/* Connection line between steps */}
+            {index < steps.length - 1 && (
+              <div className="absolute left-6 top-12 bottom-0 w-0.5 bg-gray-200" />
+            )}
+            
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-teal-500 flex items-center justify-center text-white text-lg font-semibold">
+                {step.step}
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-medium">{step.title}</h4>
+                <p className="text-gray-600 mt-1">{step.description}</p>
+              </div>
             </div>
-          </motion.div>
-          
-          {!isLast && (
-            <div className="w-0.5 h-16 bg-gradient-to-b from-teal-500 to-transparent mt-3"></div>
-          )}
-        </div>
-        
-        <div className="pt-2">
-          <h3 className="font-medium text-gray-900 text-lg sm:text-xl mb-2">{title}</h3>
-          <p className="text-gray-600">{description}</p>
-        </div>
+          </div>
+        ))}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
