@@ -52,15 +52,11 @@ const CountryGrid: React.FC<CountryGridProps> = ({ limit }) => {
               .limit(1);
             
             const visaPackage = packageData && packageData[0];
-            const processingDays = visaPackage?.processing_days || 15;
-            const futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + processingDays);
             
             return {
               ...country,
               total_price: visaPackage?.total_price || 1999,
-              processing_days: processingDays,
-              entry_date: `Get on ${futureDate.getDate()} ${futureDate.toLocaleString('en-US', { month: 'short' })}`,
+              processing_days: visaPackage?.processing_days || 15,
               has_special_visa: country.name === 'Japan'
             };
           })

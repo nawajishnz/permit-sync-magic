@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
@@ -7,15 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import type { Database } from '@/integrations/supabase/types';
 
 type Destination = {
   id: string;
   name: string;
   imageUrl: string;
-  startingPrice: number;
-  visaCount: string;
-  date: string;
+  totalPrice: number;
   processingDays: number;
   hasSpecialVisa: boolean;
 };
@@ -30,7 +28,7 @@ const PopularDestinations = () => {
   } = useQuery<Destination[], Error>({
     queryKey: ['popularDestinations'],
     queryFn: async () => {
-      console.log('Fetching popular destinations using simplified approach...');
+      console.log('Fetching popular destinations...');
       
       try {
         const { data: countriesData, error: countriesError } = await supabase
@@ -51,6 +49,7 @@ const PopularDestinations = () => {
         
         const destinationsWithPricing = await Promise.all(
           countriesData.map(async (country) => {
+            // Fetch accurate pricing from visa_packages table
             const { data: packageData, error: packageError } = await supabase
               .from('visa_packages')
               .select('total_price, processing_days')
@@ -61,18 +60,15 @@ const PopularDestinations = () => {
               console.warn(`Could not fetch packages for country ${country.id}:`, packageError);
             }
             
+            // If we have package data, use it; otherwise use defaults
             const visaPackage = packageData && packageData.length > 0 ? packageData[0] : null;
             const processingDays = visaPackage?.processing_days || 15;
-            const futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + processingDays);
             
             return {
               id: country.id,
               name: country.name || 'Unknown Country',
               imageUrl: country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
-              startingPrice: visaPackage?.total_price || 1999,
-              visaCount: '15K+',
-              date: `Get on ${futureDate.getDate()} ${futureDate.toLocaleString('en-US', { month: 'short' })}`,
+              totalPrice: visaPackage?.total_price || 1999,
               processingDays: processingDays,
               hasSpecialVisa: country.name === 'Japan'
             };
@@ -106,9 +102,9 @@ const PopularDestinations = () => {
     }
   }, [error, toast]);
 
-  const getCountryDetails = (country: any) => {
+  const getCountryDetails = (country: Destination) => {
     return {
-      price: `₹${country.startingPrice.toLocaleString('en-IN')}`,
+      price: `₹${country.totalPrice.toLocaleString('en-IN')}`,
       processingDays: country.processingDays,
     };
   };
