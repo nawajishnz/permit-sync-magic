@@ -230,7 +230,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         });
         
         await fetchPricingData();
-        queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+        activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       } else {
         toast({
           title: "Status Update Failed",
