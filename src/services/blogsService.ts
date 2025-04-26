@@ -80,7 +80,10 @@ export const getRecentBlogs = async (limit: number = 3): Promise<Blog[]> => {
 };
 
 export const getBlogBySlug = async (slug: string): Promise<Blog | undefined> => {
-  return Promise.resolve(mockBlogs.find(blog => blog.slug === slug));
+  console.log("Looking for blog with slug:", slug);
+  const foundBlog = mockBlogs.find(blog => blog.slug === slug);
+  console.log("Found blog:", foundBlog);
+  return Promise.resolve(foundBlog);
 };
 
 export const deleteBlog = async (id: string): Promise<void> => {

@@ -15,7 +15,9 @@ const BlogPost: React.FC = () => {
     queryKey: ['blog', slug],
     queryFn: async () => {
       if (!slug) return null;
-      return await getBlogBySlug(slug);
+      const result = await getBlogBySlug(slug);
+      console.log("Blog fetched:", result); // Debug log
+      return result;
     },
   });
 
@@ -38,6 +40,7 @@ const BlogPost: React.FC = () => {
   }
 
   if (error || !blog) {
+    console.error("Error loading blog post:", error);
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="text-center p-8">
@@ -64,13 +67,15 @@ const BlogPost: React.FC = () => {
         </Link>
         
         <article className="bg-white rounded-lg shadow-md overflow-hidden max-w-4xl mx-auto">
-          <AspectRatio ratio={16/9}>
-            <img 
-              src={blog.featured_image} 
-              alt={blog.title} 
-              className="w-full h-full object-cover"
-            />
-          </AspectRatio>
+          {blog.featured_image && (
+            <AspectRatio ratio={16/9}>
+              <img 
+                src={blog.featured_image} 
+                alt={blog.title} 
+                className="w-full h-full object-cover"
+              />
+            </AspectRatio>
+          )}
           
           <div className="p-6 md:p-8">
             <div className="text-sm text-gray-500 mb-3">
