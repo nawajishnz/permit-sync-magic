@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -233,11 +232,19 @@ const BlogsManager = () => {
               />
               
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsEditing(false)}
+                  disabled={updateBlogMutation.isPending}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" isLoading={updateBlogMutation.isPending}>
-                  Save Changes
+                <Button 
+                  type="submit" 
+                  disabled={updateBlogMutation.isPending}
+                >
+                  {updateBlogMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>
               </DialogFooter>
             </form>
