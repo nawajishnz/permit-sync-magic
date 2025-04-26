@@ -182,8 +182,14 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
   };
 
   const handlePricingChange = (field: keyof NonNullable<CountryFormData['pricing']>, value: string) => {
+    const currentPricing = formData.pricing || { 
+      government_fee: '0', 
+      service_fee: '0', 
+      processing_days: '15' 
+    };
+
     updateFormData('pricing', {
-      ...(formData.pricing),
+      ...currentPricing,
       [field]: value
     });
   };
@@ -196,14 +202,15 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
       visa_includes: (formData.visa_includes || []).filter(item => item?.trim()),
       visa_assistance: (formData.visa_assistance || []).filter(item => item?.trim()),
       processing_steps: (formData.processing_steps || []).filter(step => step?.title?.trim()),
-      faq: (formData.faq || []).filter(item => item?.question?.trim())
+      faq: (formData.faq || []).filter(item => item?.question?.trim()),
+      documents: (formData.documents || []).filter(doc => doc?.document_name?.trim()),
     };
     
-    if (formData.pricing) {
+    if (!submitData.pricing) {
       submitData.pricing = {
-        government_fee: formData.pricing.government_fee || '0',
-        service_fee: formData.pricing.service_fee || '0',
-        processing_days: formData.pricing.processing_days || '15'
+        government_fee: '0',
+        service_fee: '0',
+        processing_days: '15'
       };
     }
     

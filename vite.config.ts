@@ -6,13 +6,13 @@ import path from 'path';
 // Fix for ESM-only libraries
 const componentTaggerDevFix = {
   name: 'component-tagger-dev-fix',
-  resolveId(id) {
+  resolveId(id: string) {
     if (id === 'lovable-tagger') {
       return { id: 'lovable-tagger-stub', external: false };
     }
     return null;
   },
-  load(id) {
+  load(id: string) {
     if (id === 'lovable-tagger-stub') {
       return `export const componentTagger = () => ({ name: 'component-tagger-stub' })`;
     }

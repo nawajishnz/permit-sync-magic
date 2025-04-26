@@ -295,6 +295,7 @@ const CountriesManager = () => {
         processing_steps: submitData.processing_steps,
         faq: submitData.faq,
         embassy_details: submitData.embassy_details,
+        documents: submitData.documents,
         updated_at: new Date().toISOString()
       };
 
@@ -316,7 +317,7 @@ const CountriesManager = () => {
 
       if (countryId && submitData.pricing) {
         try {
-          console.log('Handling pricing data for country:', countryId);
+          console.log('Handling pricing data for country:', countryId, submitData.pricing);
           const { government_fee, service_fee, processing_days } = submitData.pricing;
           
           const { saveVisaPackage } = await import('@/services/visaPackageService');
@@ -331,11 +332,21 @@ const CountriesManager = () => {
           
           if (!pricingResult.success) {
             console.error('Error saving pricing:', pricingResult.message);
+            toast({
+              title: "Warning",
+              description: "Country saved but pricing data could not be updated: " + pricingResult.message,
+              variant: "destructive",
+            });
           } else {
             console.log('Pricing saved successfully:', pricingResult.data);
           }
         } catch (pricingError) {
           console.error('Failed to save pricing:', pricingError);
+          toast({
+            title: "Warning",
+            description: "Country saved but there was an error updating pricing data",
+            variant: "destructive",
+          });
         }
       }
 
@@ -348,6 +359,8 @@ const CountriesManager = () => {
         queryClient.invalidateQueries({ queryKey: ['country', countryId] });
         queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
       }
+      
+      refetch();
       
       toast({
         title: isEditMode ? "Country updated" : "Country created",

@@ -173,7 +173,6 @@ export async function runDiagnostic(countryId: string): Promise<{ success: boole
   try {
     const results: any = {
       tableAccess: null,
-      viewAccess: null,
       packageExists: false,
       rpc: {
         success: false,

@@ -163,8 +163,10 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           description: `Pricing for ${countryName} has been updated successfully`,
         });
         
+        // Force refetch immediately
         await fetchPricingData();
         
+        // Invalidate all relevant queries to ensure data consistency
         activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
