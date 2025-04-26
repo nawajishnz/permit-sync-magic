@@ -9,6 +9,8 @@ import CountryTable from './CountryTable';
 import CountryDialog, { CountryFormData, CountrySubmitData } from './CountryDialog';
 import { fixVisaPackagesSchema } from '@/integrations/supabase/fix-schema';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { saveVisaPackage } from '@/services/visaPackageService';
+import { saveDocumentChecklist } from '@/services/documentChecklistService';
 
 const getInitialFormData = (): CountryFormData => ({
   name: '',
@@ -350,14 +352,47 @@ const CountriesManager = () => {
         }
       }
 
+      if (countryId && submitData.documents && submitData.documents.length > 0) {
+        try {
+          console.log('Handling documents for country:', countryId, submitData.documents);
+          
+          const documentsToSave = submitData.documents.map(doc => ({
+            ...doc,
+            country_id: countryId as string
+          }));
+          
+          const docsResult = await saveDocumentChecklist(countryId, documentsToSave);
+          
+          if (!docsResult.success) {
+            console.error('Error saving documents:', docsResult.message);
+            toast({
+              title: "Warning",
+              description: "Country saved but documents could not be updated: " + docsResult.message,
+              variant: "destructive",
+            });
+          } else {
+            console.log('Documents saved successfully:', docsResult.data);
+          }
+        } catch (docsError: any) {
+          console.error('Failed to save documents:', docsError);
+          toast({
+            title: "Warning",
+            description: "Country saved but there was an error updating documents",
+            variant: "destructive",
+          });
+        }
+      }
+
       setIsDialogOpen(false);
       
       queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       queryClient.invalidateQueries({ queryKey: ['countries'] });
       queryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] }); 
+      queryClient.invalidateQueries({ queryKey: ['documents'] }); 
       if (countryId) {
         queryClient.invalidateQueries({ queryKey: ['country', countryId] });
         queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
+        queryClient.invalidateQueries({ queryKey: ['documents', countryId] });
       }
       
       refetch();

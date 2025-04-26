@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,29 +11,28 @@ import { Plus, Trash, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient, QueryClient } from '@tanstack/react-query';
+import { saveDocumentChecklist } from '@/services/documentChecklistService';
 
 interface DocumentChecklistManagerProps {
   countries: any[];
   selectedCountryId: string | null;
   onSelectCountry: (countryId: string) => void;
-  queryClient?: QueryClient; // Made queryClient optional
+  queryClient?: QueryClient;
 }
 
 const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
   countries,
   selectedCountryId,
   onSelectCountry,
-  queryClient: externalQueryClient // Rename to prevent conflict with hook
+  queryClient: externalQueryClient
 }) => {
   const [documents, setDocuments] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const localQueryClient = useQueryClient();
   
-  // Use the passed queryClient or the local one
   const activeQueryClient = externalQueryClient || localQueryClient;
 
-  // Fetch documents for the selected country
   const { 
     data: fetchedDocuments = [], 
     isLoading,
@@ -59,12 +57,10 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
     enabled: !!selectedCountryId,
   });
 
-  // Update local state when fetched documents change
   useEffect(() => {
     if (fetchedDocuments.length > 0) {
       setDocuments(fetchedDocuments);
     } else if (selectedCountryId) {
-      // If no documents were found but a country is selected, provide an empty form
       setDocuments([
         {
           country_id: selectedCountryId,
@@ -121,7 +117,6 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
     try {
       setIsSaving(true);
 
-      // Validate documents
       for (const doc of documents) {
         if (!doc.document_name.trim()) {
           toast({
@@ -134,61 +129,27 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
         }
       }
 
-      // Delete existing documents for this country that aren't in the current list
-      const existingIds = documents
-        .filter(doc => doc.id)
-        .map(doc => doc.id);
+      const result = await saveDocumentChecklist(selectedCountryId, documents);
 
-      if (fetchedDocuments.length > 0) {
-        const documentsToDelete = fetchedDocuments
-          .filter(doc => !existingIds.includes(doc.id))
-          .map(doc => doc.id);
-
-        if (documentsToDelete.length > 0) {
-          const { error: deleteError } = await supabase
-            .from('document_checklist')
-            .delete()
-            .in('id', documentsToDelete);
-
-          if (deleteError) throw deleteError;
-        }
+      if (result.success) {
+        toast({
+          title: "Documents saved",
+          description: "Document checklist has been updated successfully",
+        });
+        
+        refetch();
+        
+        activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
+        activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
+        activeQueryClient.invalidateQueries({ queryKey: ['popularCountries'] });
+        activeQueryClient.invalidateQueries({ queryKey: ['documents', selectedCountryId] });
+      } else {
+        toast({
+          title: "Error saving documents",
+          description: result.message,
+          variant: "destructive",
+        });
       }
-
-      // Insert new documents and update modified ones
-      for (const doc of documents) {
-        if (doc.isNew) {
-          // Insert new document
-          const { document_name, document_description, required, country_id } = doc;
-          const { error: insertError } = await supabase
-            .from('document_checklist')
-            .insert({ document_name, document_description, required, country_id });
-
-          if (insertError) throw insertError;
-        } else if (doc.modified) {
-          // Update existing document
-          const { id, document_name, document_description, required } = doc;
-          const { error: updateError } = await supabase
-            .from('document_checklist')
-            .update({ document_name, document_description, required })
-            .eq('id', id);
-
-          if (updateError) throw updateError;
-        }
-      }
-
-      toast({
-        title: "Documents saved",
-        description: "Document checklist has been updated successfully",
-      });
-
-      // Refresh data
-      refetch();
-      
-      // Invalidate country detail queries to update front-end data
-      activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
-      activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
-      activeQueryClient.invalidateQueries({ queryKey: ['popularCountries'] });
-
     } catch (error: any) {
       toast({
         title: "Error saving documents",

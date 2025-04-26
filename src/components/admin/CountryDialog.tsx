@@ -26,7 +26,14 @@ export interface CountryFormData {
   processing_steps: Array<{ step: number; title: string; description: string }>;
   faq: Array<{ question: string; answer: string }>;
   embassy_details: { address: string; phone: string; email: string; hours: string };
-  documents?: Array<{ document_name: string; document_description: string; required: boolean; isNew?: boolean }>;
+  documents?: Array<{ 
+    id?: string;
+    document_name: string; 
+    document_description: string; 
+    required: boolean; 
+    isNew?: boolean;
+    modified?: boolean;
+  }>;
   pricing?: { 
     government_fee: string; 
     service_fee: string; 
@@ -170,7 +177,11 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
 
   const handleDocumentChange = (index: number, field: string, value: string | boolean) => {
     const newDocs = [...(formData.documents || [])];
-    newDocs[index] = { ...newDocs[index], [field]: value };
+    newDocs[index] = { 
+      ...newDocs[index], 
+      [field]: value,
+      modified: newDocs[index].id ? true : undefined
+    };
     updateFormData('documents', newDocs);
   };
 
@@ -195,6 +206,14 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
   };
 
   const handleFormSubmit = () => {
+    const processedDocuments = (formData.documents || [])
+      .filter(doc => doc?.document_name?.trim())
+      .map(doc => ({
+        ...doc,
+        document_description: doc.document_description || '',
+        required: !!doc.required
+      }));
+    
     const submitData: CountrySubmitData = {
       ...formData,
       flagFile: flagFile,
@@ -203,7 +222,7 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
       visa_assistance: (formData.visa_assistance || []).filter(item => item?.trim()),
       processing_steps: (formData.processing_steps || []).filter(step => step?.title?.trim()),
       faq: (formData.faq || []).filter(item => item?.question?.trim()),
-      documents: (formData.documents || []).filter(doc => doc?.document_name?.trim()),
+      documents: processedDocuments,
     };
     
     if (!submitData.pricing) {
