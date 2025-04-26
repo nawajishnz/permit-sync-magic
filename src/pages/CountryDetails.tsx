@@ -1,11 +1,12 @@
+
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useParams, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCountryData } from '@/hooks/useCountryData';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CountryDataFallback from '@/components/country/CountryDataFallback';
-import { autoFixSchema, createFallbackPricing } from '@/integrations/supabase/refresh-schema';
+import CountryNotFound from '@/components/country/CountryNotFound';
+import { autoFixSchema, createFallbackPricing } from '@/integrations/supabase/fix-schema';
 import {
   Card,
   CardContent,
@@ -21,7 +22,6 @@ import FAQSection from '@/components/country/FAQSection';
 import EmbassySection from '@/components/country/EmbassySection';
 import DocumentChecklist from '@/components/country/DocumentChecklist';
 import { Separator } from '@/components/ui/separator';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -76,65 +76,13 @@ const CountryDetails = () => {
   }
   
   // Handle error state with our fallback component
-  if (error || (!country && !isLoading)) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertTitle>Error Loading Country Details</AlertTitle>
-          <AlertDescription>
-            {error?.message || "Country details could not be loaded"}
-          </AlertDescription>
-        </Alert>
-        
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center py-12">
-              <h2 className="text-xl font-bold mb-2">Country details not available</h2>
-              <p className="text-gray-600 mb-4">There was a problem loading this country's information.</p>
-              <div className="flex gap-4">
-                <Button 
-                  onClick={() => refetch()}
-                  className="bg-blue-600 text-white"
-                >
-                  Try Again
-                </Button>
-                <Link to="/">
-                  <Button variant="outline">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (error) {
+    return <CountryDataFallback countryId={id || ''} error={error as Error} onRetry={refetch} />;
   }
 
-  // Ensure we have all necessary data
+  // Handle not found
   if (!country) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-xl font-bold mb-2">Country details not available</h2>
-          <p className="text-gray-600 mb-4">The requested country could not be found.</p>
-          <div className="flex justify-center gap-4">
-            <Button 
-              onClick={() => refetch()}
-              className="bg-blue-600 text-white"
-            >
-              Try Again
-            </Button>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <CountryNotFound onRetry={refetch} />;
   }
 
   // Create a fallback package if none exists
