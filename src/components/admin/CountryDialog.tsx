@@ -163,9 +163,17 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
   };
 
   const handleAddDocument = () => {
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
     updateFormData('documents', [
       ...(formData.documents || []),
-      { document_name: '', document_description: '', required: false, isNew: true }
+      { 
+        id: tempId,
+        document_name: '', 
+        document_description: '', 
+        required: false, 
+        isNew: true 
+      }
     ]);
   };
 

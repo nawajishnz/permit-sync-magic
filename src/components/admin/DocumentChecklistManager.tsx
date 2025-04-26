@@ -12,7 +12,7 @@ import { Plus, Trash, Save, Loader2, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient, QueryClient } from '@tanstack/react-query';
-import { saveDocumentChecklist, getDocumentChecklist } from '@/services/documentChecklistService';
+import { saveDocumentChecklist, getDocumentChecklist, DocumentItem } from '@/services/documentChecklistService';
 import { refreshDocumentSchema } from '@/integrations/supabase/refresh-schema';
 
 interface DocumentChecklistManagerProps {
@@ -78,6 +78,7 @@ const DocumentChecklistManager: React.FC<DocumentChecklistManagerProps> = ({
     setDocuments([
       ...documents,
       {
+        id: `new-${Date.now()}`, // Generate a temporary id for new documents
         country_id: selectedCountryId,
         document_name: '',
         document_description: '',

@@ -10,7 +10,7 @@ import CountryDialog, { CountryFormData, CountrySubmitData } from './CountryDial
 import { fixVisaPackagesSchema } from '@/integrations/supabase/fix-schema';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { saveVisaPackage } from '@/services/visaPackageService';
-import { saveDocumentChecklist } from '@/services/documentChecklistService';
+import { saveDocumentChecklist, DocumentItem } from '@/services/documentChecklistService';
 import { getDocumentChecklist } from '@/services/documentChecklistService';
 
 const getInitialFormData = (): CountryFormData => ({
@@ -369,8 +369,10 @@ const CountriesManager = () => {
         try {
           console.log('Handling documents for country:', countryId, submitData.documents);
           
-          const documentsToSave = submitData.documents.map(doc => ({
+          // Ensure all documents have an id - generate UUID-like ids for new documents
+          const documentsToSave: DocumentItem[] = submitData.documents.map(doc => ({
             ...doc,
+            id: doc.id || `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             country_id: countryId as string
           }));
           
