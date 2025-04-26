@@ -25,7 +25,7 @@ export async function getCountryVisaPackage(countryId: string): Promise<VisaPack
   console.log('Fetching visa package for country:', countryId);
   
   try {
-    // First attempt: Direct query
+    // Direct query to visa_packages table
     const { data, error } = await supabase
       .from('visa_packages')
       .select('*')
@@ -33,36 +33,12 @@ export async function getCountryVisaPackage(countryId: string): Promise<VisaPack
       .single();
     
     if (!error && data) {
-      console.log('Visa package found via direct query:', data);
-      return data;
+      console.log('Visa package found:', data);
+      return data as VisaPackage;
     }
     
     if (error) {
-      console.warn('Direct query failed, error:', error.message);
-    }
-    
-    // Second attempt: Try the view
-    try {
-      const { data: viewData, error: viewError } = await supabase
-        .from('countries_with_packages')
-        .select('*')
-        .eq('country_id', countryId)
-        .single();
-      
-      if (!viewError && viewData) {
-        console.log('Visa package found via view:', viewData);
-        return {
-          id: viewData.package_id || undefined,
-          country_id: viewData.country_id,
-          name: viewData.package_name || 'Visa Package',
-          government_fee: viewData.government_fee || 0,
-          service_fee: viewData.service_fee || 0,
-          processing_days: viewData.processing_days || 15,
-          total_price: viewData.total_price || 0
-        };
-      }
-    } catch (viewErr) {
-      console.warn('View query failed:', viewErr);
+      console.warn('Query failed, error:', error.message);
     }
     
     // If package doesn't exist, create a default one
@@ -191,7 +167,11 @@ export async function runDiagnostic(countryId: string): Promise<{ success: boole
     const results: any = {
       tableAccess: null,
       viewAccess: null,
-      packageExists: false
+      packageExists: false,
+      rpc: {
+        success: false,
+        error: null
+      }
     };
     
     // Test direct table access
@@ -224,27 +204,31 @@ export async function runDiagnostic(countryId: string): Promise<{ success: boole
       results.packageExists = !error && !!data;
     }
     
-    // Test view access
+    // Try using RPC function for better compatibility
     try {
-      const { data: viewData, error: viewError } = await supabase
-        .from('countries_with_packages')
-        .select('count(*)')
-        .single();
-        
-      results.viewAccess = {
-        success: !viewError,
-        error: viewError?.message,
-        data: viewData
+      // Using the save_visa_package RPC function
+      const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', {
+        p_country_id: countryId,
+        p_name: 'Test Package',
+        p_government_fee: 0,
+        p_service_fee: 0,
+        p_processing_days: 15
+      });
+      
+      results.rpc = {
+        success: !rpcError && !!rpcData,
+        error: rpcError?.message,
+        data: rpcData
       };
     } catch (err: any) {
-      results.viewAccess = {
+      results.rpc = {
         success: false,
         error: err.message
       };
     }
     
     return {
-      success: results.tableAccess?.success || results.viewAccess?.success,
+      success: results.tableAccess?.success || results.rpc?.success,
       message: "Diagnostic completed",
       results
     };
