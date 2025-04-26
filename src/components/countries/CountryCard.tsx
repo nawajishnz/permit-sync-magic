@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Calendar, Plane, BadgeCheck, MapPin, Heart, ChevronRight, Check, Clock, Globe, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
-// Add visa package type definition
 type VisaPackage = {
   id: string;
   country_id: string;
@@ -32,7 +32,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
   const [visaPackage, setVisaPackage] = useState<VisaPackage | null>(null);
   const [isLoadingPackage, setIsLoadingPackage] = useState(false);
 
-  // Fetch visa package for this country
   useEffect(() => {
     const fetchVisaPackage = async () => {
       if (!country.id) return;
@@ -62,14 +61,11 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
     fetchVisaPackage();
   }, [country.id]);
   
-  // Helper function to get correct flag URL format based on country name
   const getCountryFlagUrl = (country: any) => {
-    // If there's already a valid flag URL stored, use that
     if (country.flag && country.flag.includes('http')) {
       return country.flag;
     }
     
-    // Convert country name to ISO code for flag CDN usage
     const countryIsoMap: {[key: string]: string} = {
       'United States': 'us',
       'Canada': 'ca',
@@ -90,12 +86,10 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
     return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
   };
 
-  // Get visa types for a country 
   const getVisaTypes = (country: any) => {
-    return ['Tourist Visa']; // Only show Tourist Visa
+    return ['Tourist Visa'];
   };
 
-  // Generate pricing and details
   const getCountryDetails = (country: any) => {
     const visaPackage = country.visa_packages?.[0];
     if (visaPackage) {
@@ -108,7 +102,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
       };
     }
     
-    // Fallback values if no visa package is available
     return {
       price: '₹1,999',
       processingTime: '7-10 business days'
@@ -117,7 +110,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
 
   const { price, processingTime } = getCountryDetails(country);
 
-  // Grid view card
   if (viewMode === 'grid') {
     return (
       <Link to={`/country/${country.id}`} className="block h-full">
@@ -145,7 +137,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
               </div>
             )}
             
-            {/* Country name and continent */}
             <div className="absolute bottom-3 left-3 z-20">
               <h3 className="font-semibold text-xl text-white mb-1">{country.name}</h3>
               <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
@@ -154,7 +145,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
               </div>
             </div>
             
-            {/* Flag at bottom right */}
             <div className="absolute bottom-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
               <div className="w-8 h-8 rounded-full overflow-hidden">
                 <img 
@@ -169,7 +159,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
               </div>
             </div>
             
-            {/* Save button */}
             <Button
               size="sm"
               variant="ghost"
@@ -226,7 +215,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
     );
   }
   
-  // List view card (same modifications for the list view)
   return (
     <Link to={`/country/${country.id}`} className="block">
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm group">
@@ -244,7 +232,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent md:bg-gradient-to-b"></div>
               
-              {/* Flag overlay */}
               <div className="absolute top-3 left-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30 md:bottom-3 md:top-auto">
                 <div className="w-8 h-8 rounded-full overflow-hidden">
                   <img 
@@ -259,7 +246,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
                 </div>
               </div>
               
-              {/* Save button */}
               <Button
                 size="sm"
                 variant="ghost"
