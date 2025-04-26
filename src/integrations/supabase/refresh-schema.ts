@@ -74,3 +74,87 @@ export const refreshDocumentSchema = async () => {
     return { success: false, message: `Unexpected error: ${error.message}` };
   }
 };
+
+/**
+ * Runs diagnostic tests on visa packages for a specific country
+ * This helps troubleshoot issues with visa package data
+ */
+export const runVisaPackagesDiagnostic = async (countryId: string) => {
+  try {
+    console.log(`Running visa packages diagnostic for country ID: ${countryId}`);
+    
+    // Step 1: Check if country exists
+    const { data: countryData, error: countryError } = await supabase
+      .from('countries')
+      .select('id, name')
+      .eq('id', countryId)
+      .single();
+      
+    if (countryError) {
+      return {
+        success: false,
+        message: `Country not found: ${countryError.message}`,
+        diagnosticResults: {
+          countryExists: false
+        }
+      };
+    }
+    
+    // Step 2: Check for visa packages related to this country
+    const { data: packageData, error: packageError } = await supabase
+      .from('visa_packages')
+      .select('*')
+      .eq('country_id', countryId);
+      
+    if (packageError) {
+      return {
+        success: false,
+        message: `Error querying visa packages: ${packageError.message}`,
+        diagnosticResults: {
+          countryExists: true,
+          countryName: countryData.name,
+          packagesQueryError: packageError.message
+        }
+      };
+    }
+    
+    // Prepare the diagnostic results
+    const diagnosticResults = {
+      countryExists: true,
+      countryName: countryData.name,
+      packagesFound: packageData.length > 0,
+      packagesCount: packageData.length,
+      packages: packageData,
+      recommendation: packageData.length === 0 ? 'Create at least one visa package for this country' : 'Visa packages exist for this country'
+    };
+    
+    // Step 3: Check if the country has the required fields
+    const missingFields = [];
+    const requiredFields = ['name', 'flag', 'banner', 'description'];
+    
+    for (const field of requiredFields) {
+      if (!countryData[field]) {
+        missingFields.push(field);
+      }
+    }
+    
+    return {
+      success: true,
+      message: packageData.length > 0 
+        ? `Found ${packageData.length} visa packages for ${countryData.name}` 
+        : `No visa packages found for ${countryData.name}`,
+      diagnosticResults: {
+        ...diagnosticResults,
+        missingRequiredFields: missingFields.length > 0 ? missingFields : [],
+        hasMissingFields: missingFields.length > 0
+      }
+    };
+  } catch (error: any) {
+    console.error('Error in visa packages diagnostic:', error);
+    return {
+      success: false,
+      message: `Diagnostic error: ${error.message}`,
+      diagnosticResults: { error: error.message }
+    };
+  }
+};
