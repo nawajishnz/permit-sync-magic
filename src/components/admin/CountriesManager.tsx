@@ -1,21 +1,13 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CountryTable from './CountryTable';
 import CountryDialog, { CountryFormData, CountrySubmitData } from './CountryDialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DocumentChecklistManager from './DocumentChecklistManager';
-import CountryPricingTab from './CountryPricingTab';
-import VisaTypesManager from './VisaTypesManager';
-import VisaPackagesManager from './VisaPackagesManager';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { z } from 'zod';
-import { refreshSchemaCache } from '@/integrations/supabase/refresh-schema';
 
 const getInitialFormData = (): CountryFormData => ({
   name: '',
@@ -36,43 +28,13 @@ const getInitialFormData = (): CountryFormData => ({
   pricing: { government_fee: '', service_fee: '', processing_days: '' }
 });
 
-interface CountriesManagerProps {
-  queryClient?: any;
-}
-
-const formSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1, "Country name is required"),
-  code: z.string().min(2, "Country code is required").max(2),
-  flag_url: z.string().optional(),
-  description: z.string().optional(),
-  entry_type: z.string().optional(),
-  processing_time: z.string().optional(),
-  is_active: z.boolean().default(true),
-  pricing: z.array(
-    z.object({
-      visa_type: z.string(),
-      government_fee: z.union([z.string(), z.number()]),
-      service_fee: z.union([z.string(), z.number()]),
-      processing_days: z.union([z.string(), z.number()]),
-      length_of_stay: z.union([z.string(), z.number()]),
-    })
-  ).optional()
-});
-
-const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
+const CountriesManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentCountryId, setCurrentCountryId] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState('countries');
-  const [selectedCountryIdForTabs, setSelectedCountryIdForTabs] = useState<string | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const localQueryClient = useQueryClient();
-  
-  const activeQueryClient = queryClient || localQueryClient;
-  
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<CountryFormData>(getInitialFormData());
 
   const { 
@@ -84,66 +46,21 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
   } = useQuery({
     queryKey: ['adminCountries'],
     queryFn: async () => {
-      console.log('Fetching countries for admin...');
       const { data, error } = await supabase
         .from('countries')
-        .select('*')
-        .order('name');
+        .select('*, visa_packages(*)');
         
-      console.log('Countries response:', { data, error, count: data?.length });
-      
-      if (error) {
-        console.error('Error fetching countries:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       return data || [];
-    },
-    staleTime: 0
+    }
   });
 
-  useEffect(() => {
-    console.log('Countries data in admin component:', countries);
-  }, [countries]);
-
   const handleRefresh = () => {
-    console.log('Manually refreshing countries data...');
-    
-    invalidateAllCountryQueries();
-    
+    queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
     toast({
       title: "Refreshing data",
       description: "Fetching the latest countries data",
     });
-  };
-
-  const invalidateAllCountryQueries = () => {
-    activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
-    activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
-    activeQueryClient.invalidateQueries({ queryKey: ['popularCountries'] });
-    activeQueryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
-    activeQueryClient.invalidateQueries({ queryKey: ['heroCountries'] });
-    activeQueryClient.invalidateQueries({ queryKey: ['countryDetails'] });
-    activeQueryClient.invalidateQueries({ queryKey: ['visaPackages'] });
-    
-    setTimeout(() => {
-      refetch();
-    }, 300);
-  };
-
-  useEffect(() => {
-    if (isError && error instanceof Error) {
-      toast({
-        title: "Error fetching countries",
-        description: error.message || "Failed to load countries data",
-        variant: "destructive",
-      });
-    }
-  }, [isError, error, toast]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleAddNew = () => {
@@ -154,7 +71,6 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
   };
 
   const handleEdit = (country: any) => {
-    console.log('Editing country:', country);
     setFormData({
       id: country.id,
       name: country.name || '',
@@ -177,7 +93,11 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         hours: ''
       },
       documents: country.documents || [],
-      pricing: { government_fee: '', service_fee: '', processing_days: '' }
+      pricing: country.visa_packages?.[0] ? {
+        government_fee: country.visa_packages[0].government_fee?.toString() || '',
+        service_fee: country.visa_packages[0].service_fee?.toString() || '',
+        processing_days: country.visa_packages[0].processing_days?.toString() || ''
+      } : { government_fee: '', service_fee: '', processing_days: '' }
     });
     setCurrentCountryId(country.id);
     setIsEditMode(true);
@@ -198,9 +118,8 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         description: "Country has been successfully removed",
       });
       
-      invalidateAllCountryQueries();
+      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
     } catch (error: any) {
-      console.error('Error deleting country:', error);
       toast({
         title: "Error deleting country",
         description: error.message || "Failed to delete country",
@@ -220,103 +139,103 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
 
       if (submitData.flagFile) {
         const flagFilename = `flag-${Date.now()}-${submitData.flagFile.name}`;
-        const { data, error } = await supabase.storage.from('country-images').upload(flagFilename, submitData.flagFile);
-        if (error) throw new Error(`Flag upload failed: ${error.message}`);
+        const { error: flagError } = await supabase.storage
+          .from('country-images')
+          .upload(flagFilename, submitData.flagFile);
+        if (flagError) throw new Error(`Flag upload failed: ${flagError.message}`);
         flagUrl = supabase.storage.from('country-images').getPublicUrl(flagFilename).data.publicUrl;
       }
+      
       if (submitData.bannerFile) {
         const bannerFilename = `banner-${Date.now()}-${submitData.bannerFile.name}`;
-        const { data, error } = await supabase.storage.from('country-images').upload(bannerFilename, submitData.bannerFile);
-        if (error) throw new Error(`Banner upload failed: ${error.message}`);
+        const { error: bannerError } = await supabase.storage
+          .from('country-images')
+          .upload(bannerFilename, submitData.bannerFile);
+        if (bannerError) throw new Error(`Banner upload failed: ${bannerError.message}`);
         bannerUrl = supabase.storage.from('country-images').getPublicUrl(bannerFilename).data.publicUrl;
       }
-      
-      const { 
-        pricing, 
-        documents, 
-        flagFile, 
-        bannerFile,
-        id, 
-        ...countryFields 
-      } = submitData;
-      
+
       const dataToSave = {
-          ...countryFields,
-          flag: flagUrl,
-          banner: bannerUrl,
-          entry_type: countryFields.entry_type || 'Tourist Visa',
-          processing_time: countryFields.processing_time || 'N/A',
-          updated_at: new Date().toISOString()
+        name: submitData.name,
+        flag: flagUrl,
+        banner: bannerUrl,
+        description: submitData.description,
+        entry_type: submitData.entry_type || 'Tourist Visa',
+        validity: submitData.validity,
+        processing_time: submitData.processing_time,
+        length_of_stay: submitData.length_of_stay,
+        requirements_description: submitData.requirements_description,
+        visa_includes: submitData.visa_includes,
+        visa_assistance: submitData.visa_assistance,
+        processing_steps: submitData.processing_steps,
+        faq: submitData.faq,
+        embassy_details: submitData.embassy_details,
+        updated_at: new Date().toISOString()
       };
 
-      if (!dataToSave.name || !dataToSave.flag || !dataToSave.banner || !dataToSave.description) {
-        throw new Error("Missing required fields: Name, Flag, Banner, Description.");
-      }
-
       if (isEditMode && countryId) {
-        console.log(`Updating country ${countryId} with data:`, dataToSave);
-        const { error } = await supabase.from('countries').update(dataToSave).eq('id', countryId);
+        const { error } = await supabase
+          .from('countries')
+          .update(dataToSave)
+          .eq('id', countryId);
         if (error) throw error;
       } else {
-        console.log("Creating new country with data:", dataToSave);
-        const { data: newData, error } = await supabase.from('countries').insert(dataToSave).select('id').single();
+        const { data, error } = await supabase
+          .from('countries')
+          .insert(dataToSave)
+          .select('id')
+          .single();
         if (error) throw error;
-        if (newData) {
-          countryId = newData.id;
-        }
+        if (data) countryId = data.id;
       }
 
-      if (countryId && pricing && (pricing.government_fee || pricing.service_fee || pricing.processing_days)) {
-        try {
-          const govFee = parseFloat(pricing.government_fee) || 0;
-          const serviceFee = parseFloat(pricing.service_fee) || 0;
-          const processingDays = parseInt(pricing.processing_days) || 0;
-          
-          if (govFee > 0 || serviceFee > 0 || processingDays > 0) {
-              console.log(`Calling save_visa_package for country ${countryId} using positional arguments`);
-              const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', 
-                  [countryId, 'Visa Package', govFee, serviceFee, processingDays]
-              );
+      // Handle visa package pricing
+      if (countryId && submitData.pricing) {
+        const { government_fee, service_fee, processing_days } = submitData.pricing;
+        if (government_fee || service_fee || processing_days) {
+          const packageData = {
+            country_id: countryId,
+            name: 'Visa Package',
+            government_fee: parseFloat(government_fee) || 0,
+            service_fee: parseFloat(service_fee) || 0,
+            processing_days: parseInt(processing_days) || 15
+          };
 
-              if (rpcError) {
-                  console.error("Error saving visa package via RPC:", rpcError);
-                  throw new Error(`Failed to save pricing: ${rpcError.message}`);
-              } else {
-                  console.log("Visa package saved successfully via RPC:", rpcData);
-                  toast({ title: "Pricing Saved", description: `Default pricing for ${savedCountryName} saved.` });
-              }
+          const { data: existingPackage } = await supabase
+            .from('visa_packages')
+            .select('id')
+            .eq('country_id', countryId)
+            .single();
+
+          if (existingPackage) {
+            await supabase
+              .from('visa_packages')
+              .update(packageData)
+              .eq('id', existingPackage.id);
+          } else {
+            await supabase
+              .from('visa_packages')
+              .insert(packageData);
           }
-        } catch (pricingError: any) {
-          console.error("Error processing pricing data:", pricingError);
-          toast({ 
-              title: "Warning: Pricing Issue", 
-              description: `Country ${savedCountryName} saved, but pricing failed: ${pricingError.message}`, 
-              variant: "destructive" 
-          });
         }
-      }
-
-      if (documents && documents.length > 0 && countryId) {
-        console.log("Document handling logic would go here.");
       }
 
       setIsDialogOpen(false);
-      invalidateAllCountryQueries();
+      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+      toast({
+        title: isEditMode ? "Country updated" : "Country created",
+        description: `${savedCountryName} has been successfully ${isEditMode ? 'updated' : 'created'}.`
+      });
 
     } catch (error: any) {
-      console.error("Error in handleSubmit:", error);
-      toast({ 
-          title: "Save Failed", 
-          description: error.message || "An unexpected error occurred", 
-          variant: "destructive" 
+      toast({
+        title: "Error saving country",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSelectCountryForTabs = (countryId: string) => {
-    setSelectedCountryIdForTabs(countryId);
   };
 
   return (
@@ -333,55 +252,21 @@ const CountriesManager = ({ queryClient }: CountriesManagerProps) => {
         </div>
       </div>
       
-      <Tabs value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="mb-4 grid w-full grid-cols-4">
-          <TabsTrigger value="countries">Countries</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="pricing">Pricing</TabsTrigger>
-          <TabsTrigger value="visatypes">Visa Types</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="countries">
-          <Card>
-            <CardHeader>
-              <CardTitle>Manage Countries</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CountryTable 
-                countries={countries}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                isLoading={countriesLoading}
-                isError={isError}
-                error={error as Error | null}
-                onSelectCountry={handleSelectCountryForTabs}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="documents">
-          <DocumentChecklistManager
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Countries</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CountryTable 
             countries={countries}
-            selectedCountryId={selectedCountryIdForTabs}
-            onSelectCountry={handleSelectCountryForTabs}
-            queryClient={activeQueryClient}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isLoading={countriesLoading}
+            isError={isError}
+            error={error as Error | null}
           />
-        </TabsContent>
-        
-        <TabsContent value="pricing">
-          <CountryPricingTab countries={countries} />
-        </TabsContent>
-        
-        <TabsContent value="visatypes">
-          <VisaTypesManager
-            countries={countries}
-            selectedCountryId={selectedCountryIdForTabs}
-            onSelectCountry={handleSelectCountryForTabs}
-            queryClient={activeQueryClient}
-          />
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
 
       <CountryDialog
         isOpen={isDialogOpen}
