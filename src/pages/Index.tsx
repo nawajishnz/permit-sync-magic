@@ -128,7 +128,8 @@ const Index = () => {
       <Header />
       <main className="flex-grow pt-20 md:pt-24">
         <Hero />
-        <div className="pt-2 pb-4 md:pt-4 md:pb-10 bg-white px-4">
+        
+        <div className="pt-2 pb-4 md:pt-4 md:pb-10 bg-gradient-to-br from-indigo-50/40 via-blue-50/30 to-white/90 px-4">
           <PopularDestinations />
         </div>
         
