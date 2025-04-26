@@ -59,39 +59,43 @@ export type Database = {
       }
       blogs: {
         Row: {
-          id: string;
-          title: string;
-          slug: string;
-          content: string;
-          excerpt: string;
-          featured_image: string;
-          author_id: string;
-          published_at: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+          id: string
+          title: string
+          slug: string
+          content: string
+          excerpt: string
+          featured_image: string
+          author_id: string
+          published_at: string
+          created_at: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          title: string;
-          slug: string;
-          content: string;
-          excerpt: string;
-          featured_image: string;
-          author_id: string;
-          published_at?: string;
-        };
+          id?: string
+          title: string
+          slug: string
+          content: string
+          excerpt: string
+          featured_image: string
+          author_id: string
+          published_at?: string
+          created_at?: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          title?: string;
-          slug?: string;
-          content?: string;
-          excerpt?: string;
-          featured_image?: string;
-          author_id?: string;
-          published_at?: string;
-        };
-        Relationships: [];
-      };
+          id?: string
+          title?: string
+          slug?: string
+          content?: string
+          excerpt?: string
+          featured_image?: string
+          author_id?: string
+          published_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           application_id: string | null
@@ -820,8 +824,18 @@ export type Database = {
           country_id: string;
         };
       };
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
-  };
+    Enums: {
+      user_role: "user" | "admin"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
 
 type PublicSchema = Database[Extract<keyof Database, "public">]

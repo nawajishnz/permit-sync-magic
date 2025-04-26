@@ -25,7 +25,7 @@ const BlogsManager = () => {
     },
   });
 
-  const deleteBlog = useSupabaseDelete({
+  const deleteBlog = useSupabaseDelete<Blog>({
     table: 'blogs',
     queryKey: ['admin-blogs'],
     successMessage: 'Blog post deleted successfully',
