@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Loader2, Database } from 'lucide-react';
+import { AlertCircle, Loader2, Database, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getCountryVisaPackage, saveVisaPackage, runDiagnostic } from '@/services/visaPackageService';
 import { VisaPackage } from '@/types/visaPackage';
 import { useQueryClient } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 
 interface PricingTierManagerProps {
   countries: any[];
@@ -55,6 +57,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     setError(null);
     
     try {
+      console.log('Fetching pricing data for country:', selectedCountryId);
       const packageData = await getCountryVisaPackage(selectedCountryId);
       
       if (packageData) {
@@ -144,6 +147,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     setError(null);
     
     try {
+      // Make sure to parse the numerical values correctly
       const packageToSave: VisaPackage = {
         id: packageData?.id,
         country_id: selectedCountryId,
@@ -156,7 +160,10 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
       const country = countries.find(c => c.id === selectedCountryId);
       const countryName = country?.name || "country";
       
+      console.log('Saving package with data:', packageToSave);
+      
       const result = await saveVisaPackage(packageToSave);
+      console.log('Save result:', result);
       
       if (result.success) {
         toast({
@@ -164,12 +171,15 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           description: `Pricing for ${countryName} has been updated successfully`,
         });
         
+        // Refetch the data to update our UI
         await fetchPricingData();
         
+        // Invalidate all related queries to ensure data consistency
         activeQueryClient.invalidateQueries({ queryKey: ['adminCountries'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countryDetail'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countries'] });
         activeQueryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] });
+        activeQueryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
         if (selectedCountryId) {
           activeQueryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
           activeQueryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
@@ -194,6 +204,21 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
     } finally {
       setSaving(false);
     }
+  };
+  
+  const getPackageStatus = () => {
+    if (!selectedCountryId) return null;
+    
+    if (loading) return <Badge variant="outline" className="bg-gray-100">Loading...</Badge>;
+    
+    if (packageData) {
+      const hasPricing = packageData.government_fee > 0 || packageData.service_fee > 0;
+      return hasPricing ? 
+        <Badge className="bg-green-100 text-green-800 border-green-300">Active</Badge> : 
+        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Inactive</Badge>;
+    }
+    
+    return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Not configured</Badge>;
   };
   
   const selectedCountry = countries.find(c => c.id === selectedCountryId);
@@ -255,9 +280,12 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
           {selectedCountryId && (
             <div className="space-y-4 border p-4 rounded-md">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">
-                  Pricing for {selectedCountry?.name}
-                </h3>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-lg font-medium">
+                    Pricing for {selectedCountry?.name}
+                  </h3>
+                  {getPackageStatus()}
+                </div>
                 <Button 
                   variant="outline" 
                   size="sm"

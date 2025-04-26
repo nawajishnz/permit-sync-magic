@@ -41,7 +41,8 @@ export const getCountryVisaPackage = async (countryId: string): Promise<VisaPack
           government_fee: packageData.government_fee || 0,
           service_fee: packageData.service_fee || 0,
           processing_days: packageData.processing_days || 15,
-          total_price: packageData.total_price
+          total_price: packageData.total_price,
+          updated_at: packageData.updated_at || new Date().toISOString()
         };
       }
     } catch (rpcErr) {
@@ -73,38 +74,7 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       };
     }
 
-    // First try using the RPC function
-    try {
-      console.log('Attempting to save via RPC function...');
-      const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        'save_visa_package',
-        {
-          p_country_id: packageData.country_id,
-          p_name: packageData.name || 'Visa Package',
-          p_government_fee: packageData.government_fee || 0,
-          p_service_fee: packageData.service_fee || 0,
-          p_processing_days: packageData.processing_days || 15
-        }
-      );
-      
-      if (!rpcError && rpcResult) {
-        console.log('Successfully saved visa package via RPC:', rpcResult);
-        return {
-          success: true,
-          message: 'Visa package saved successfully',
-          data: rpcResult
-        };
-      } else {
-        console.warn('RPC function failed:', rpcError);
-      }
-    } catch (rpcErr) {
-      console.error('RPC function threw an error:', rpcErr);
-    }
-    
-    // If RPC fails, try direct table operation
-    console.log('Falling back to direct table operation...');
-    
-    // Check if a package already exists for this country
+    // First check if a package already exists for this country
     const { data: existingPackage, error: checkError } = await supabase
       .from('visa_packages')
       .select('id')
@@ -193,8 +163,56 @@ export const runDiagnostic = async (countryId: string) => {
   };
   
   try {
+    // Test direct table access first (more reliable)
+    try {
+      console.log('Testing direct table access...');
+      const { data: existingPackage, error: checkError } = await supabase
+        .from('visa_packages')
+        .select('id')
+        .eq('country_id', countryId)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.warn('Error checking for existing package:', checkError);
+        results.table = { success: false, error: checkError.message || 'Unknown error' };
+      } else {
+        // Try to update or create a test entry
+        if (existingPackage) {
+          const { error: updateError } = await supabase
+            .from('visa_packages')
+            .update({
+              name: 'Diagnostic Test',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingPackage.id);
+            
+          results.table = { success: !updateError, error: updateError?.message || null };
+        } else {
+          const { error: insertError } = await supabase
+            .from('visa_packages')
+            .insert({
+              country_id: countryId,
+              name: 'Diagnostic Test',
+              government_fee: 100,
+              service_fee: 50,
+              processing_days: 10
+            })
+            .select();
+            
+          results.table = { success: !insertError, error: insertError?.message || null };
+        }
+        
+        if (results.table.success) {
+          console.log('Direct table access is working');
+        }
+      }
+    } catch (tableErr: any) {
+      results.table = { success: false, error: tableErr.message };
+    }
+    
     // Test RPC function
     try {
+      console.log('Testing RPC function...');
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
         'save_visa_package',
         {
@@ -206,55 +224,21 @@ export const runDiagnostic = async (countryId: string) => {
         }
       );
       
-      if (!rpcError) {
-        results.rpc = { success: true, error: null };
+      if (rpcError) {
+        results.rpc = { success: false, error: rpcError.message || 'Unknown RPC error' };
       } else {
-        results.rpc = { success: false, error: rpcError.message };
+        results.rpc = { success: true, error: null };
+        console.log('RPC function is working');
       }
     } catch (rpcErr: any) {
       results.rpc = { success: false, error: rpcErr.message };
     }
     
-    // Test direct table access
-    try {
-      const { data: existingPackage } = await supabase
-        .from('visa_packages')
-        .select('id')
-        .eq('country_id', countryId)
-        .maybeSingle();
-        
-      if (existingPackage) {
-        const { error: updateError } = await supabase
-          .from('visa_packages')
-          .update({
-            name: 'Diagnostic Test',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPackage.id);
-          
-        results.table = { success: !updateError, error: updateError?.message || null };
-      } else {
-        const { error: insertError } = await supabase
-          .from('visa_packages')
-          .insert({
-            country_id: countryId,
-            name: 'Diagnostic Test',
-            government_fee: 100,
-            service_fee: 50,
-            processing_days: 10
-          });
-          
-        results.table = { success: !insertError, error: insertError?.message || null };
-      }
-    } catch (tableErr: any) {
-      results.table = { success: false, error: tableErr.message };
-    }
-    
     // Overall diagnostic result
-    const success = results.rpc.success || results.table.success;
+    const success = results.table.success; // Prioritize direct table access over RPC
     const message = success
-      ? 'Diagnostic successful. At least one method works for saving packages.'
-      : 'Diagnostic failed. Neither RPC nor direct table access is working.';
+      ? 'Diagnostic successful. Direct table access is working.'
+      : 'Diagnostic failed. Cannot access or update visa packages table.';
       
     return {
       success,
