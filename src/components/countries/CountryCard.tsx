@@ -139,10 +139,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
             
             <div className="absolute bottom-3 left-3 z-20">
               <h3 className="font-semibold text-xl text-white mb-1">{country.name}</h3>
-              <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
-                <MapPin size={12} className="mr-1" /> 
-                <span>{getContinent(country.name)}</span>
-              </div>
             </div>
             
             <div className="absolute bottom-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
@@ -271,10 +267,6 @@ const CountryCard = ({ country, viewMode, isSaved, onToggleSave, getContinent }:
                 {country.name === 'Japan' && (
                   <Badge className="ml-2 bg-amber-400 text-gray-900 border-0">Fast Track</Badge>
                 )}
-              </div>
-              <div className="flex items-center text-sm text-gray-500 mt-1">
-                <MapPin size={14} className="mr-1" /> 
-                <span>{getContinent(country.name)}</span>
               </div>
               <div className="flex flex-wrap gap-1 mt-2">
                 {getVisaTypes(country).map((type, i) => (

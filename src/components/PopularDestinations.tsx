@@ -168,21 +168,8 @@ const PopularDestinations = () => {
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
                       </AspectRatio>
                       
-                      {destination.hasSpecialVisa && (
-                        <div className="absolute top-3 right-3">
-                          <div className="bg-yellow-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-navy-900 flex items-center">
-                            <BadgeCheck className="w-3.5 h-3.5 mr-1" /> 
-                            Sticker Visa
-                          </div>
-                        </div>
-                      )}
-                      
                       <div className="absolute bottom-3 left-3 z-20">
                         <h3 className="font-semibold text-xl text-white">{destination.name}</h3>
-                        <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
-                          <MapPin size={12} className="mr-1" /> 
-                          <span>{getContinent(destination.name)}</span>
-                        </div>
                       </div>
                       
                       <div className="absolute bottom-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
