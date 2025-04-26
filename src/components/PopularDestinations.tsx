@@ -1,15 +1,15 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Clock, ArrowRight, Globe } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Heart, Clock, Plane, MapPin, ChevronRight, BadgeCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type Destination = {
   id: string;
@@ -25,88 +25,90 @@ const PopularDestinations = () => {
 
   const { 
     data: destinations = [],
-    isLoading, 
-    error,
+    isLoading,
+    error 
   } = useQuery<Destination[], Error>({
     queryKey: ['popularDestinations'],
     queryFn: async () => {
-      console.log('Fetching popular destinations...');
-      
       try {
         const { data: countriesData, error: countriesError } = await supabase
           .from('countries')
           .select('id, name, banner')
           .order('name')
           .limit(8);
-        
-        if (countriesError) {
-          console.error('Countries query error:', countriesError);
-          throw new Error(`Failed to fetch destinations: ${countriesError.message}`);
-        }
-        
-        if (!countriesData || countriesData.length === 0) {
-          console.log('No countries found in database');
-          return [];
-        }
-        
+
+        if (countriesError) throw countriesError;
+
+        if (!countriesData) return [];
+
         const destinationsWithPricing = await Promise.all(
           countriesData.map(async (country) => {
-            const { data: packageData, error: packageError } = await supabase
+            const { data: packageData } = await supabase
               .from('visa_packages')
               .select('total_price, processing_days')
               .eq('country_id', country.id)
               .limit(1);
-              
-            if (packageError) {
-              console.warn(`Could not fetch packages for country ${country.id}:`, packageError);
-            }
-            
-            const visaPackage = packageData && packageData.length > 0 ? packageData[0] : null;
-            const processingDays = visaPackage?.processing_days || 15;
-            
+
+            const visaPackage = packageData && packageData[0];
+
             return {
               id: country.id,
-              name: country.name || 'Unknown Country',
+              name: country.name,
               imageUrl: country.banner || 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
               totalPrice: visaPackage?.total_price || 1999,
-              processingDays: processingDays,
+              processingDays: visaPackage?.processing_days || 15,
               hasSpecialVisa: country.name === 'Japan'
             };
           })
         );
-        
+
         return destinationsWithPricing;
       } catch (err) {
-        console.error('Error in data fetch:', err);
-        toast({
-          title: "Error loading destinations",
-          description: err instanceof Error ? err.message : "Failed to load destinations",
-          variant: "destructive",
-        });
+        console.error('Error fetching destinations:', err);
         throw err;
       }
     },
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    retry: 2,
   });
 
-  React.useEffect(() => {
-    if (error) {
-      console.error('Error in useQuery:', error);
-      toast({
-        title: "Error loading destinations",
-        description: error instanceof Error ? error.message : "Failed to load destinations",
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
-
-  const getCountryDetails = (country: Destination) => {
-    return {
-      price: `₹${country.totalPrice.toLocaleString('en-IN')}`,
-      processingDays: country.processingDays,
+  const getCountryFlagUrl = (countryName: string) => {
+    const countryIsoMap: {[key: string]: string} = {
+      'United States': 'us',
+      'Canada': 'ca',
+      'United Kingdom': 'gb',
+      'Australia': 'au',
+      'Japan': 'jp',
+      'Germany': 'de',
+      'France': 'fr',
+      'Singapore': 'sg',
+      'UAE': 'ae',
+      'India': 'in',
+      'China': 'cn',
+      'Italy': 'it',
+      'Spain': 'es'
     };
+    
+    const isoCode = countryIsoMap[countryName] || 'xx';
+    return `https://flagcdn.com/w320/${isoCode.toLowerCase()}.png`;
+  };
+
+  const getContinent = (countryName: string) => {
+    const continentMap: {[key: string]: string} = {
+      'United States': 'North America',
+      'Canada': 'North America',
+      'United Kingdom': 'Europe',
+      'Australia': 'Oceania',
+      'Japan': 'Asia',
+      'Germany': 'Europe',
+      'France': 'Europe',
+      'Singapore': 'Asia',
+      'UAE': 'Asia',
+      'India': 'Asia',
+      'China': 'Asia',
+      'Italy': 'Europe',
+      'Spain': 'Europe'
+    };
+    
+    return continentMap[countryName] || 'Unknown';
   };
 
   return (
@@ -139,72 +141,117 @@ const PopularDestinations = () => {
         ) : destinations.length === 0 ? (
           <div className="text-center py-16 px-4">
             <p className="text-gray-500 mb-4">No destinations available yet.</p>
-            <p className="text-sm text-gray-400">
-              Please check back soon for exciting new destinations.
-            </p>
+            <p className="text-sm text-gray-400">Please check back soon for exciting new destinations.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {destinations.map((destination, index) => {
-              const { price, processingDays } = getCountryDetails(destination);
-              
-              return (
-                <motion.div
-                  key={destination.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Link to={`/country/${destination.id}`}>
-                    <Card className="overflow-hidden h-full rounded-xl border-0 shadow-md hover:shadow-xl transition-all duration-300 group">
-                      <div className="relative">
-                        <AspectRatio ratio={16/9} className="bg-gray-100">
-                          <img 
-                            src={destination.imageUrl} 
-                            alt={destination.name}
-                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                            loading="lazy"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
-                        </AspectRatio>
-                        
-                        <Badge className="absolute top-3 left-3 bg-blue-600/90 text-white border-0 py-1.5 px-3 rounded-full backdrop-blur-sm">
-                          25K+ Visas on Time
-                        </Badge>
-                        
-                        {destination.hasSpecialVisa && (
-                          <div className="absolute top-3 right-3">
-                            <div className="bg-yellow-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-navy-900 flex items-center">
-                              <BadgeCheck className="w-3.5 h-3.5 mr-1" /> 
-                              Sticker Visa
-                            </div>
+            {destinations.map((destination, index) => (
+              <motion.div
+                key={destination.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <Link to={`/country/${destination.id}`}>
+                  <Card className="overflow-hidden h-full rounded-xl border-0 shadow-md hover:shadow-xl transition-all duration-300 group">
+                    <div className="relative">
+                      <AspectRatio ratio={16/9} className="bg-gray-100">
+                        <img 
+                          src={destination.imageUrl}
+                          alt={destination.name}
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+                      </AspectRatio>
+                      
+                      <Badge className="absolute top-3 left-3 bg-blue-600/90 text-white border-0 py-1.5 px-3 rounded-full backdrop-blur-sm">
+                        25K+ Visas on Time
+                      </Badge>
+                      
+                      {destination.hasSpecialVisa && (
+                        <div className="absolute top-3 right-3">
+                          <div className="bg-yellow-400/90 text-xs font-bold px-3 py-1.5 rounded-full text-navy-900 flex items-center">
+                            <BadgeCheck className="w-3.5 h-3.5 mr-1" /> 
+                            Sticker Visa
                           </div>
-                        )}
-                        
-                        <div className="absolute bottom-3 left-3 z-20">
-                          <h3 className="font-semibold text-xl text-white">{destination.name}</h3>
+                        </div>
+                      )}
+                      
+                      <div className="absolute bottom-3 left-3 z-20">
+                        <h3 className="font-semibold text-xl text-white">{destination.name}</h3>
+                        <div className="flex items-center text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+                          <MapPin size={12} className="mr-1" /> 
+                          <span>{getContinent(destination.name)}</span>
                         </div>
                       </div>
                       
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
-                            <span>{processingDays} business days</span>
-                          </div>
-                          <span className="font-bold text-blue-600">{price}</span>
+                      <div className="absolute bottom-3 right-3 z-20 bg-white/20 backdrop-blur-md rounded-full p-1 shadow-lg border border-white/30">
+                        <div className="w-8 h-8 rounded-full overflow-hidden">
+                          <img 
+                            src={getCountryFlagUrl(destination.name)}
+                            alt={`${destination.name} flag`} 
+                            className="object-cover w-full h-full"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://via.placeholder.com/320x160?text=Flag';
+                            }}
+                          />
                         </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </motion.div>
-              );
-            })}
+                      </div>
+                      
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="absolute top-11 right-3 z-20 h-8 w-8 p-0 bg-black/30 text-white hover:bg-black/40 hover:text-white backdrop-blur-sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          // Save functionality can be added here
+                        }}
+                      >
+                        <Heart className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
+                          <span>{destination.processingDays} business days</span>
+                        </div>
+                        <span className="font-bold text-blue-600">₹{destination.totalPrice.toLocaleString('en-IN')}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-xs text-gray-500 mb-3">
+                        <Plane className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-indigo-500" />
+                        <span className="truncate">5 direct flights from ₹60k</span>
+                      </div>
+                      
+                      <div className="mt-auto">
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full">
+                            Tourist Visa
+                          </span>
+                        </div>
+                        
+                        <Button 
+                          size="sm" 
+                          className="w-full rounded-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                        >
+                          View Details
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
           </div>
         )}
         
@@ -217,7 +264,7 @@ const PopularDestinations = () => {
         >
           <Link to="/countries" className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center group">
             View all destinations
-            <ArrowRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" />
           </Link>
         </motion.div>
       </div>
