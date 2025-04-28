@@ -1,18 +1,21 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Loader2, Database, CheckCircle, XCircle, RefreshCw, PlusCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Database, CheckCircle, RefreshCw, PlusCircle } from 'lucide-react';
 import { getCountryVisaPackage, saveVisaPackage, runDiagnostic, toggleVisaPackageStatus } from '@/services/visaPackageService';
 import { VisaPackage } from '@/types/visaPackage';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
-import { useApiMutation } from '@/hooks/useApiMutations';
-import { Switch } from '@/components/ui/switch';
+
+// Import our new components
+import CountrySelector from './pricing/CountrySelector';
+import DiagnosticResult from './pricing/DiagnosticResult';
+import PackageStatusToggle from './pricing/PackageStatusToggle';
+import PricingForm from './pricing/PricingForm';
+import LoadingIndicator from '../shared/LoadingIndicator';
+import ErrorDisplay from '../shared/ErrorDisplay';
 
 interface PricingTierManagerProps {
   countries: any[];
@@ -269,10 +272,6 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
   };
   
   const selectedCountry = countries.find(c => c.id === selectedCountryId);
-  const totalPrice = 
-    (parseFloat(formData.government_fee) || 0) + 
-    (parseFloat(formData.service_fee) || 0);
-  
   const isNewPackage = packageData && !packageData.id;
   const buttonText = isNewPackage ? 'Create Package' : 'Save Pricing';
   
@@ -282,53 +281,16 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         <CardTitle>Manage Pricing</CardTitle>
       </CardHeader>
       <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        <ErrorDisplay error={error} />
         
-        {diagnosticResult && (
-          <Alert className="mb-4 bg-slate-50">
-            <AlertTitle>Diagnostic Results</AlertTitle>
-            <AlertDescription>
-              <div className="text-sm mt-2 space-y-1">
-                <div><strong>Success:</strong> {diagnosticResult.success ? 'Yes' : 'No'}</div>
-                {diagnosticResult.results && (
-                  <>
-                    <div>
-                      <strong>RPC Function:</strong> {diagnosticResult.results.rpc.success ? 'Working' : 'Failed'}
-                      {diagnosticResult.results.rpc.error && <div className="text-xs text-red-500">{diagnosticResult.results.rpc.error}</div>}
-                    </div>
-                    <div>
-                      <strong>Direct Table Access:</strong> {diagnosticResult.results.table.success ? 'Working' : 'Failed'}
-                      {diagnosticResult.results.table.error && <div className="text-xs text-red-500">{diagnosticResult.results.table.error}</div>}
-                    </div>
-                  </>
-                )}
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+        <DiagnosticResult diagnosticResult={diagnosticResult} />
         
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Label>Select Country</Label>
-            <Select value={selectedCountryId || ''} onValueChange={handleSelectCountry}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a country" />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((country) => (
-                  <SelectItem key={country.id} value={country.id}>
-                    {country.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CountrySelector 
+            countries={countries}
+            selectedCountryId={selectedCountryId}
+            onSelectCountry={handleSelectCountry}
+          />
           
           {selectedCountryId && (
             <div className="space-y-4 border p-4 rounded-md">
@@ -338,17 +300,10 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                     Pricing for {selectedCountry?.name}
                   </h3>
                   {packageData && (
-                    <div className="flex items-center space-x-2">
-                      <Label htmlFor="status-toggle" className="mr-2">Status:</Label>
-                      <Switch
-                        id="status-toggle"
-                        checked={packageData.is_active}
-                        onCheckedChange={handleToggleStatus}
-                      />
-                      <span className={packageData.is_active ? "text-green-600" : "text-gray-500"}>
-                        {packageData.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
+                    <PackageStatusToggle
+                      isActive={packageData.is_active}
+                      onToggle={handleToggleStatus}
+                    />
                   )}
                 </div>
                 
@@ -369,10 +324,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                     disabled={runningDiagnostic}
                   >
                     {runningDiagnostic ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Running...
-                      </>
+                      <LoadingIndicator size="sm" text="Running..." />
                     ) : (
                       <>
                         <Database className="mr-2 h-4 w-4" />
@@ -384,52 +336,18 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
               </div>
               
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-                </div>
+                <LoadingIndicator size="lg" className="py-8" />
               ) : (
                 <>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="government_fee">Government Fee (₹)</Label>
-                      <Input
-                        id="government_fee"
-                        name="government_fee"
-                        type="number"
-                        value={formData.government_fee}
-                        onChange={handleInputChange}
-                        placeholder="0"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="service_fee">Service Fee (₹)</Label>
-                      <Input
-                        id="service_fee"
-                        name="service_fee"
-                        type="number"
-                        value={formData.service_fee}
-                        onChange={handleInputChange}
-                        placeholder="0"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="processing_days">Processing Days</Label>
-                      <Input
-                        id="processing_days"
-                        name="processing_days"
-                        type="number"
-                        value={formData.processing_days}
-                        onChange={handleInputChange}
-                        placeholder="15"
-                      />
-                    </div>
-                  </div>
+                  <PricingForm 
+                    formData={formData}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
                   
                   <div className="flex justify-between items-center pt-4">
                     <div className="text-sm text-gray-700 font-medium">
-                      Total Price: ₹{totalPrice.toFixed(2)}
+                      {getPackageStatus()}
                     </div>
                     
                     <Button 
@@ -438,10 +356,7 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
                       className={isNewPackage ? "bg-blue-600 hover:bg-blue-700" : "bg-teal hover:bg-teal-600"}
                     >
                       {saving ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
+                        <LoadingIndicator size="sm" text="Saving..." />
                       ) : (
                         <>
                           {isNewPackage && <PlusCircle className="mr-2 h-4 w-4" />}
