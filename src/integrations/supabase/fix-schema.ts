@@ -134,12 +134,12 @@ export const refreshSchemaCache = async () => {
       visa_packages: {
         success: !packagesError,
         error: packagesError?.message,
-        count: packages?.count
+        count: packagesError ? 0 : packages?.count ?? 0
       },
       document_checklist: {
         success: !docsError,
         error: docsError?.message,
-        count: docs?.count
+        count: docsError ? 0 : docs?.count ?? 0
       }
     };
   } catch (error: any) {

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DocumentItem {
@@ -244,7 +243,7 @@ export const ensureCountryHasDocuments = async (countryId: string): Promise<Save
       };
     }
     
-    const count = docs?.count || 0;
+    const count = docs?.count ?? 0;
     
     // If country has documents, we're done
     if (count > 0) {

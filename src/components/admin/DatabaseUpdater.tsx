@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Database, AlertCircle } from 'lucide-react';
@@ -120,4 +121,4 @@ const DatabaseUpdater: React.FC = () => {
   );
 };
 
-export default DatabaseUpdater; 
+export default DatabaseUpdater;

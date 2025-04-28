@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -249,7 +248,7 @@ const CountryDiagnosticTool: React.FC<CountryDiagnosticToolProps> = ({
                   
                   <div className="flex justify-between">
                     <span>Package Active:</span>
-                    <Badge variant={diagnosticResult.results.packageActive ? "success" : "default"}>
+                    <Badge variant={diagnosticResult.results.packageActive ? "outline" : "default"}>
                       {diagnosticResult.results.packageActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
