@@ -82,6 +82,7 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
     // Prepare the data to be used for either create or update
     const packageValues = {
       name: packageData.name || 'Visa Package',
+      country_id: packageData.country_id,
       government_fee: packageData.government_fee || 0,
       service_fee: packageData.service_fee || 0,
       processing_days: packageData.processing_days || 15,
@@ -92,7 +93,8 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
     
     if (existingPackage) {
       console.log('Updating existing package with ID:', existingPackage.id);
-      // Update existing package - IMPORTANT: total_price is a generated column
+      
+      // IMPORTANT: We MUST NOT include the total_price field as it's a generated column
       result = await supabase
         .from('visa_packages')
         .update(packageValues)
@@ -102,13 +104,10 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       console.log('Update result:', result);
     } else {
       console.log('Creating new package for country:', packageData.country_id);
-      // Create new package - IMPORTANT: total_price is a generated column
+      
       result = await supabase
         .from('visa_packages')
-        .insert({
-          country_id: packageData.country_id,
-          ...packageValues
-        })
+        .insert(packageValues)
         .select();
         
       console.log('Insert result:', result);
@@ -174,13 +173,13 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       
       console.log('Setting fees to:', { governmentFee, serviceFee });
       
-      // Update existing package to reflect active/inactive state via pricing
-      // IMPORTANT: total_price is a generated column
+      // IMPORTANT: We MUST NOT include the total_price field as it's a generated column
       result = await supabase
         .from('visa_packages')
         .update({ 
           government_fee: governmentFee,
-          service_fee: serviceFee
+          service_fee: serviceFee,
+          updated_at: new Date().toISOString()
         })
         .eq('id', existingPackage.id)
         .select();
@@ -190,7 +189,6 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       console.log('No existing package, creating new one');
       
       // Create new package with status represented by pricing
-      // IMPORTANT: total_price is a generated column
       result = await supabase
         .from('visa_packages')
         .insert({
