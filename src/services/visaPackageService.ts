@@ -23,7 +23,12 @@ export const getCountryVisaPackage = async (countryId: string): Promise<VisaPack
     
     if (data) {
       console.log('Found existing package:', data);
-      return data as VisaPackage;
+      // If we have package data, we'll consider it active if it has pricing set up
+      const isActive = data.total_price > 0 || (data.government_fee > 0 || data.service_fee > 0);
+      return {
+        ...data,
+        is_active: isActive
+      } as VisaPackage;
     }
     
     // Return a default package template if none exists
@@ -87,7 +92,6 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
           service_fee: packageData.service_fee || 0,
           processing_days: packageData.processing_days || 15,
           total_price: totalPrice,
-          is_active: packageData.is_active !== undefined ? packageData.is_active : true,
           updated_at: new Date().toISOString()
         })
         .eq('id', existingPackage.id)
@@ -103,7 +107,6 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
           service_fee: packageData.service_fee || 0,
           processing_days: packageData.processing_days || 15,
           total_price: totalPrice,
-          is_active: packageData.is_active !== undefined ? packageData.is_active : true,
           updated_at: new Date().toISOString()
         })
         .select();
@@ -137,7 +140,7 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
   try {
     const { data: existingPackage, error: checkError } = await supabase
       .from('visa_packages')
-      .select('id')
+      .select('*')
       .eq('country_id', countryId)
       .maybeSingle();
       
@@ -146,24 +149,32 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
     let result;
     
     if (existingPackage) {
-      // Update existing package status
+      // "Activate" by ensuring there's a positive price, or "deactivate" by setting fees to 0
+      const governmentFee = isActive ? Math.max(existingPackage.government_fee, 1) : 0;
+      const serviceFee = isActive ? Math.max(existingPackage.service_fee, 1) : 0;
+      const totalPrice = governmentFee + serviceFee;
+      
+      // Update existing package to reflect active/inactive state via pricing
       result = await supabase
         .from('visa_packages')
-        .update({ is_active: isActive })
+        .update({ 
+          government_fee: governmentFee,
+          service_fee: serviceFee,
+          total_price: totalPrice
+        })
         .eq('id', existingPackage.id)
         .select();
     } else {
-      // Create new package with status
+      // Create new package with status represented by pricing
       result = await supabase
         .from('visa_packages')
         .insert({
           country_id: countryId,
           name: 'Visa Package',
-          government_fee: 0,
-          service_fee: 0,
+          government_fee: isActive ? 1 : 0,
+          service_fee: isActive ? 1 : 0,
+          total_price: isActive ? 2 : 0,
           processing_days: 15,
-          total_price: 0,
-          is_active: isActive,
           updated_at: new Date().toISOString()
         })
         .select();
