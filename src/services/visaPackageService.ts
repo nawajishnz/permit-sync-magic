@@ -79,37 +79,57 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
 
     let result;
     
+    // Prepare the data to be used for either create or update
+    const packageValues = {
+      name: packageData.name || 'Visa Package',
+      government_fee: packageData.government_fee || 0,
+      service_fee: packageData.service_fee || 0,
+      processing_days: packageData.processing_days || 15,
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('Package values to save:', packageValues);
+    
     if (existingPackage) {
-      // Update existing package - IMPORTANT: Remove total_price as it's a generated column
+      console.log('Updating existing package with ID:', existingPackage.id);
+      // Update existing package - IMPORTANT: total_price is a generated column
       result = await supabase
         .from('visa_packages')
-        .update({
-          name: packageData.name || 'Visa Package',
-          government_fee: packageData.government_fee || 0,
-          service_fee: packageData.service_fee || 0,
-          processing_days: packageData.processing_days || 15,
-          updated_at: new Date().toISOString()
-        })
+        .update(packageValues)
         .eq('id', existingPackage.id)
         .select();
+        
+      console.log('Update result:', result);
     } else {
-      // Create new package - IMPORTANT: Remove total_price as it's a generated column
+      console.log('Creating new package for country:', packageData.country_id);
+      // Create new package - IMPORTANT: total_price is a generated column
       result = await supabase
         .from('visa_packages')
         .insert({
           country_id: packageData.country_id,
-          name: packageData.name || 'Visa Package',
-          government_fee: packageData.government_fee || 0,
-          service_fee: packageData.service_fee || 0,
-          processing_days: packageData.processing_days || 15,
-          updated_at: new Date().toISOString()
+          ...packageValues
         })
         .select();
+        
+      console.log('Insert result:', result);
     }
 
     if (result.error) {
       console.error('Error saving package:', result.error);
       throw result.error;
+    }
+
+    // Verify the update was successful by fetching the latest data
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('visa_packages')
+      .select('*')
+      .eq('country_id', packageData.country_id)
+      .maybeSingle();
+      
+    if (verifyError) {
+      console.warn('Could not verify saved data:', verifyError);
+    } else {
+      console.log('Verified saved data:', verifyData);
     }
 
     return {
@@ -133,6 +153,8 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
   data?: any;
 }> => {
   try {
+    console.log(`Toggling package status for country ${countryId} to ${isActive ? 'active' : 'inactive'}`);
+    
     const { data: existingPackage, error: checkError } = await supabase
       .from('visa_packages')
       .select('*')
@@ -144,12 +166,16 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
     let result;
     
     if (existingPackage) {
+      console.log('Found existing package:', existingPackage);
+      
       // "Activate" by ensuring there's a positive price, or "deactivate" by setting fees to 0
       const governmentFee = isActive ? Math.max(existingPackage.government_fee, 1) : 0;
       const serviceFee = isActive ? Math.max(existingPackage.service_fee, 1) : 0;
       
+      console.log('Setting fees to:', { governmentFee, serviceFee });
+      
       // Update existing package to reflect active/inactive state via pricing
-      // IMPORTANT: Remove total_price as it's a generated column
+      // IMPORTANT: total_price is a generated column
       result = await supabase
         .from('visa_packages')
         .update({ 
@@ -158,9 +184,13 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
         })
         .eq('id', existingPackage.id)
         .select();
+        
+      console.log('Update result:', result);
     } else {
+      console.log('No existing package, creating new one');
+      
       // Create new package with status represented by pricing
-      // IMPORTANT: Remove total_price as it's a generated column
+      // IMPORTANT: total_price is a generated column
       result = await supabase
         .from('visa_packages')
         .insert({
@@ -172,9 +202,27 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
           updated_at: new Date().toISOString()
         })
         .select();
+        
+      console.log('Insert result:', result);
     }
 
-    if (result.error) throw result.error;
+    if (result.error) {
+      console.error('Error updating package status:', result.error);
+      throw result.error;
+    }
+
+    // Verify the update was successful
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('visa_packages')
+      .select('*')
+      .eq('country_id', countryId)
+      .maybeSingle();
+      
+    if (verifyError) {
+      console.warn('Could not verify status update:', verifyError);
+    } else {
+      console.log('Verified status update:', verifyData);
+    }
 
     return {
       success: true,
