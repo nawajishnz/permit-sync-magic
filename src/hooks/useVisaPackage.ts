@@ -107,6 +107,7 @@ export const useVisaPackage = ({ externalQueryClient }: UseVisaPackageProps = {}
     if (countryId) {
       queryClient.invalidateQueries({ queryKey: ['country', countryId] });
       queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
+      queryClient.invalidateQueries({ queryKey: ['countryVisaPackage', countryId] });
     }
   };
   

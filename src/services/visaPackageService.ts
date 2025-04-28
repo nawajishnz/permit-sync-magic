@@ -23,7 +23,7 @@ export const getCountryVisaPackage = async (countryId: string): Promise<VisaPack
     
     if (data) {
       console.log('Found existing package:', data);
-      // If we have package data, we'll consider it active if it has pricing set up
+      // Calculate is_active based on having either government_fee or service_fee > 0
       const isActive = data.total_price > 0 || (data.government_fee > 0 || data.service_fee > 0);
       return {
         ...data,
@@ -80,12 +80,13 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
     let result;
     
     // Prepare the data to be used for either create or update
+    // Always include country_id for both update and insert operations
     const packageValues = {
       name: packageData.name || 'Visa Package',
       country_id: packageData.country_id,
-      government_fee: packageData.government_fee || 0,
-      service_fee: packageData.service_fee || 0,
-      processing_days: packageData.processing_days || 15,
+      government_fee: Number(packageData.government_fee) || 0,
+      service_fee: Number(packageData.service_fee) || 0,
+      processing_days: Number(packageData.processing_days) || 15,
       updated_at: new Date().toISOString()
     };
     

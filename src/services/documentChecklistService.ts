@@ -40,6 +40,13 @@ export const getDocumentChecklist = async (countryId: string): Promise<DocumentI
 export const saveDocumentChecklist = async (countryId: string, documents: DocumentItem[]): Promise<SaveResult> => {
   try {
     console.log('Saving document checklist for country:', countryId, 'Documents:', documents);
+    
+    if (!countryId) {
+      return {
+        success: false,
+        message: 'Country ID is required'
+      };
+    }
 
     // First, fetch existing documents for this country
     const { data: existingDocs, error: fetchError } = await supabase
@@ -61,14 +68,15 @@ export const saveDocumentChecklist = async (countryId: string, documents: Docume
     const processedIds = new Set<string>();
     
     // Sort documents into new and updates
-    documents.forEach(doc => {
+    for (const doc of documents) {
+      // Skip empty document names - they're probably not meant to be saved
+      if (!doc.document_name?.trim()) {
+        console.log('Skipping document with empty name:', doc);
+        continue;
+      }
+      
       // Ensure doc.id is always a string
       const docId = doc.id || `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-      
-      // Skip empty document names - they're probably not meant to be saved
-      if (!doc.document_name.trim()) {
-        return;
-      }
       
       // Clone the document to avoid mutating the original
       const cleanDoc = {
@@ -90,15 +98,14 @@ export const saveDocumentChecklist = async (countryId: string, documents: Docume
         }
         newDocs.push(cleanDoc);
       }
-    });
+    }
     
     // Find documents to delete (existing but not in the new list)
     const deleteIds = Array.from(existingIds).filter(id => !processedIds.has(id));
 
-    // Batch operations for efficiency
-    const operations = [];
+    // Track success or error for each operation
     let success = true;
-    let error = null;
+    let errors = [];
 
     // Delete removed documents
     if (deleteIds.length > 0) {
@@ -111,7 +118,7 @@ export const saveDocumentChecklist = async (countryId: string, documents: Docume
       if (deleteError) {
         console.error('Error deleting documents:', deleteError);
         success = false;
-        error = deleteError;
+        errors.push(`Delete error: ${deleteError.message}`);
       }
     }
 
@@ -125,7 +132,7 @@ export const saveDocumentChecklist = async (countryId: string, documents: Docume
       if (insertError) {
         console.error('Error inserting documents:', insertError);
         success = false;
-        error = insertError;
+        errors.push(`Insert error: ${insertError.message}`);
       }
     }
 
@@ -144,14 +151,14 @@ export const saveDocumentChecklist = async (countryId: string, documents: Docume
       if (updateError) {
         console.error('Error updating document:', updateError);
         success = false;
-        error = updateError;
+        errors.push(`Update error for document ${doc.document_name}: ${updateError.message}`);
       }
     }
 
     if (!success) {
       return {
         success: false,
-        message: error ? error.message : 'Failed to save documents'
+        message: errors.join('; ')
       };
     }
 
@@ -175,17 +182,32 @@ export const saveDocumentChecklist = async (countryId: string, documents: Docume
 
 export const refreshDocumentSchema = async (): Promise<SaveResult> => {
   try {
-    // Perform a simple query to check if the table exists
-    const { data, error } = await supabase
-      .from('document_checklist')
-      .select('id')
-      .limit(1);
+    console.log('Refreshing document schema...');
+    
+    // Try to create the document_checklist table if it doesn't exist
+    // We can't do this directly with SQL, so we'll try an alternative approach
+    
+    try {
+      // First, check if table exists by doing a simple query
+      const { data, error } = await supabase
+        .from('document_checklist')
+        .select('id')
+        .limit(1);
+        
+      if (error) {
+        console.error('Error checking document schema:', error);
+        return {
+          success: false,
+          message: `Schema check failed: ${error.message}`
+        };
+      }
       
-    if (error) {
-      console.error('Error checking document schema:', error);
+      console.log('Document schema check successful');
+    } catch (error: any) {
+      console.error('Could not access document_checklist table:', error);
       return {
         success: false,
-        message: `Schema check failed: ${error.message}`
+        message: `Could not access document schema: ${error.message}`
       };
     }
     
@@ -198,6 +220,124 @@ export const refreshDocumentSchema = async (): Promise<SaveResult> => {
     return {
       success: false,
       message: error.message || 'Failed to refresh document schema'
+    };
+  }
+};
+
+// Create a function to ensure all countries have document checklist records
+export const ensureCountryHasDocuments = async (countryId: string): Promise<SaveResult> => {
+  try {
+    console.log('Ensuring country has document records:', countryId);
+    
+    // Check if country already has documents
+    const { data: docs, error: checkError } = await supabase
+      .from('document_checklist')
+      .select('count(*)')
+      .eq('country_id', countryId)
+      .single();
+      
+    if (checkError) {
+      console.error('Error checking for documents:', checkError);
+      return {
+        success: false,
+        message: `Failed to check documents: ${checkError.message}`
+      };
+    }
+    
+    const count = docs?.count || 0;
+    
+    // If country has documents, we're done
+    if (count > 0) {
+      console.log('Country already has document records:', count);
+      return {
+        success: true,
+        message: `Country already has ${count} document records`,
+        data: { count }
+      };
+    }
+    
+    // Create default documents for this country
+    const defaultDocs = [
+      {
+        country_id: countryId,
+        document_name: 'Passport',
+        document_description: 'Valid passport with at least 6 months validity',
+        required: true
+      },
+      {
+        country_id: countryId,
+        document_name: 'Application Form',
+        document_description: 'Completed visa application form',
+        required: true
+      },
+      {
+        country_id: countryId,
+        document_name: 'Passport Photos',
+        document_description: 'Recent passport-sized photographs',
+        required: true
+      }
+    ];
+    
+    const { error: insertError } = await supabase
+      .from('document_checklist')
+      .insert(defaultDocs);
+      
+    if (insertError) {
+      console.error('Error creating default documents:', insertError);
+      return {
+        success: false,
+        message: `Failed to create default documents: ${insertError.message}`
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Default document records created successfully',
+      data: { count: defaultDocs.length }
+    };
+  } catch (error: any) {
+    console.error('Error in ensureCountryHasDocuments:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to ensure country has documents'
+    };
+  }
+};
+
+// Add a function to fix document issues
+export const fixDocumentIssues = async (countryId: string): Promise<SaveResult> => {
+  try {
+    console.log('Attempting to fix document issues for country:', countryId);
+    
+    // Ensure the table exists and is accessible
+    const schemaResult = await refreshDocumentSchema();
+    if (!schemaResult.success) {
+      return schemaResult;
+    }
+    
+    // Check if country exists
+    const { data: country, error: countryError } = await supabase
+      .from('countries')
+      .select('id')
+      .eq('id', countryId)
+      .single();
+      
+    if (countryError || !country) {
+      console.error('Country not found:', countryId, countryError);
+      return {
+        success: false,
+        message: `Country not found: ${countryError?.message || 'Invalid country ID'}`
+      };
+    }
+    
+    // Ensure country has document records
+    return await ensureCountryHasDocuments(countryId);
+    
+  } catch (error: any) {
+    console.error('Error fixing document issues:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to fix document issues'
     };
   }
 };

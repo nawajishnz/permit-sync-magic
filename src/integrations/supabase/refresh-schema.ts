@@ -1,160 +1,116 @@
 
 import { supabase } from './client';
 
-/**
- * Refreshes the Supabase schema cache to ensure we have the latest schema information
- * This is particularly useful when dealing with schema-related errors
- */
-export const refreshSchemaCache = async () => {
-  try {
-    console.log('Refreshing schema cache...');
-    
-    // First try to query the document_checklist table to refresh its schema
-    const { data: documentData, error: documentError } = await supabase
-      .from('document_checklist')
-      .select('id')
-      .limit(1);
-    
-    if (documentError) {
-      console.warn('Schema refresh for document_checklist encountered an error:', documentError);
-    } else {
-      console.log('Schema for document_checklist refreshed successfully');
-    }
-    
-    // Then try to query visa_packages to refresh its schema
-    const { data: packageData, error: packageError } = await supabase
-      .from('visa_packages')
-      .select('id')
-      .limit(1);
-    
-    if (packageError) {
-      console.warn('Schema refresh for visa_packages encountered an error:', packageError);
-    } else {
-      console.log('Schema for visa_packages refreshed successfully');
-    }
-    
-    // Then try to query countries to refresh its schema
-    const { data: countryData, error: countryError } = await supabase
-      .from('countries')
-      .select('id, name')
-      .limit(1);
-    
-    if (countryError) {
-      console.warn('Schema refresh for countries encountered an error:', countryError);
-    } else {
-      console.log('Schema for countries refreshed successfully');
-    }
-    
-    return { success: true, message: 'Schema cache refreshed successfully' };
-  } catch (error) {
-    console.error('Failed to refresh schema cache:', error);
-    return { success: false, message: 'Failed to refresh schema cache', error };
-  }
-};
-
-/**
- * Refreshes the document checklist schema cache specifically
- */
+// Simple function to refresh schema cache by performing some queries
 export const refreshDocumentSchema = async () => {
   try {
+    console.log('Refreshing document schema...');
+    
+    // Try to access the document_checklist table
     const { data, error } = await supabase
       .from('document_checklist')
-      .select('id, country_id, document_name')
-      .limit(1);
-    
+      .select('count(*)')
+      .single();
+      
     if (error) {
-      console.error('Error refreshing document schema:', error);
-      return { success: false, message: `Error refreshing document schema: ${error.message}` };
+      console.error('Error accessing document_checklist table:', error);
+      return {
+        success: false,
+        message: `Schema refresh failed: ${error.message}`
+      };
     }
     
     console.log('Document schema refreshed successfully');
-    return { success: true, message: 'Document schema refreshed successfully' };
+    return {
+      success: true,
+      message: 'Document schema refreshed successfully',
+      count: data?.count
+    };
   } catch (error: any) {
-    console.error('Error in refreshDocumentSchema:', error);
-    return { success: false, message: `Unexpected error: ${error.message}` };
+    console.error('Error refreshing document schema:', error);
+    return {
+      success: false,
+      message: `Error refreshing document schema: ${error.message}`,
+      error
+    };
   }
 };
 
-/**
- * Runs diagnostic tests on visa packages for a specific country
- * This helps troubleshoot issues with visa package data
- */
-export const runVisaPackagesDiagnostic = async (countryId: string) => {
+// Function to check if tables exist and are accessible
+export const checkTablesExist = async () => {
   try {
-    console.log(`Running visa packages diagnostic for country ID: ${countryId}`);
+    const results: Record<string, any> = {};
     
-    // Step 1: Check if country exists
-    const { data: countryData, error: countryError } = await supabase
-      .from('countries')
-      .select('id, name')
-      .eq('id', countryId)
-      .single();
-      
-    if (countryError) {
-      return {
-        success: false,
-        message: `Country not found: ${countryError.message}`,
-        diagnosticResults: {
-          countryExists: false
-        }
+    // Check visa_packages table
+    try {
+      const { data: packages, error: packagesError } = await supabase
+        .from('visa_packages')
+        .select('count(*)')
+        .single();
+        
+      results.visa_packages = {
+        exists: !packagesError,
+        error: packagesError?.message,
+        count: packages?.count
+      };
+    } catch (err: any) {
+      results.visa_packages = {
+        exists: false,
+        error: err.message
       };
     }
     
-    // Step 2: Check for visa packages related to this country
-    const { data: packageData, error: packageError } = await supabase
-      .from('visa_packages')
-      .select('*')
-      .eq('country_id', countryId);
-      
-    if (packageError) {
-      return {
-        success: false,
-        message: `Error querying visa packages: ${packageError.message}`,
-        diagnosticResults: {
-          countryExists: true,
-          countryName: countryData.name,
-          packagesQueryError: packageError.message
-        }
+    // Check document_checklist table
+    try {
+      const { data: docs, error: docsError } = await supabase
+        .from('document_checklist')
+        .select('count(*)')
+        .single();
+        
+      results.document_checklist = {
+        exists: !docsError,
+        error: docsError?.message,
+        count: docs?.count
+      };
+    } catch (err: any) {
+      results.document_checklist = {
+        exists: false,
+        error: err.message
       };
     }
     
-    // Prepare the diagnostic results
-    const diagnosticResults = {
-      countryExists: true,
-      countryName: countryData.name,
-      packagesFound: packageData.length > 0,
-      packagesCount: packageData.length,
-      packages: packageData,
-      recommendation: packageData.length === 0 ? 'Create at least one visa package for this country' : 'Visa packages exist for this country'
-    };
-    
-    // Step 3: Check if the country has the required fields
-    const missingFields = [];
-    const requiredFields = ['name', 'flag', 'banner', 'description'];
-    
-    for (const field of requiredFields) {
-      if (!countryData[field]) {
-        missingFields.push(field);
-      }
+    // Check countries table
+    try {
+      const { data: countries, error: countriesError } = await supabase
+        .from('countries')
+        .select('count(*)')
+        .single();
+        
+      results.countries = {
+        exists: !countriesError,
+        error: countriesError?.message,
+        count: countries?.count
+      };
+    } catch (err: any) {
+      results.countries = {
+        exists: false,
+        error: err.message
+      };
     }
+    
+    const allExist = Object.values(results).every((r: any) => r.exists);
     
     return {
-      success: true,
-      message: packageData.length > 0 
-        ? `Found ${packageData.length} visa packages for ${countryData.name}` 
-        : `No visa packages found for ${countryData.name}`,
-      diagnosticResults: {
-        ...diagnosticResults,
-        missingRequiredFields: missingFields.length > 0 ? missingFields : [],
-        hasMissingFields: missingFields.length > 0
-      }
+      success: allExist,
+      message: allExist ? 'All tables exist and are accessible' : 'Some tables have issues',
+      results
     };
   } catch (error: any) {
-    console.error('Error in visa packages diagnostic:', error);
+    console.error('Error checking tables:', error);
     return {
       success: false,
-      message: `Diagnostic error: ${error.message}`,
-      diagnosticResults: { error: error.message }
+      message: `Error checking tables: ${error.message}`,
+      error
     };
   }
 };
