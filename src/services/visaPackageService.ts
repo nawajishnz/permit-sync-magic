@@ -92,7 +92,7 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
     
     console.log('Package values to save:', packageValues);
     
-    if (existingPackage) {
+    if (existingPackage && existingPackage.id) {
       console.log('Updating existing package with ID:', existingPackage.id);
       
       // IMPORTANT: We MUST NOT include the total_price field as it's a generated column

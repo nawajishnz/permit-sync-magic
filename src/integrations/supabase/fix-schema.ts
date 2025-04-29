@@ -128,9 +128,9 @@ export const refreshSchemaCache = async () => {
       console.log('Successfully accessed document_checklist table:', docs);
     }
     
-    // Safely get the count values
-    const packagesCount = packagesError ? 0 : (packages?.count ?? 0);
-    const docsCount = docsError ? 0 : (docs?.count ?? 0);
+    // Safely handle potentially undefined data
+    const packagesData = packages || { count: 0 };
+    const docsData = docs || { count: 0 };
     
     return {
       success: !packagesError && !docsError,
@@ -138,12 +138,12 @@ export const refreshSchemaCache = async () => {
       visa_packages: {
         success: !packagesError,
         error: packagesError?.message,
-        count: packagesCount
+        count: packagesData.count || 0
       },
       document_checklist: {
         success: !docsError,
         error: docsError?.message,
-        count: docsCount
+        count: docsData.count || 0
       }
     };
   } catch (error: any) {

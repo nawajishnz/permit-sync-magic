@@ -27,10 +27,12 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       .select('count(*)')
       .single();
       
+    const tableAccessData = tableAccessCheck.data || { count: 0 };
+    
     const tableAccess = {
       success: !tableAccessCheck.error,
       error: tableAccessCheck.error?.message,
-      count: tableAccessCheck.error ? 0 : (tableAccessCheck.data?.count ?? 0)
+      count: tableAccessCheck.error ? 0 : (tableAccessData.count || 0)
     };
     
     // Check if package exists for this country
@@ -40,9 +42,11 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       .eq('country_id', countryId);
       
     const hasPackage = !packageError && packageExists && packageExists.length > 0;
+    
     // The is_active property isn't directly on the package, we need to calculate it
     const isActive = hasPackage && 
-      (packageExists[0].government_fee > 0 || packageExists[0].service_fee > 0);
+      (packageExists && packageExists[0] && 
+      (packageExists[0].government_fee > 0 || packageExists[0].service_fee > 0));
     
     // Check document_checklist table access
     const docTableAccessCheck = await supabase
@@ -50,10 +54,12 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       .select('count(*)')
       .single();
       
+    const docTableAccessData = docTableAccessCheck.data || { count: 0 };
+    
     const documentTableAccess = {
       success: !docTableAccessCheck.error,
       error: docTableAccessCheck.error?.message,
-      count: docTableAccessCheck.error ? 0 : (docTableAccessCheck.data?.count ?? 0)
+      count: docTableAccessCheck.error ? 0 : (docTableAccessData.count || 0)
     };
     
     // Check if documents exist for this country
@@ -123,6 +129,8 @@ export const refreshDocumentSchema = async () => {
       .select('count(*)')
       .single();
       
+    const safeData = data || { count: 0 };
+    
     if (error) {
       console.error('Error accessing document_checklist table:', error);
       return {
@@ -135,7 +143,7 @@ export const refreshDocumentSchema = async () => {
     return {
       success: true,
       message: 'Document schema refreshed successfully',
-      count: data?.count ?? 0
+      count: safeData.count || 0
     };
   } catch (error: any) {
     console.error('Error refreshing document schema:', error);
@@ -164,9 +172,8 @@ export const refreshSchemaCache = async () => {
       .select('count(*)')
       .single();
       
-    // Get count safely, handling both errors and missing data
-    const packagesCount = packagesError ? 0 : (packagesData?.count ?? 0);
-    const docCount = docError ? 0 : (docData?.count ?? 0);
+    const safePackagesData = packagesData || { count: 0 };
+    const safeDocData = docData || { count: 0 };
     
     return {
       success: !packagesError && !docError,
@@ -174,12 +181,12 @@ export const refreshSchemaCache = async () => {
       visa_packages: {
         success: !packagesError,
         error: packagesError?.message,
-        count: packagesCount
+        count: packagesError ? 0 : (safePackagesData.count || 0)
       },
       document_checklist: {
         success: !docError,
         error: docError?.message,
-        count: docCount
+        count: docError ? 0 : (safeDocData.count || 0)
       }
     };
   } catch (error: any) {
@@ -204,10 +211,12 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
+      const safePackages = packages || { count: 0 };
+      
       results.visa_packages = {
         exists: !packagesError,
         error: packagesError?.message,
-        count: packagesError ? 0 : (packages?.count ?? 0)
+        count: packagesError ? 0 : (safePackages.count || 0)
       };
     } catch (err: any) {
       results.visa_packages = {
@@ -223,10 +232,12 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
+      const safeDocs = docs || { count: 0 };
+      
       results.document_checklist = {
         exists: !docsError,
         error: docsError?.message,
-        count: docsError ? 0 : (docs?.count ?? 0)
+        count: docsError ? 0 : (safeDocs.count || 0)
       };
     } catch (err: any) {
       results.document_checklist = {
@@ -242,10 +253,12 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
+      const safeCountries = countries || { count: 0 };
+      
       results.countries = {
         exists: !countriesError,
         error: countriesError?.message,
-        count: countriesError ? 0 : (countries?.count ?? 0)
+        count: countriesError ? 0 : (safeCountries.count || 0)
       };
     } catch (err: any) {
       results.countries = {
