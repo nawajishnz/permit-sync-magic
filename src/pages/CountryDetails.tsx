@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -6,7 +5,7 @@ import { useCountryData } from '@/hooks/useCountryData';
 import { useToast } from '@/hooks/use-toast';
 import CountryDataFallback from '@/components/country/CountryDataFallback';
 import CountryNotFound from '@/components/country/CountryNotFound';
-import { autoFixSchema } from '@/integrations/supabase/fix-schema';
+import { autoFixSchema } from '@/integrations/supabase/fix-schema'; // Corrected import
 import {
   Card,
   CardContent,

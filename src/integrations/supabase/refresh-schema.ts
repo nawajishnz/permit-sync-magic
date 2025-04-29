@@ -1,7 +1,43 @@
 
 import { supabase } from './client';
 import { createOrFixVisaPackageSchema, createDefaultVisaPackageForCountry } from './fix-schema';
-import { Database } from '@/integrations/supabase/types';
+
+/**
+ * Refreshes document checklist schema
+ */
+export async function refreshDocumentSchema() {
+  try {
+    // First try to run the schema refresh RPC
+    const { data, error } = await supabase.rpc('refresh_document_checklist_schema');
+    
+    if (error) {
+      console.error('Error refreshing document checklist schema via RPC:', error);
+      // Fallback to direct fix
+      const result = await createOrFixVisaPackageSchema();
+      return result;
+    }
+    
+    if (data) {
+      return {
+        success: true,
+        message: 'Document checklist schema refreshed successfully',
+        data
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Document checklist schema refresh returned no data'
+    };
+  } catch (error) {
+    console.error('Exception in refreshDocumentSchema:', error);
+    return { 
+      success: false, 
+      message: 'Exception occurred while refreshing document checklist schema',
+      error 
+    };
+  }
+}
 
 /**
  * Refreshes the database schema to ensure tables have the correct structure
@@ -78,8 +114,9 @@ export async function refreshVisaPackagesSchema() {
  */
 export async function getStoredProceduresDefinitions() {
   try {
-    // This SQL query gets the definition of all stored procedures
-    const { data, error } = await supabase.from('pg_proc_definitions').select('*');
+    // Use raw() instead of from() to avoid type issues with pg_proc_definitions
+    const { data, error } = await supabase
+      .rpc('get_stored_procedures');
     
     if (error) {
       console.error('Error fetching stored procedures:', error);
@@ -110,7 +147,7 @@ export async function getStoredProceduresDefinitions() {
  */
 export async function runVisaPackagesDiagnostic(countryId?: string) {
   try {
-    const results = {
+    const results: any = {
       schema: null,
       tables: null,
       countryCheck: null,
@@ -128,19 +165,16 @@ export async function runVisaPackagesDiagnostic(countryId?: string) {
       hasFunctions: schemaCheck.data && schemaCheck.data.some((p: any) => p.name === 'fix_visa_packages')
     };
     
-    // Check if tables exist
+    // Check if tables exist - use rpc instead of direct query to system tables
     const { data: tableList, error: tableError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .in('table_name', ['visa_packages', 'document_checklist', 'countries']);
+      .rpc('get_table_names');
     
     results.tables = {
       success: !tableError,
       error: tableError ? tableError.message : null,
-      tables: tableList ? tableList.map((t: any) => t.table_name) : [],
-      hasPackagesTable: tableList ? tableList.some((t: any) => t.table_name === 'visa_packages') : false,
-      hasDocumentsTable: tableList ? tableList.some((t: any) => t.table_name === 'document_checklist') : false
+      tables: tableList || [],
+      hasPackagesTable: tableList ? tableList.includes('visa_packages') : false,
+      hasDocumentsTable: tableList ? tableList.includes('document_checklist') : false
     };
     
     // If a country ID is provided, check if it exists

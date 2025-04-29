@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { runDiagnostic } from '@/services/visaPackageService';
-import { refreshDocumentSchema, fixDocumentIssues } from '@/services/documentChecklistService';
+import { refreshDocumentSchema } from '@/services/document-checklist'; // Fixed import path
+import { fixDocumentIssues } from '@/services/document-checklist'; // Using the proper path
 import { useCountryQueries } from './useCountryQueries';
 import { useCountryData } from './useCountryData';
 

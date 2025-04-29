@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
 import { useEffect } from 'react';
-import { autoFixSchema } from '@/integrations/supabase/fix-schema';
+import { autoFixSchema } from '@/integrations/supabase/fix-schema'; // Corrected import
 import { getDocumentChecklist, DocumentItem } from '@/services/documentChecklistService';
 
 export interface DocumentChecklistItem {

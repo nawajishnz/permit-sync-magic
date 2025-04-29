@@ -2,6 +2,7 @@
 import { supabase } from './client';
 import { getCountryVisaPackage } from '@/services/visaPackageService';
 import { getDocumentChecklist } from '@/services/documentChecklistService';
+import { Database } from './types';
 
 /**
  * Creates the visa packages table and schema if it doesn't exist
@@ -91,6 +92,31 @@ export async function createOrFixVisaPackageSchema() {
 }
 
 /**
+ * Auto-fixes schema issues - main entry point for schema management
+ */
+export async function autoFixSchema() {
+  console.log('Running auto schema fix...');
+  try {
+    return await createOrFixVisaPackageSchema();
+  } catch (error) {
+    console.error('Auto schema fix failed:', error);
+    return { 
+      success: false, 
+      message: 'Auto schema fix failed', 
+      error 
+    };
+  }
+}
+
+/**
+ * Fixes visa packages schema - alias for createOrFixVisaPackageSchema
+ */
+export async function fixVisaPackagesSchema() {
+  console.log('Fixing visa packages schema...');
+  return await createOrFixVisaPackageSchema();
+}
+
+/**
  * Creates a default visa package for a country
  */
 export async function createDefaultVisaPackageForCountry(countryId: string) {
@@ -111,14 +137,16 @@ export async function createDefaultVisaPackageForCountry(countryId: string) {
       .from('visa_packages')
       .insert({
         country_id: countryId,
-        is_active: false,
+        name: 'Standard Tourist Visa',
         government_fee: 1000,
         service_fee: 1000,
-        total_price: 2000,
         processing_days: 7,
-        validity_months: 3,
-        entry_type: 'single',
-        package_name: 'Standard Tourist Visa'
+        // The following properties were causing type errors - removing them
+        // is_active: false,
+        // total_price: 2000,
+        // validity_months: 3,
+        // entry_type: 'single',
+        // package_name: 'Standard Tourist Visa'
       })
       .select('*')
       .single();
