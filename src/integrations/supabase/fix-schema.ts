@@ -1,209 +1,193 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { updateSchemaAndFixData } from './update-schema-and-fix-data';
+import { supabase } from './client';
+import { getCountryVisaPackage } from '@/services/visaPackageService';
+import { getDocumentChecklist } from '@/services/documentChecklistService';
 
-// Function to fix schema issues automatically
-export const fixVisaPackagesSchema = async () => {
-  console.log('Attempting to fix visa packages schema...');
-  
+/**
+ * Creates the visa packages table and schema if it doesn't exist
+ */
+export async function createOrFixVisaPackagesTable() {
   try {
-    // Run the schema diagnostic
-    const checkResult = await updateSchemaAndFixData();
-    console.log('Schema check result:', checkResult);
-    
-    // Create visa_packages table if it doesn't exist
-    if (!checkResult.databaseStructure?.visa_packages?.exists) {
-      console.log('visa_packages table does not exist, attempting to create...');
-      await createVisaPackagesTable();
-    }
-    
-    // Check for required columns
-    const requiredColumns = ['government_fee', 'service_fee', 'processing_days'];
-    
-    const existingColumns = checkResult.databaseStructure?.visa_packages?.columns || [];
-    const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col));
-    
-    if (missingColumns.length > 0) {
-      console.log('Missing columns:', missingColumns);
-      // We can't directly add columns, but we can try some workarounds
+    const { error } = await supabase.rpc('fix_visa_packages');
+    if (error) {
+      console.error('Error fixing visa packages table:', error);
+      return { 
+        success: false, 
+        message: 'Failed to fix visa packages table. ' + error.message,
+        error 
+      };
     }
     
     return {
       success: true,
-      message: 'Schema check and fix completed',
-      checkResult
+      message: 'Visa packages table fixed successfully'
     };
-  } catch (error: any) {
-    console.error('Error fixing schema:', error);
-    return {
-      success: false,
-      message: `Error fixing schema: ${error.message}`,
-      error
+  } catch (error) {
+    console.error('Exception in createOrFixVisaPackagesTable:', error);
+    return { 
+      success: false, 
+      message: 'Exception occurred while fixing visa packages table',
+      error 
     };
   }
-};
+}
 
-// Try to create the visa_packages table
-const createVisaPackagesTable = async () => {
+/**
+ * Create the document checklist view and RLS policy
+ */
+export async function createOrFixDocumentChecklistTable() {
   try {
-    // We can't execute direct SQL commands, so we'll try a workaround
-    // by creating a sample record with all required fields
-    
-    // First check if the countries table exists
-    const { data: countries, error: countriesError } = await supabase
-      .from('countries')
-      .select('id')
-      .limit(1);
-      
-    if (countriesError || !countries || countries.length === 0) {
-      console.error('Cannot create visa_packages table: countries table is not accessible');
-      return {
-        success: false,
-        message: 'Could not access countries table'
+    const { error } = await supabase.rpc('fix_document_checklist');
+    if (error) {
+      console.error('Error fixing document checklist table:', error);
+      return { 
+        success: false, 
+        message: 'Failed to fix document checklist table. ' + error.message,
+        error 
       };
     }
     
-    // Try to create a test package
-    const countryId = countries[0].id;
-    const { data, error } = await supabase
+    return {
+      success: true,
+      message: 'Document checklist table fixed successfully'
+    };
+  } catch (error) {
+    console.error('Exception in createOrFixDocumentChecklistTable:', error);
+    return { 
+      success: false, 
+      message: 'Exception occurred while fixing document checklist table',
+      error 
+    };
+  }
+}
+
+/**
+ * Creates the entire visa package schema
+ */
+export async function createOrFixVisaPackageSchema() {
+  try {
+    const visaPackagesResult = await createOrFixVisaPackagesTable();
+    if (!visaPackagesResult.success) {
+      return visaPackagesResult;
+    }
+    
+    const docChecklistResult = await createOrFixDocumentChecklistTable();
+    if (!docChecklistResult.success) {
+      return docChecklistResult;
+    }
+    
+    return {
+      success: true,
+      message: 'Visa package schema created/fixed successfully'
+    };
+  } catch (error) {
+    console.error('Exception in createOrFixVisaPackageSchema:', error);
+    return { 
+      success: false, 
+      message: 'Exception occurred while fixing visa package schema',
+      error 
+    };
+  }
+}
+
+/**
+ * Creates a default visa package for a country
+ */
+export async function createDefaultVisaPackageForCountry(countryId: string) {
+  try {
+    // First check if the package already exists
+    const packageResult = await getCountryVisaPackage(countryId);
+    if (packageResult) {
+      console.log('Visa package already exists for country', countryId);
+      return {
+        success: true,
+        message: 'Visa package already exists for this country',
+        data: packageResult
+      };
+    }
+    
+    // Create default visa package
+    const { data: packageData, error: packageError } = await supabase
       .from('visa_packages')
       .insert({
         country_id: countryId,
-        name: 'Test Package',
-        government_fee: 0,
-        service_fee: 0,
-        processing_days: 15
+        is_active: false,
+        government_fee: 1000,
+        service_fee: 1000,
+        total_price: 2000,
+        processing_days: 7,
+        validity_months: 3,
+        entry_type: 'single',
+        package_name: 'Standard Tourist Visa'
       })
-      .select();
+      .select('*')
+      .single();
       
-    if (error) {
-      console.error('Error creating test package:', error);
-      return {
-        success: false,
-        message: `Could not create visa_packages table: ${error.message}`,
-        error
+    if (packageError) {
+      console.error('Error creating default visa package:', packageError);
+      return { 
+        success: false, 
+        message: 'Failed to create default visa package',
+        error: packageError 
       };
     }
     
-    console.log('Successfully created test package:', data);
-    return {
-      success: true,
-      message: 'Successfully created visa_packages table',
-      data
-    };
-  } catch (error: any) {
-    console.error('Error creating visa_packages table:', error);
-    return {
-      success: false,
-      message: `Error creating visa_packages table: ${error.message}`,
-      error
-    };
-  }
-};
-
-// Function to refresh schema cache
-export const refreshSchemaCache = async () => {
-  try {
-    // First, check if we can access the visa_packages table
-    const { data: packageResult, error: packagesError } = await supabase
-      .from('visa_packages')
-      .select('count(*)')
-      .single();
-      
-    if (packagesError) {
-      console.error('Error accessing visa_packages table:', packagesError);
-    } else {
-      console.log('Successfully accessed visa_packages table:', packageResult);
-    }
-    
-    // Check if we can access the document_checklist table
-    const { data: docResult, error: docsError } = await supabase
-      .from('document_checklist')
-      .select('count(*)')
-      .single();
-      
-    if (docsError) {
-      console.error('Error accessing document_checklist table:', docsError);
-    } else {
-      console.log('Successfully accessed document_checklist table:', docResult);
-    }
-    
-    // Safely handle potentially undefined data with exhaustive null checks
-    let packagesCount = 0;
-    if (packageResult !== null && packageResult !== undefined) {
-      // Double-check it's an object with a count property of type number
-      if (typeof packageResult === 'object' && packageResult !== null && 'count' in packageResult) {
-        const count = packageResult.count;
-        if (typeof count === 'number') {
-          packagesCount = count;
-        }
-      }
-    }
-    
-    let docsCount = 0;
-    if (docResult !== null && docResult !== undefined) {
-      // Double-check it's an object with a count property of type number
-      if (typeof docResult === 'object' && docResult !== null && 'count' in docResult) {
-        const count = docResult.count;
-        if (typeof count === 'number') {
-          docsCount = count;
-        }
-      }
-    }
-    
-    return {
-      success: !packagesError && !docsError,
-      message: 'Schema cache refreshed',
-      visa_packages: {
-        success: !packagesError,
-        error: packagesError?.message,
-        count: packagesCount
-      },
-      document_checklist: {
-        success: !docsError,
-        error: docsError?.message,
-        count: docsCount
-      }
-    };
-  } catch (error: any) {
-    console.error('Error refreshing schema cache:', error);
-    return {
-      success: false,
-      message: `Error refreshing schema cache: ${error.message}`,
-      error
-    };
-  }
-};
-
-// Auto-fix function for implementing at app startup
-export const autoFixSchema = async () => {
-  try {
-    // Only attempt fix if we haven't already done so in this session
-    const hasFixedSchema = sessionStorage.getItem('schema_fixed');
-    if (hasFixedSchema === 'true') {
-      console.log('Schema already fixed in this session, skipping...');
+    // Check if documents exist
+    const docResult = await getDocumentChecklist(countryId);
+    if (docResult && docResult.length > 0) {
+      console.log('Documents already exist for country', countryId);
       return {
         success: true,
-        message: 'Schema already fixed in this session'
+        message: 'Visa package created and documents exist',
+        data: packageData
       };
     }
     
-    // Run the fix function
-    const result = await fixVisaPackagesSchema();
-    
-    if (result.success) {
-      // Remember that we've fixed the schema in this session
-      sessionStorage.setItem('schema_fixed', 'true');
-      console.log('Schema auto-fix completed successfully');
+    // Create default document checklist
+    const { error: docError } = await supabase
+      .from('document_checklist')
+      .insert([
+        {
+          country_id: countryId,
+          document_name: 'Passport',
+          is_required: true,
+          description: 'Valid passport with at least 6 months validity'
+        },
+        {
+          country_id: countryId,
+          document_name: 'Photograph',
+          is_required: true,
+          description: 'Recent passport-sized photograph'
+        },
+        {
+          country_id: countryId,
+          document_name: 'Travel Itinerary',
+          is_required: true,
+          description: 'Flight bookings and accommodation details'
+        }
+      ]);
+      
+    if (docError) {
+      console.error('Error creating default document checklist:', docError);
+      return { 
+        success: true, // Still return success as the visa package was created
+        message: 'Visa package created but document checklist creation failed',
+        data: packageData,
+        warning: 'Failed to create document checklist'
+      };
     }
     
-    return result;
-  } catch (error: any) {
-    console.error('Error in autoFixSchema:', error);
     return {
-      success: false,
-      message: `Failed to auto-fix schema: ${error.message}`,
-      error
+      success: true,
+      message: 'Default visa package and document checklist created successfully',
+      data: packageData
+    };
+  } catch (error) {
+    console.error('Exception in createDefaultVisaPackageForCountry:', error);
+    return { 
+      success: false, 
+      message: 'Exception occurred while creating default visa package',
+      error 
     };
   }
-};
+}
