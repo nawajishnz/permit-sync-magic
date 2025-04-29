@@ -105,7 +105,7 @@ const createVisaPackagesTable = async () => {
 export const refreshSchemaCache = async () => {
   try {
     // First, check if we can access the visa_packages table
-    const { data: packages, error: packagesError } = await supabase
+    const { data: packageResult, error: packagesError } = await supabase
       .from('visa_packages')
       .select('count(*)')
       .single();
@@ -113,11 +113,11 @@ export const refreshSchemaCache = async () => {
     if (packagesError) {
       console.error('Error accessing visa_packages table:', packagesError);
     } else {
-      console.log('Successfully accessed visa_packages table:', packages);
+      console.log('Successfully accessed visa_packages table:', packageResult);
     }
     
     // Check if we can access the document_checklist table
-    const { data: docs, error: docsError } = await supabase
+    const { data: docResult, error: docsError } = await supabase
       .from('document_checklist')
       .select('count(*)')
       .single();
@@ -125,24 +125,28 @@ export const refreshSchemaCache = async () => {
     if (docsError) {
       console.error('Error accessing document_checklist table:', docsError);
     } else {
-      console.log('Successfully accessed document_checklist table:', docs);
+      console.log('Successfully accessed document_checklist table:', docResult);
     }
     
     // Safely handle potentially undefined data with exhaustive null checks
     let packagesCount = 0;
-    if (packages !== null && packages !== undefined) {
-      if (typeof packages === 'object' && packages !== null) {
-        if ('count' in packages && typeof packages.count === 'number') {
-          packagesCount = packages.count;
+    if (packageResult !== null && packageResult !== undefined) {
+      // Double-check it's an object with a count property of type number
+      if (typeof packageResult === 'object' && packageResult !== null) {
+        const count = packageResult.count;
+        if (typeof count === 'number') {
+          packagesCount = count;
         }
       }
     }
     
     let docsCount = 0;
-    if (docs !== null && docs !== undefined) {
-      if (typeof docs === 'object' && docs !== null) {
-        if ('count' in docs && typeof docs.count === 'number') {
-          docsCount = docs.count;
+    if (docResult !== null && docResult !== undefined) {
+      // Double-check it's an object with a count property of type number
+      if (typeof docResult === 'object' && docResult !== null) {
+        const count = docResult.count;
+        if (typeof count === 'number') {
+          docsCount = count;
         }
       }
     }

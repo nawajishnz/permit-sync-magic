@@ -29,11 +29,12 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       
     // Safely handle the count, whether it exists or not
     let tableCountValue = 0;
-    if (tableAccessCheck.data !== null && tableAccessCheck.data !== undefined) {
+    if (tableAccessCheck && tableAccessCheck.data !== null && tableAccessCheck.data !== undefined) {
       const data = tableAccessCheck.data;
-      if (typeof data === 'object' && data !== null) {
-        if ('count' in data && typeof data.count === 'number') {
-          tableCountValue = data.count;
+      if (typeof data === 'object' && data !== null && 'count' in data) {
+        const count = data.count;
+        if (typeof count === 'number') {
+          tableCountValue = count;
         }
       }
     }
@@ -65,11 +66,12 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       
     // Safely handle the count
     let docTableCountValue = 0;
-    if (docTableAccessCheck.data !== null && docTableAccessCheck.data !== undefined) {
+    if (docTableAccessCheck && docTableAccessCheck.data !== null && docTableAccessCheck.data !== undefined) {
       const data = docTableAccessCheck.data;
-      if (typeof data === 'object' && data !== null) {
-        if ('count' in data && typeof data.count === 'number') {
-          docTableCountValue = data.count;
+      if (typeof data === 'object' && data !== null && 'count' in data) {
+        const count = data.count;
+        if (typeof count === 'number') {
+          docTableCountValue = count;
         }
       }
     }
@@ -158,9 +160,10 @@ export const refreshDocumentSchema = async () => {
     // Safely handle the count
     let count = 0;
     if (data !== null && data !== undefined) {
-      if (typeof data === 'object' && data !== null) {
-        if ('count' in data && typeof data.count === 'number') {
-          count = data.count;
+      if (typeof data === 'object' && data !== null && 'count' in data) {
+        const dataCount = data.count;
+        if (typeof dataCount === 'number') {
+          count = dataCount;
         }
       }
     }
@@ -201,18 +204,20 @@ export const refreshSchemaCache = async () => {
     // Safely handle the count values
     let packagesCount = 0;
     if (packagesData !== null && packagesData !== undefined) {
-      if (typeof packagesData === 'object' && packagesData !== null) {
-        if ('count' in packagesData && typeof packagesData.count === 'number') {
-          packagesCount = packagesData.count;
+      if (typeof packagesData === 'object' && packagesData !== null && 'count' in packagesData) {
+        const dataCount = packagesData.count;
+        if (typeof dataCount === 'number') {
+          packagesCount = dataCount;
         }
       }
     }
       
     let docCount = 0;
     if (docData !== null && docData !== undefined) {
-      if (typeof docData === 'object' && docData !== null) {
-        if ('count' in docData && typeof docData.count === 'number') {
-          docCount = docData.count;
+      if (typeof docData === 'object' && docData !== null && 'count' in docData) {
+        const dataCount = docData.count;
+        if (typeof dataCount === 'number') {
+          docCount = dataCount;
         }
       }
     }
@@ -255,9 +260,10 @@ export const checkTablesExist = async () => {
         
       let packagesCount = 0;
       if (packages !== null && packages !== undefined) {
-        if (typeof packages === 'object' && packages !== null) {
-          if ('count' in packages && typeof packages.count === 'number') {
-            packagesCount = packages.count;
+        if (typeof packages === 'object' && packages !== null && 'count' in packages) {
+          const count = packages.count;
+          if (typeof count === 'number') {
+            packagesCount = count;
           }
         }
       }
@@ -283,9 +289,10 @@ export const checkTablesExist = async () => {
         
       let docsCount = 0;
       if (docs !== null && docs !== undefined) {
-        if (typeof docs === 'object' && docs !== null) {
-          if ('count' in docs && typeof docs.count === 'number') {
-            docsCount = docs.count;
+        if (typeof docs === 'object' && docs !== null && 'count' in docs) {
+          const count = docs.count;
+          if (typeof count === 'number') {
+            docsCount = count;
           }
         }
       }
@@ -311,9 +318,10 @@ export const checkTablesExist = async () => {
         
       let countriesCount = 0;
       if (countries !== null && countries !== undefined) {
-        if (typeof countries === 'object' && countries !== null) {
-          if ('count' in countries && typeof countries.count === 'number') {
-            countriesCount = countries.count;
+        if (typeof countries === 'object' && countries !== null && 'count' in countries) {
+          const count = countries.count;
+          if (typeof count === 'number') {
+            countriesCount = count;
           }
         }
       }
