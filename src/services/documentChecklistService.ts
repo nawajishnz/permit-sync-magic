@@ -9,6 +9,8 @@ export interface DocumentItem {
   description?: string;
   document_description?: string;
   required: boolean;
+  isNew?: boolean;
+  modified?: boolean;
 }
 
 export const getDocumentChecklist = async (countryId: string): Promise<DocumentItem[]> => {
@@ -104,15 +106,18 @@ export const saveDocumentChecklist = async (
 
     console.log(`Successfully saved ${data?.length || 0} documents`);
     // Convert back to our interface format
-    const savedDocs = data?.map(item => ({
-      id: item.id,
-      country_id: item.country_id,
-      name: item.document_name,
-      document_name: item.document_name,
-      description: item.document_description,
-      document_description: item.document_description,
-      required: item.required ?? true
-    })) as DocumentItem[];
+    let savedDocs: DocumentItem[] = [];
+    if (data !== null && data !== undefined) {
+      savedDocs = data.map(item => ({
+        id: item.id,
+        country_id: item.country_id,
+        name: item.document_name,
+        document_name: item.document_name,
+        description: item.document_description,
+        document_description: item.document_description,
+        required: item.required ?? true
+      }));
+    }
     
     return {
       success: true,
@@ -275,4 +280,3 @@ export const fixDocumentIssues = async (countryId: string): Promise<{
     };
   }
 };
-
