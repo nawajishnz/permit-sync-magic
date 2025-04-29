@@ -129,8 +129,8 @@ export const refreshSchemaCache = async () => {
     }
     
     // Safely handle potentially undefined data
-    const packagesData = packages || { count: 0 };
-    const docsData = docs || { count: 0 };
+    const packagesCount = packages && typeof packages.count === 'number' ? packages.count : 0;
+    const docsCount = docs && typeof docs.count === 'number' ? docs.count : 0;
     
     return {
       success: !packagesError && !docsError,
@@ -138,12 +138,12 @@ export const refreshSchemaCache = async () => {
       visa_packages: {
         success: !packagesError,
         error: packagesError?.message,
-        count: packagesData.count || 0
+        count: packagesCount
       },
       document_checklist: {
         success: !docsError,
         error: docsError?.message,
-        count: docsData.count || 0
+        count: docsCount
       }
     };
   } catch (error: any) {

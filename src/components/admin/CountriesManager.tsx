@@ -378,7 +378,9 @@ const CountriesManager = () => {
           const documentsToSave: DocumentItem[] = submitData.documents.map(doc => ({
             id: doc.id || `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             country_id: countryId as string,
+            name: doc.document_name,
             document_name: doc.document_name,
+            description: doc.document_description || '',
             document_description: doc.document_description || '',
             required: !!doc.required,
             isNew: doc.isNew,

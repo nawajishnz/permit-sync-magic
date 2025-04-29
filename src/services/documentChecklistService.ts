@@ -4,9 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 export interface DocumentItem {
   id?: string;
   country_id: string;
-  name: string;
-  required: boolean;
+  name?: string;
+  document_name: string;
   description?: string;
+  document_description?: string;
+  required: boolean;
 }
 
 export const getDocumentChecklist = async (countryId: string): Promise<DocumentItem[]> => {
@@ -33,9 +35,11 @@ export const getDocumentChecklist = async (countryId: string): Promise<DocumentI
     return data.map(doc => ({
       id: doc.id,
       country_id: doc.country_id,
-      name: doc.name || 'Document',
-      required: doc.required ?? true,
-      description: doc.description || ''
+      name: doc.document_name, // Map document_name to name for backwards compatibility
+      document_name: doc.document_name,
+      description: doc.document_description, // Map document_description to description
+      document_description: doc.document_description,
+      required: doc.required ?? true
     }));
   } catch (error) {
     console.error('Error in getDocumentChecklist:', error);
@@ -80,11 +84,12 @@ export const saveDocumentChecklist = async (
     }
 
     // Then, insert the new documents
+    // Map to the expected database schema fields
     const docsToInsert = documents.map(doc => ({
       country_id: countryId,
-      name: doc.name || 'Document',
-      required: doc.required ?? true,
-      description: doc.description || ''
+      document_name: doc.name || doc.document_name || 'Document',
+      document_description: doc.description || doc.document_description || '',
+      required: doc.required ?? true
     }));
 
     const { data, error } = await supabase
@@ -98,10 +103,21 @@ export const saveDocumentChecklist = async (
     }
 
     console.log(`Successfully saved ${data?.length || 0} documents`);
+    // Convert back to our interface format
+    const savedDocs = data?.map(item => ({
+      id: item.id,
+      country_id: item.country_id,
+      name: item.document_name,
+      document_name: item.document_name,
+      description: item.document_description,
+      document_description: item.document_description,
+      required: item.required ?? true
+    })) as DocumentItem[];
+    
     return {
       success: true,
       message: 'Document checklist saved successfully',
-      data: data as DocumentItem[]
+      data: savedDocs
     };
   } catch (error: any) {
     console.error('Error saving document checklist:', error);
@@ -135,8 +151,7 @@ export const refreshDocumentSchema = async (): Promise<{
     }
     
     // Safely get the count value
-    const safeData = data || { count: 0 };
-    const count = safeData.count || 0;
+    const count = data && typeof data.count === 'number' ? data.count : 0;
     
     return {
       success: true,
@@ -147,8 +162,7 @@ export const refreshDocumentSchema = async (): Promise<{
     console.error('Error refreshing document schema:', error);
     return {
       success: false,
-      message: `Error refreshing document schema: ${error.message}`,
-      error
+      message: `Error refreshing document schema: ${error.message}`
     };
   }
 };
@@ -175,21 +189,21 @@ export const fixDocumentIssues = async (countryId: string): Promise<{
       .eq('country_id', countryId)
       .single();
       
-    const safeExistingDocs = existingDocs || { count: 0 };
-    
     if (checkError) {
       console.warn('Error checking existing documents:', checkError);
       // Continue with fix attempt despite error
     }
     
-    const hasDocuments = safeExistingDocs.count && safeExistingDocs.count > 0;
+    // Safely handle the count
+    const count = existingDocs && typeof existingDocs.count === 'number' ? existingDocs.count : 0;
+    const hasDocuments = count > 0;
     
     if (hasDocuments) {
       console.log('Country already has document checklist items');
       return {
         success: true,
         message: 'Country already has document checklist items',
-        data: { count: safeExistingDocs.count }
+        data: { count }
       };
     }
     
@@ -199,21 +213,21 @@ export const fixDocumentIssues = async (countryId: string): Promise<{
     const defaultDocuments = [
       {
         country_id: countryId,
-        name: 'Valid Passport',
-        required: true,
-        description: 'Passport must be valid for at least 6 months beyond your stay'
+        document_name: 'Valid Passport',
+        document_description: 'Passport must be valid for at least 6 months beyond your stay',
+        required: true
       },
       {
         country_id: countryId,
-        name: 'Passport Photos',
-        required: true,
-        description: 'Recent passport-sized photos with white background'
+        document_name: 'Passport Photos',
+        document_description: 'Recent passport-sized photos with white background',
+        required: true
       },
       {
         country_id: countryId,
-        name: 'Travel Itinerary',
-        required: true,
-        description: 'Flight bookings and travel plan'
+        document_name: 'Travel Itinerary',
+        document_description: 'Flight bookings and travel plan',
+        required: true
       }
     ];
     
@@ -226,8 +240,7 @@ export const fixDocumentIssues = async (countryId: string): Promise<{
       console.error('Error adding default documents:', error);
       return {
         success: false,
-        message: `Failed to add default documents: ${error.message}`,
-        error
+        message: `Failed to add default documents: ${error.message}`
       };
     }
     
@@ -241,8 +254,7 @@ export const fixDocumentIssues = async (countryId: string): Promise<{
     console.error('Error fixing document issues:', error);
     return {
       success: false,
-      message: `Error fixing document issues: ${error.message}`,
-      error
+      message: `Error fixing document issues: ${error.message}`
     };
   }
 };

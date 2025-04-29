@@ -106,12 +106,12 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
         const documentsData = await getDocumentChecklist(countryId);
         console.log("[useCountryData] Fetched documents:", documentsData);
         
-        // Ensure documents match the required DocumentChecklistItem interface
+        // Convert DocumentItem to DocumentChecklistItem
         const documents: DocumentChecklistItem[] = documentsData.map(doc => ({
-          id: doc.id, // ID is now required in DocumentItem
-          document_name: doc.document_name,
-          document_description: doc.document_description || '',
-          required: !!doc.required // Ensure it's a boolean
+          id: doc.id || '',
+          document_name: doc.document_name || doc.name || '',
+          document_description: doc.document_description || doc.description || '',
+          required: !!doc.required
         }));
 
         if (!documents || documents.length === 0) {

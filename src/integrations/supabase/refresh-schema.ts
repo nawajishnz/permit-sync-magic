@@ -27,12 +27,14 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       .select('count(*)')
       .single();
       
-    const tableAccessData = tableAccessCheck.data || { count: 0 };
+    // Safely handle the count, whether it exists or not
+    const tableCountValue = tableAccessCheck.data && typeof tableAccessCheck.data.count === 'number' 
+      ? tableAccessCheck.data.count : 0;
     
     const tableAccess = {
       success: !tableAccessCheck.error,
       error: tableAccessCheck.error?.message,
-      count: tableAccessCheck.error ? 0 : (tableAccessData.count || 0)
+      count: tableCountValue
     };
     
     // Check if package exists for this country
@@ -43,10 +45,10 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       
     const hasPackage = !packageError && packageExists && packageExists.length > 0;
     
-    // The is_active property isn't directly on the package, we need to calculate it
+    // Calculate if the package is active based on fees
     const isActive = hasPackage && 
       (packageExists && packageExists[0] && 
-      (packageExists[0].government_fee > 0 || packageExists[0].service_fee > 0));
+      ((packageExists[0].government_fee || 0) > 0 || (packageExists[0].service_fee || 0) > 0));
     
     // Check document_checklist table access
     const docTableAccessCheck = await supabase
@@ -54,12 +56,14 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       .select('count(*)')
       .single();
       
-    const docTableAccessData = docTableAccessCheck.data || { count: 0 };
+    // Safely handle the count
+    const docTableCountValue = docTableAccessCheck.data && typeof docTableAccessCheck.data.count === 'number'
+      ? docTableAccessCheck.data.count : 0;
     
     const documentTableAccess = {
       success: !docTableAccessCheck.error,
       error: docTableAccessCheck.error?.message,
-      count: docTableAccessCheck.error ? 0 : (docTableAccessData.count || 0)
+      count: docTableCountValue
     };
     
     // Check if documents exist for this country
@@ -129,8 +133,6 @@ export const refreshDocumentSchema = async () => {
       .select('count(*)')
       .single();
       
-    const safeData = data || { count: 0 };
-    
     if (error) {
       console.error('Error accessing document_checklist table:', error);
       return {
@@ -139,11 +141,14 @@ export const refreshDocumentSchema = async () => {
       };
     }
     
+    // Safely handle the count
+    const count = data && typeof data.count === 'number' ? data.count : 0;
+    
     console.log('Document schema refreshed successfully');
     return {
       success: true,
       message: 'Document schema refreshed successfully',
-      count: safeData.count || 0
+      count
     };
   } catch (error: any) {
     console.error('Error refreshing document schema:', error);
@@ -172,8 +177,9 @@ export const refreshSchemaCache = async () => {
       .select('count(*)')
       .single();
       
-    const safePackagesData = packagesData || { count: 0 };
-    const safeDocData = docData || { count: 0 };
+    // Safely handle the count values
+    const packagesCount = packagesData && typeof packagesData.count === 'number' ? packagesData.count : 0;
+    const docCount = docData && typeof docData.count === 'number' ? docData.count : 0;
     
     return {
       success: !packagesError && !docError,
@@ -181,12 +187,12 @@ export const refreshSchemaCache = async () => {
       visa_packages: {
         success: !packagesError,
         error: packagesError?.message,
-        count: packagesError ? 0 : (safePackagesData.count || 0)
+        count: packagesCount
       },
       document_checklist: {
         success: !docError,
         error: docError?.message,
-        count: docError ? 0 : (safeDocData.count || 0)
+        count: docCount
       }
     };
   } catch (error: any) {
@@ -211,12 +217,12 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
-      const safePackages = packages || { count: 0 };
+      const packagesCount = packages && typeof packages.count === 'number' ? packages.count : 0;
       
       results.visa_packages = {
         exists: !packagesError,
         error: packagesError?.message,
-        count: packagesError ? 0 : (safePackages.count || 0)
+        count: packagesError ? 0 : packagesCount
       };
     } catch (err: any) {
       results.visa_packages = {
@@ -232,12 +238,12 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
-      const safeDocs = docs || { count: 0 };
+      const docsCount = docs && typeof docs.count === 'number' ? docs.count : 0;
       
       results.document_checklist = {
         exists: !docsError,
         error: docsError?.message,
-        count: docsError ? 0 : (safeDocs.count || 0)
+        count: docsError ? 0 : docsCount
       };
     } catch (err: any) {
       results.document_checklist = {
@@ -253,12 +259,12 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
-      const safeCountries = countries || { count: 0 };
+      const countriesCount = countries && typeof countries.count === 'number' ? countries.count : 0;
       
       results.countries = {
         exists: !countriesError,
         error: countriesError?.message,
-        count: countriesError ? 0 : (safeCountries.count || 0)
+        count: countriesError ? 0 : countriesCount
       };
     } catch (err: any) {
       results.countries = {
