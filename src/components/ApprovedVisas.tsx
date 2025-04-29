@@ -1,13 +1,18 @@
-import React, { useEffect, useState, useRef } from 'react';
+
+import React, { useEffect, useState, useCallback } from 'react';
 import { Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getApprovedVisas, type ApprovedVisa } from '@/models/testimonials';
+import useEmblaCarousel from 'embla-carousel-react';
+import AutoPlay from 'embla-carousel-autoplay';
+import { Button } from '@/components/ui/button';
 
 const ApprovedVisas: React.FC = () => {
   const [visas, setVisas] = useState<ApprovedVisa[]>([]);
   const [loading, setLoading] = useState(true);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
+  
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'start', dragFree: true }, [
+    AutoPlay({ delay: 3500, stopOnInteraction: false })
+  ]);
 
   useEffect(() => {
     const fetchVisas = async () => {
@@ -25,61 +30,16 @@ const ApprovedVisas: React.FC = () => {
     fetchVisas();
   }, []);
 
-  // Set up smooth continuous scrolling using requestAnimationFrame
-  useEffect(() => {
-    const startSmoothScroll = () => {
-      let scrollPosition = 0;
-      
-      const scrollAnimation = () => {
-        if (scrollContainerRef.current) {
-          const container = scrollContainerRef.current;
-          
-          // Scroll by a small amount each frame for smooth motion
-          container.scrollLeft += 0.5;  
-          
-          // Reset to beginning when reached the end (create infinite loop effect)
-          if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
-            container.scrollLeft = 0;
-          }
-          
-          // Continue the animation loop
-          animationFrameRef.current = requestAnimationFrame(scrollAnimation);
-        }
-      };
-      
-      // Start the animation
-      animationFrameRef.current = requestAnimationFrame(scrollAnimation);
-    };
-    
-    if (!loading && visas.length > 0) {
-      startSmoothScroll();
-    }
-    
-    // Clean up animation on unmount
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [loading, visas]);
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
 
-  // Create a long, repeating list of visas for continuous scrolling
-  const displayVisas = visas.length > 0 ? [...visas, ...visas, ...visas, ...visas] : [];
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
 
-  // Scroll handlers for desktop navigation arrows
-  const scrollLeft = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: -300, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: 300, behavior: 'smooth' });
-    }
-  };
+  // Create a duplicate array of visas for smoother infinite scrolling
+  const displayVisas = visas.length > 0 ? [...visas, ...visas] : [];
 
   return (
     <section className="py-12 sm:py-16 bg-white">
@@ -107,56 +67,71 @@ const ApprovedVisas: React.FC = () => {
         <div className="relative mb-16 px-4">
           {/* Desktop navigation arrows */}
           <div className="hidden md:block">
-            <button 
-              onClick={scrollLeft}
+            <Button 
+              onClick={scrollPrev}
               className="absolute left-8 top-1/2 transform -translate-y-1/2 z-10 bg-white p-3 rounded-full shadow-md hover:bg-gray-100 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              variant="outline"
+              size="icon"
               aria-label="Scroll left"
             >
               <ChevronLeft className="h-5 w-5 text-indigo-600" />
-            </button>
-            <button 
-              onClick={scrollRight}
+            </Button>
+            <Button 
+              onClick={scrollNext}
               className="absolute right-8 top-1/2 transform -translate-y-1/2 z-10 bg-white p-3 rounded-full shadow-md hover:bg-gray-100 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              variant="outline"
+              size="icon"
               aria-label="Scroll right"
             >
               <ChevronRight className="h-5 w-5 text-indigo-600" />
-            </button>
+            </Button>
           </div>
           
-          {/* Horizontal scrollable container */}
-          <div 
-            ref={scrollContainerRef}
-            id="visa-scroll-container"
-            className="flex overflow-x-auto py-8 snap-x scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent gap-6"
-            style={{ 
-              scrollbarWidth: 'none',
-              WebkitOverflowScrolling: 'touch',
-              paddingLeft: '2rem',
-              paddingRight: '2rem',
-              msOverflowStyle: 'none'
-            }}
-          >
-            {displayVisas.map((visa, index) => (
-              <div 
-                key={`${visa.id}-${index}`}
-                className="flex-shrink-0 snap-center"
-              >
-                <div className="h-[320px] w-[240px] md:h-[360px] md:w-[280px] rounded-lg overflow-hidden bg-white flex items-center justify-center relative group">
-                  <div className="absolute inset-0 border border-gray-200 rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300"></div>
-                  <div className="relative p-3 w-full h-full flex items-center justify-center">
-                    <img 
-                      src={visa.image_url} 
-                      alt={`Approved Visa`}
-                      className="max-h-full max-w-full object-contain" 
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/placeholder.svg';
-                      }}
-                    />
+          {/* Carousel with Embla */}
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex gap-6 py-8">
+              {displayVisas.map((visa, index) => (
+                <div 
+                  key={`${visa.id}-${index}`}
+                  className="flex-[0_0_240px] md:flex-[0_0_280px] snap-center"
+                >
+                  <div className="h-[320px] w-full md:h-[360px] rounded-lg overflow-hidden bg-white flex items-center justify-center relative group">
+                    <div className="absolute inset-0 border border-gray-200 rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300"></div>
+                    <div className="relative p-3 w-full h-full flex items-center justify-center">
+                      <img 
+                        src={visa.image_url} 
+                        alt={`Approved Visa`}
+                        className="max-h-full max-w-full object-contain" 
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder.svg';
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+          
+          {/* Mobile navigation dots */}
+          <div className="flex justify-center mt-6 gap-2 md:hidden">
+            <Button 
+              onClick={scrollPrev}
+              variant="outline" 
+              size="icon"
+              className="rounded-full border border-gray-200 w-9 h-9"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button 
+              onClick={scrollNext}
+              variant="outline"
+              size="icon" 
+              className="rounded-full border border-gray-200 w-9 h-9"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       )}
@@ -164,4 +139,4 @@ const ApprovedVisas: React.FC = () => {
   );
 };
 
-export default ApprovedVisas; 
+export default ApprovedVisas;
