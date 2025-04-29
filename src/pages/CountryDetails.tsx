@@ -5,7 +5,7 @@ import { useCountryData } from '@/hooks/useCountryData';
 import { useToast } from '@/hooks/use-toast';
 import CountryDataFallback from '@/components/country/CountryDataFallback';
 import CountryNotFound from '@/components/country/CountryNotFound';
-import { autoFixSchema } from '@/integrations/supabase/fix-schema'; // Corrected import
+import { fixSchemaIfNeeded } from '@/integrations/supabase/fix-schema'; // Corrected import
 import {
   Card,
   CardContent,
@@ -32,10 +32,8 @@ const CountryDetails = () => {
   
   // Run schema fix on page load
   useEffect(() => {
-    if (id) {
-      autoFixSchema().catch(console.error);
-    }
-  }, [id]);
+    fixSchemaIfNeeded().catch(console.error);
+  }, []);
 
   // Periodic data refresh
   useEffect(() => {
@@ -67,7 +65,7 @@ const CountryDetails = () => {
     
     try {
       // Run schema fix first to ensure table structures are correct
-      await autoFixSchema();
+      await fixSchemaIfNeeded();
       
       // Force query invalidation and refetch
       await queryClient.invalidateQueries({ queryKey: ['countryDetail', id] });

@@ -1,11 +1,10 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
 import { useEffect } from 'react';
-import { autoFixSchema } from '@/integrations/supabase/fix-schema'; // Corrected import
-import { getDocumentChecklist, DocumentItem } from '@/services/documentChecklistService';
+import { fixSchemaIfNeeded } from '@/integrations/supabase/fix-schema'; // Correct import
+import { getDocumentChecklist, DocumentItem } from '@/services/document-checklist';
 
 export interface DocumentChecklistItem {
   id: string;
@@ -69,7 +68,7 @@ export const useCountryData = (countryId: string | undefined, options = {}) => {
   useEffect(() => {
     if (countryId) {
       console.log('[useCountryData] Running schema fix check...');
-      autoFixSchema().catch(err => {
+      fixSchemaIfNeeded().catch(err => {
         console.error('[useCountryData] Schema auto-fix error:', err);
       });
     }
