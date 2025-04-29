@@ -159,7 +159,7 @@ export const refreshDocumentSchema = async (): Promise<{
     let count = 0;
     if (data !== null && data !== undefined) {
       if (typeof data === 'object' && data !== null && 'count' in data) {
-        const dataCount = (data as any).count;
+        const dataCount = (data as { count: number }).count;
         if (typeof dataCount === 'number') {
           count = dataCount;
         }
@@ -211,7 +211,7 @@ export const fixDocumentIssues = async (countryId: string): Promise<{
     let count = 0;
     if (existingDocs !== null && existingDocs !== undefined) {
       if (typeof existingDocs === 'object' && existingDocs !== null && 'count' in existingDocs) {
-        const dataCount = (existingDocs as any).count;
+        const dataCount = (existingDocs as { count: number }).count;
         if (typeof dataCount === 'number') {
           count = dataCount;
         }
