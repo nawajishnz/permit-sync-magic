@@ -30,7 +30,7 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
     const tableAccess = {
       success: !tableAccessCheck.error,
       error: tableAccessCheck.error?.message,
-      count: tableAccessCheck.error ? 0 : tableAccessCheck.data?.count
+      count: tableAccessCheck.error ? 0 : (tableAccessCheck.data?.count ?? 0)
     };
     
     // Check if package exists for this country
@@ -40,7 +40,9 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       .eq('country_id', countryId);
       
     const hasPackage = !packageError && packageExists && packageExists.length > 0;
-    const isActive = hasPackage && packageExists[0].is_active;
+    // The is_active property isn't directly on the package, we need to calculate it
+    const isActive = hasPackage && 
+      (packageExists[0].government_fee > 0 || packageExists[0].service_fee > 0);
     
     // Check document_checklist table access
     const docTableAccessCheck = await supabase
@@ -51,7 +53,7 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
     const documentTableAccess = {
       success: !docTableAccessCheck.error,
       error: docTableAccessCheck.error?.message,
-      count: docTableAccessCheck.error ? 0 : docTableAccessCheck.data?.count
+      count: docTableAccessCheck.error ? 0 : (docTableAccessCheck.data?.count ?? 0)
     };
     
     // Check if documents exist for this country
@@ -110,7 +112,7 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
   }
 };
 
-// Simple function to refresh schema cache by performing some queries
+// Simple function to refresh document schema by performing some queries
 export const refreshDocumentSchema = async () => {
   try {
     console.log('Refreshing document schema...');
@@ -162,18 +164,22 @@ export const refreshSchemaCache = async () => {
       .select('count(*)')
       .single();
       
+    // Get count safely, handling both errors and missing data
+    const packagesCount = packagesError ? 0 : (packagesData?.count ?? 0);
+    const docCount = docError ? 0 : (docData?.count ?? 0);
+    
     return {
       success: !packagesError && !docError,
       message: 'Schema cache refreshed',
       visa_packages: {
         success: !packagesError,
         error: packagesError?.message,
-        count: packagesError ? 0 : packagesData?.count ?? 0
+        count: packagesCount
       },
       document_checklist: {
         success: !docError,
         error: docError?.message,
-        count: docError ? 0 : docData?.count ?? 0
+        count: docCount
       }
     };
   } catch (error: any) {
@@ -201,7 +207,7 @@ export const checkTablesExist = async () => {
       results.visa_packages = {
         exists: !packagesError,
         error: packagesError?.message,
-        count: packagesError ? 0 : packages?.count ?? 0
+        count: packagesError ? 0 : (packages?.count ?? 0)
       };
     } catch (err: any) {
       results.visa_packages = {
@@ -220,7 +226,7 @@ export const checkTablesExist = async () => {
       results.document_checklist = {
         exists: !docsError,
         error: docsError?.message,
-        count: docsError ? 0 : docs?.count ?? 0
+        count: docsError ? 0 : (docs?.count ?? 0)
       };
     } catch (err: any) {
       results.document_checklist = {
@@ -239,7 +245,7 @@ export const checkTablesExist = async () => {
       results.countries = {
         exists: !countriesError,
         error: countriesError?.message,
-        count: countriesError ? 0 : countries?.count ?? 0
+        count: countriesError ? 0 : (countries?.count ?? 0)
       };
     } catch (err: any) {
       results.countries = {

@@ -47,7 +47,7 @@ const CountryDiagnosticTool: React.FC<CountryDiagnosticToolProps> = ({
       const result = await runCountryDiagnostic(selectedCountryId);
       
       toast({
-        title: result.success ? "Diagnostic complete" : "Diagnostic found issues",
+        title: result.success ? 'Success' : 'Warning',
         description: result.message,
         variant: result.success ? "default" : "destructive"
       });

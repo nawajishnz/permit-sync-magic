@@ -243,6 +243,7 @@ export const ensureCountryHasDocuments = async (countryId: string): Promise<Save
       };
     }
     
+    // Safely get the count value
     const count = docs?.count ?? 0;
     
     // If country has documents, we're done
