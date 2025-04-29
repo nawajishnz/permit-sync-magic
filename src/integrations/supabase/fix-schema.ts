@@ -130,16 +130,20 @@ export const refreshSchemaCache = async () => {
     
     // Safely handle potentially undefined data with exhaustive null checks
     let packagesCount = 0;
-    if (packages && typeof packages === 'object' && packages !== null) {
-      if ('count' in packages && typeof packages.count === 'number') {
-        packagesCount = packages.count;
+    if (packages !== null && packages !== undefined) {
+      if (typeof packages === 'object' && packages !== null) {
+        if ('count' in packages && typeof packages.count === 'number') {
+          packagesCount = packages.count;
+        }
       }
     }
     
     let docsCount = 0;
-    if (docs && typeof docs === 'object' && docs !== null) {
-      if ('count' in docs && typeof docs.count === 'number') {
-        docsCount = docs.count;
+    if (docs !== null && docs !== undefined) {
+      if (typeof docs === 'object' && docs !== null) {
+        if ('count' in docs && typeof docs.count === 'number') {
+          docsCount = docs.count;
+        }
       }
     }
     
