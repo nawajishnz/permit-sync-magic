@@ -1,28 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCountryData } from '@/hooks/useCountryData';
 import { useToast } from '@/hooks/use-toast';
 import CountryDataFallback from '@/components/country/CountryDataFallback';
 import CountryNotFound from '@/components/country/CountryNotFound';
-import { fixSchemaIfNeeded } from '@/integrations/supabase/fix-schema'; // Corrected import
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Globe, MapPin, IndianRupee } from 'lucide-react';
-import PricingTier from '@/components/country/PricingTier';
-import ProcessStep from '@/components/country/ProcessStep';
-import FAQSection from '@/components/country/FAQSection';
-import EmbassySection from '@/components/country/EmbassySection';
-import DocumentChecklist from '@/components/country/DocumentChecklist';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { fixSchemaIfNeeded } from '@/integrations/supabase/fix-schema';
 
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -61,7 +44,6 @@ const CountryDetails = () => {
     if (!id) return;
     
     setIsRefreshing(true);
-    console.log('Manually refreshing country data for:', id);
     
     try {
       // Run schema fix first to ensure table structures are correct
@@ -75,8 +57,8 @@ const CountryDetails = () => {
         title: "Data refreshed",
         description: "Country information has been updated",
       });
-    } catch (err) {
-      console.error('Error refreshing data:', err);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
       toast({
         title: "Refresh failed",
         description: "Could not update country information",

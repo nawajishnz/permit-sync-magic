@@ -1,9 +1,10 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
 import { useEffect } from 'react';
-import { fixSchemaIfNeeded } from '@/integrations/supabase/fix-schema'; // Correct import
+import { fixSchemaIfNeeded } from '@/integrations/supabase/fix-schema';
 import { getDocumentChecklist, DocumentItem } from '@/services/document-checklist';
 
 export interface DocumentChecklistItem {

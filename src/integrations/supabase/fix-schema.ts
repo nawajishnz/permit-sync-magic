@@ -1,4 +1,7 @@
+
 import { supabase } from './client';
+import { getCountryVisaPackage } from '@/services/visaPackageService';
+import { getDocumentChecklist, refreshDocumentSchema } from '@/services/document-checklist';
 
 /**
  * Function to auto-fix schema issues
@@ -8,7 +11,7 @@ export const fixSchemaIfNeeded = async () => {
     console.log('Running schema fix check...');
     
     // Try to fix visa packages schema
-    await fixVisaPackagesSchema();
+    await createOrFixVisaPackageSchema();
     
     return { success: true };
   } catch (error) {
@@ -20,45 +23,7 @@ export const fixSchemaIfNeeded = async () => {
   }
 };
 
-/**
- * Fix visa packages schema if needed
- */
-export const fixVisaPackagesSchema = async () => {
-  try {
-    // Check if visa_packages table exists
-    const { data: tableExists, error: checkError } = await supabase
-      .from('visa_packages')
-      .select('id')
-      .limit(1);
-    
-    if (checkError) {
-      console.error('Error checking visa_packages table:', checkError);
-      return { success: false, error: checkError };
-    }
-    
-    // We don't need to do anything if the table exists and we can query it
-    if (tableExists) {
-      console.log('Visa packages table seems to be working fine');
-      return { success: true };
-    }
-    
-    // Otherwise run the fix function
-    const { error: fixError } = await supabase.rpc('fix_visa_packages');
-    
-    if (fixError) {
-      console.error('Error fixing visa_packages:', fixError);
-      return { success: false, error: fixError };
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error in fixVisaPackagesSchema:', error);
-    return { success: false, error };
-  }
-};
-
-// Re-export these for backwards compatibility
-export { refreshDocumentSchema } from '../document-checklist';
+// We'll import autoFixSchema from update-schema-and-fix-data instead of duplicating it
 export { autoFixSchema } from './update-schema-and-fix-data';
 
 /**
@@ -149,29 +114,9 @@ export async function createOrFixVisaPackageSchema() {
 }
 
 /**
- * Auto-fixes schema issues - main entry point for schema management
+ * Fixes visa packages schema - using the function we already defined
  */
-export async function autoFixSchema() {
-  console.log('Running auto schema fix...');
-  try {
-    return await createOrFixVisaPackageSchema();
-  } catch (error) {
-    console.error('Auto schema fix failed:', error);
-    return { 
-      success: false, 
-      message: 'Auto schema fix failed', 
-      error 
-    };
-  }
-}
-
-/**
- * Fixes visa packages schema - alias for createOrFixVisaPackageSchema
- */
-export async function fixVisaPackagesSchema() {
-  console.log('Fixing visa packages schema...');
-  return await createOrFixVisaPackageSchema();
-}
+export const fixVisaPackagesSchema = createOrFixVisaPackageSchema;
 
 /**
  * Creates a default visa package for a country
@@ -197,13 +142,7 @@ export async function createDefaultVisaPackageForCountry(countryId: string) {
         name: 'Standard Tourist Visa',
         government_fee: 1000,
         service_fee: 1000,
-        processing_days: 7,
-        // The following properties were causing type errors - removing them
-        // is_active: false,
-        // total_price: 2000,
-        // validity_months: 3,
-        // entry_type: 'single',
-        // package_name: 'Standard Tourist Visa'
+        processing_days: 7
       })
       .select('*')
       .single();
