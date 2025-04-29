@@ -270,7 +270,7 @@ export const fixDocumentIssues = async (countryId: string): Promise<{
     return {
       success: true,
       message: 'Default documents added successfully',
-      data
+      data: data // This is safe now since we check for error above
     };
   } catch (error: any) {
     console.error('Error fixing document issues:', error);
