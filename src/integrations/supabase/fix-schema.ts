@@ -129,8 +129,8 @@ export const refreshSchemaCache = async () => {
     }
     
     // Safely handle potentially undefined data
-    const packagesCount = packages && typeof packages.count === 'number' ? packages.count : 0;
-    const docsCount = docs && typeof docs.count === 'number' ? docs.count : 0;
+    const packagesCount = packages && typeof packages === 'object' && 'count' in packages && typeof packages.count === 'number' ? packages.count : 0;
+    const docsCount = docs && typeof docs === 'object' && 'count' in docs && typeof docs.count === 'number' ? docs.count : 0;
     
     return {
       success: !packagesError && !docsError,

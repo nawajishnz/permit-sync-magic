@@ -28,8 +28,10 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       .single();
       
     // Safely handle the count, whether it exists or not
-    const tableCountValue = tableAccessCheck.data && typeof tableAccessCheck.data.count === 'number' 
-      ? tableAccessCheck.data.count : 0;
+    let tableCountValue = 0;
+    if (tableAccessCheck.data && typeof tableAccessCheck.data === 'object' && 'count' in tableAccessCheck.data) {
+      tableCountValue = typeof tableAccessCheck.data.count === 'number' ? tableAccessCheck.data.count : 0;
+    }
     
     const tableAccess = {
       success: !tableAccessCheck.error,
@@ -57,8 +59,10 @@ export const runVisaPackagesDiagnostic = async (countryId: string) => {
       .single();
       
     // Safely handle the count
-    const docTableCountValue = docTableAccessCheck.data && typeof docTableAccessCheck.data.count === 'number'
-      ? docTableAccessCheck.data.count : 0;
+    let docTableCountValue = 0;
+    if (docTableAccessCheck.data && typeof docTableAccessCheck.data === 'object' && 'count' in docTableAccessCheck.data) {
+      docTableCountValue = typeof docTableAccessCheck.data.count === 'number' ? docTableAccessCheck.data.count : 0;
+    }
     
     const documentTableAccess = {
       success: !docTableAccessCheck.error,
@@ -142,7 +146,8 @@ export const refreshDocumentSchema = async () => {
     }
     
     // Safely handle the count
-    const count = data && typeof data.count === 'number' ? data.count : 0;
+    const count = data && typeof data === 'object' && 'count' in data ? 
+      (typeof data.count === 'number' ? data.count : 0) : 0;
     
     console.log('Document schema refreshed successfully');
     return {
@@ -178,8 +183,11 @@ export const refreshSchemaCache = async () => {
       .single();
       
     // Safely handle the count values
-    const packagesCount = packagesData && typeof packagesData.count === 'number' ? packagesData.count : 0;
-    const docCount = docData && typeof docData.count === 'number' ? docData.count : 0;
+    const packagesCount = packagesData && typeof packagesData === 'object' && 'count' in packagesData ? 
+      (typeof packagesData.count === 'number' ? packagesData.count : 0) : 0;
+      
+    const docCount = docData && typeof docData === 'object' && 'count' in docData ? 
+      (typeof docData.count === 'number' ? docData.count : 0) : 0;
     
     return {
       success: !packagesError && !docError,
@@ -217,7 +225,8 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
-      const packagesCount = packages && typeof packages.count === 'number' ? packages.count : 0;
+      const packagesCount = packages && typeof packages === 'object' && 'count' in packages ? 
+        (typeof packages.count === 'number' ? packages.count : 0) : 0;
       
       results.visa_packages = {
         exists: !packagesError,
@@ -238,7 +247,8 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
-      const docsCount = docs && typeof docs.count === 'number' ? docs.count : 0;
+      const docsCount = docs && typeof docs === 'object' && 'count' in docs ? 
+        (typeof docs.count === 'number' ? docs.count : 0) : 0;
       
       results.document_checklist = {
         exists: !docsError,
@@ -259,7 +269,8 @@ export const checkTablesExist = async () => {
         .select('count(*)')
         .single();
         
-      const countriesCount = countries && typeof countries.count === 'number' ? countries.count : 0;
+      const countriesCount = countries && typeof countries === 'object' && 'count' in countries ? 
+        (typeof countries.count === 'number' ? countries.count : 0) : 0;
       
       results.countries = {
         exists: !countriesError,

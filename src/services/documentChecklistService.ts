@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface DocumentItem {
   id?: string;
   country_id: string;
-  name?: string;
+  name: string;
   document_name: string;
   description?: string;
   document_description?: string;
@@ -150,8 +150,9 @@ export const refreshDocumentSchema = async (): Promise<{
       };
     }
     
-    // Safely get the count value
-    const count = data && typeof data.count === 'number' ? data.count : 0;
+    // Safely handle the count
+    const count = data && typeof data === 'object' && 'count' in data ?
+      (typeof data.count === 'number' ? data.count : 0) : 0;
     
     return {
       success: true,
@@ -195,7 +196,11 @@ export const fixDocumentIssues = async (countryId: string): Promise<{
     }
     
     // Safely handle the count
-    const count = existingDocs && typeof existingDocs.count === 'number' ? existingDocs.count : 0;
+    let count = 0;
+    if (existingDocs && typeof existingDocs === 'object' && 'count' in existingDocs) {
+      count = typeof existingDocs.count === 'number' ? existingDocs.count : 0;
+    }
+    
     const hasDocuments = count > 0;
     
     if (hasDocuments) {
