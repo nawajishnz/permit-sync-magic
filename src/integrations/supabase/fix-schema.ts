@@ -132,8 +132,8 @@ export const refreshSchemaCache = async () => {
     let packagesCount = 0;
     if (packageResult !== null && packageResult !== undefined) {
       // Double-check it's an object with a count property of type number
-      if (typeof packageResult === 'object' && packageResult !== null) {
-        const count = packageResult.count;
+      if (typeof packageResult === 'object' && packageResult !== null && 'count' in packageResult) {
+        const count = (packageResult as any).count;
         if (typeof count === 'number') {
           packagesCount = count;
         }
@@ -143,8 +143,8 @@ export const refreshSchemaCache = async () => {
     let docsCount = 0;
     if (docResult !== null && docResult !== undefined) {
       // Double-check it's an object with a count property of type number
-      if (typeof docResult === 'object' && docResult !== null) {
-        const count = docResult.count;
+      if (typeof docResult === 'object' && docResult !== null && 'count' in docResult) {
+        const count = (docResult as any).count;
         if (typeof count === 'number') {
           docsCount = count;
         }
