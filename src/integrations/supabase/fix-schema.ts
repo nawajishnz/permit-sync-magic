@@ -1,7 +1,7 @@
 
 import { supabase } from './client';
 import { getCountryVisaPackage } from '@/services/visaPackageService';
-import { getDocumentChecklist, refreshDocumentSchema } from '@/services/document-checklist';
+import { getDocumentChecklist } from '@/services/document-checklist';
 
 /**
  * Function to auto-fix schema issues
@@ -23,8 +23,22 @@ export const fixSchemaIfNeeded = async () => {
   }
 };
 
-// We'll import autoFixSchema from update-schema-and-fix-data instead of duplicating it
-export { autoFixSchema } from './update-schema-and-fix-data';
+/**
+ * Auto-fixes schema issues - main entry point for schema management
+ */
+export const autoFixSchema = async () => {
+  console.log('Running auto schema fix...');
+  try {
+    return await createOrFixVisaPackageSchema();
+  } catch (error) {
+    console.error('Auto schema fix failed:', error);
+    return {
+      success: false,
+      message: 'Auto schema fix failed',
+      error
+    };
+  }
+};
 
 /**
  * Creates the visa packages table and schema if it doesn't exist

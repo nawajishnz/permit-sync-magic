@@ -1,11 +1,29 @@
+
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCountryData } from '@/hooks/useCountryData';
 import { useToast } from '@/hooks/use-toast';
 import CountryDataFallback from '@/components/country/CountryDataFallback';
 import CountryNotFound from '@/components/country/CountryNotFound';
 import { fixSchemaIfNeeded } from '@/integrations/supabase/fix-schema';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { 
+  RefreshCw, 
+  ArrowLeft, 
+  MapPin, 
+  Globe, 
+  Calendar, 
+  Clock 
+} from 'lucide-react';
+import PricingTier from '@/components/country/PricingTier';
+import ProcessStep from '@/components/country/ProcessStep';
+import FAQSection from '@/components/country/FAQSection';
+import EmbassySection from '@/components/country/EmbassySection';
+import DocumentChecklist from '@/components/country/DocumentChecklist';
 
 const CountryDetails = () => {
   const { id } = useParams<{ id: string }>();
