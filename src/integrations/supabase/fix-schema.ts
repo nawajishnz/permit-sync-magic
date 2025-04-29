@@ -128,9 +128,20 @@ export const refreshSchemaCache = async () => {
       console.log('Successfully accessed document_checklist table:', docs);
     }
     
-    // Safely handle potentially undefined data
-    const packagesCount = packages && typeof packages === 'object' && packages !== null && 'count' in packages && typeof packages.count === 'number' ? packages.count : 0;
-    const docsCount = docs && typeof docs === 'object' && docs !== null && 'count' in docs && typeof docs.count === 'number' ? docs.count : 0;
+    // Safely handle potentially undefined data with exhaustive null checks
+    let packagesCount = 0;
+    if (packages && typeof packages === 'object' && packages !== null) {
+      if ('count' in packages && typeof packages.count === 'number') {
+        packagesCount = packages.count;
+      }
+    }
+    
+    let docsCount = 0;
+    if (docs && typeof docs === 'object' && docs !== null) {
+      if ('count' in docs && typeof docs.count === 'number') {
+        docsCount = docs.count;
+      }
+    }
     
     return {
       success: !packagesError && !docsError,
