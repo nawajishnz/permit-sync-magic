@@ -1,97 +1,72 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { FixResult } from './types';
+import { DocumentItem, FixResult } from './types';
+import { getDocumentChecklist } from './fetchOperations';
+import { saveDocumentChecklist } from './saveOperations';
 
 /**
- * Fixes document issues for a specific country
+ * Fixes document issues for a country
  */
 export const fixDocumentIssues = async (countryId: string): Promise<FixResult> => {
   try {
-    if (!countryId) {
-      return {
-        success: false,
-        message: 'Country ID is required'
-      };
-    }
+    console.log('Fixing document issues for country:', countryId);
     
-    console.log('Checking for document issues for country:', countryId);
+    // Check if documents exist
+    const existingDocs = await getDocumentChecklist(countryId);
     
-    // Check if documents exist for this country
-    const { data: existingDocs, error: checkError } = await supabase
-      .from('document_checklist')
-      .select('count(*)')
-      .eq('country_id', countryId)
-      .single();
-      
-    if (checkError) {
-      console.warn('Error checking existing documents:', checkError);
-      // Continue with fix attempt despite error
-    }
-    
-    // Safely handle the count
-    let count = 0;
-    if (existingDocs) {
-      if (typeof existingDocs === 'object' && existingDocs !== null && 'count' in existingDocs) {
-        const dataCount = existingDocs.count;
-        if (typeof dataCount === 'number') {
-          count = dataCount;
-        }
-      }
-    }
-    
-    const hasDocuments = count > 0;
-    
-    if (hasDocuments) {
-      console.log('Country already has document checklist items');
+    // If documents already exist, we're good
+    if (existingDocs && existingDocs.length > 0) {
+      console.log('Documents already exist, no fix needed');
       return {
         success: true,
-        message: 'Country already has document checklist items',
-        data: { count }
+        message: 'No fix required - documents already exist'
       };
     }
     
-    // If no documents, add default ones
-    console.log('Adding default document checklist for country');
+    console.log('No documents found, creating default documents');
     
-    const defaultDocuments = [
+    // Create default documents
+    const defaultDocs: DocumentItem[] = [
       {
         country_id: countryId,
+        name: 'Valid Passport',
         document_name: 'Valid Passport',
-        document_description: 'Passport must be valid for at least 6 months beyond your stay',
+        description: 'A valid passport with at least 6 months validity remaining',
+        document_description: 'A valid passport with at least 6 months validity remaining',
         required: true
       },
       {
         country_id: countryId,
+        name: 'Passport Photos',
         document_name: 'Passport Photos',
-        document_description: 'Recent passport-sized photos with white background',
+        description: 'Two recent passport-size color photographs with white background',
+        document_description: 'Two recent passport-size color photographs with white background',
         required: true
       },
       {
         country_id: countryId,
-        document_name: 'Travel Itinerary',
-        document_description: 'Flight bookings and travel plan',
+        name: 'Visa Application Form',
+        document_name: 'Visa Application Form',
+        description: 'Completed and signed visa application form',
+        document_description: 'Completed and signed visa application form',
         required: true
       }
     ];
     
-    const { data, error } = await supabase
-      .from('document_checklist')
-      .insert(defaultDocuments)
-      .select();
-      
-    if (error) {
-      console.error('Error adding default documents:', error);
+    // Save the default documents
+    const result = await saveDocumentChecklist(countryId, defaultDocs);
+    
+    if (!result.success) {
       return {
         success: false,
-        message: `Failed to add default documents: ${error.message}`
+        message: `Failed to create default documents: ${result.message}`
       };
     }
     
-    console.log('Successfully added default documents:', data);
     return {
       success: true,
-      message: 'Default documents added successfully',
-      data: data || [] // Safe handling of potentially null data
+      message: 'Created default documents successfully',
+      data: result.data
     };
   } catch (error: any) {
     console.error('Error fixing document issues:', error);
