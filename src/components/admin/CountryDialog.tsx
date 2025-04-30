@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Upload, Plus, Trash, Save, Loader2 } from 'lucide-react';
+import { AlertCircle, Upload, Plus, Trash, Save, Loader2, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import HelpOverlay from './HelpOverlay';
 
 export interface CountryFormData {
   id?: string;
@@ -68,6 +69,8 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
   const [flagFile, setFlagFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("basic-info");
+  const [showHelpOverlay, setShowHelpOverlay] = useState(false);
+  const [helpTopic, setHelpTopic] = useState('visa-packages');
   const { toast } = useToast();
 
   const updateFormData = (field: keyof CountryFormData, value: any) => {
@@ -213,6 +216,11 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
     });
   };
 
+  const handleOpenHelp = (topic: string) => {
+    setHelpTopic(topic);
+    setShowHelpOverlay(true);
+  };
+
   const handleFormSubmit = () => {
     const processedDocuments = (formData.documents || [])
       .filter(doc => doc?.document_name?.trim())
@@ -257,14 +265,13 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
         </DialogHeader>
         
         <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
             <TabsTrigger value="includes">Includes</TabsTrigger>
             <TabsTrigger value="assistance">Assistance</TabsTrigger>
             <TabsTrigger value="process">Process</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
-            <TabsTrigger value="embassy">Embassy</TabsTrigger>
+            <TabsTrigger value="visa-packages">Visa Packages</TabsTrigger>
           </TabsList>
           
           <TabsContent value="basic-info" className="space-y-4 pt-4">
@@ -500,47 +507,67 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
             </Button>
           </TabsContent>
 
-          <TabsContent value="pricing" className="space-y-4 pt-4">
-            <Label className="font-medium">Default Visa Package Pricing</Label>
-            <div className="grid md:grid-cols-3 gap-4 p-4 border rounded">
-              <div className="grid gap-1.5">
-                <Label htmlFor="government_fee">Government Fee *</Label>
-                <Input
-                  id="government_fee"
-                  name="government_fee"
-                  type="number"
-                  value={formData.pricing?.government_fee || ''}
-                  onChange={(e) => handlePricingChange('government_fee', e.target.value)}
-                  placeholder="e.g., 150"
-                  min="0"
-                />
+          <TabsContent value="visa-packages" className="space-y-4 pt-4">
+            <div className="flex justify-between items-center">
+              <Label className="font-medium text-lg">Visa Package Configuration</Label>
+              <Button variant="ghost" size="sm" onClick={() => handleOpenHelp('visa-packages')} className="text-blue-500">
+                <HelpCircle className="h-4 w-4 mr-1" /> Help
+              </Button>
+            </div>
+            
+            <div className="p-4 border rounded-md bg-gray-50">
+              <p className="text-sm text-gray-600 mb-4">
+                After creating or updating the country, you'll be able to configure visa packages 
+                with pricing tiers in the Countries Manager.
+              </p>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="government_fee">Default Government Fee</Label>
+                  <Input
+                    id="government_fee"
+                    name="government_fee"
+                    type="number"
+                    value={formData.pricing?.government_fee || ''}
+                    onChange={(e) => handlePricingChange('government_fee', e.target.value)}
+                    placeholder="e.g., 150"
+                    min="0"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="service_fee">Default Service Fee</Label>
+                  <Input
+                    id="service_fee"
+                    name="service_fee"
+                    type="number"
+                    value={formData.pricing?.service_fee || ''}
+                    onChange={(e) => handlePricingChange('service_fee', e.target.value)}
+                    placeholder="e.g., 50"
+                    min="0"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="processing_days">Processing Days</Label>
+                  <Input
+                    id="processing_days"
+                    name="processing_days"
+                    type="number"
+                    value={formData.pricing?.processing_days || ''}
+                    onChange={(e) => handlePricingChange('processing_days', e.target.value)}
+                    placeholder="e.g., 10"
+                    min="1"
+                  />
+                </div>
               </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="service_fee">Service Fee *</Label>
-                <Input
-                  id="service_fee"
-                  name="service_fee"
-                  type="number"
-                  value={formData.pricing?.service_fee || ''}
-                  onChange={(e) => handlePricingChange('service_fee', e.target.value)}
-                  placeholder="e.g., 50"
-                  min="0"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="processing_days">Processing Days *</Label>
-                <Input
-                  id="processing_days"
-                  name="processing_days"
-                  type="number"
-                  value={formData.pricing?.processing_days || ''}
-                  onChange={(e) => handlePricingChange('processing_days', e.target.value)}
-                  placeholder="e.g., 10"
-                  min="1"
-                />
+              
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
+                <p className="text-sm text-blue-700">
+                  <strong>Note:</strong> This sets the initial pricing for the default visa package. 
+                  After saving the country, you can activate this package and manage more pricing options 
+                  from the main Countries Manager screen.
+                </p>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">This sets the initial pricing for the default visa package when a country is created. You can manage more complex pricing tiers separately.</p>
           </TabsContent>
           
           <TabsContent value="embassy" className="space-y-4 pt-4">
@@ -604,6 +631,12 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
           </Button>
         </DialogFooter>
       </DialogContent>
+      
+      <HelpOverlay 
+        open={showHelpOverlay} 
+        onClose={() => setShowHelpOverlay(false)}
+        topic={helpTopic}
+      />
     </Dialog>
   );
 };

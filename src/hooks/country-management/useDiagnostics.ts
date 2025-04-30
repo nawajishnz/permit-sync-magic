@@ -1,62 +1,51 @@
-import { useState } from 'react';
-import { runDiagnostic } from '@/services/visaPackageService';
-import { refreshDocumentSchema, fixDocumentIssues } from '@/services/document-checklist';
-import { useCountryQueries } from './useCountryQueries';
-import { useCountryData } from './useCountryData';
 
-export const useDiagnostics = (queryClient?: any) => {
-  const [runningDiagnostic, setRunningDiagnostic] = useState(false);
-  const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
-  
-  const { invalidateQueries } = useCountryQueries(queryClient);
-  const { fetchCountryData, setError } = useCountryData(queryClient);
-  
-  // Run diagnostic with enhanced functionality
+import { useState } from 'react';
+import { runDiagnostic } from '@/services/visaDiagnosticService';
+
+export interface DiagnosticResult {
+  success: boolean;
+  message: string;
+  details?: any;
+  timestamp: string;
+  // Add any other properties that might be used
+}
+
+export const useDiagnostics = () => {
+  const [loading, setLoading] = useState(false);
+  const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const runCountryDiagnostic = async (countryId: string) => {
-    setRunningDiagnostic(true);
+    setLoading(true);
+    setError(null);
     
     try {
-      // Run visa package diagnostic
       const result = await runDiagnostic(countryId);
       setDiagnosticResult(result);
       
-      // If there are issues, try to fix them
-      if (!result.success || (result.recommendations && result.recommendations.length > 0)) {
-        // Try to fix document issues
-        await fixDocumentIssues(countryId);
-      }
+      // Make sure we don't access properties that might not exist
+      const hasDetails = result.details && typeof result.details === 'object';
       
       return result;
     } catch (err: any) {
-      console.error("Error in runCountryDiagnostic:", err);
-      setError(err.message || "Failed to run diagnostic");
-      throw err;
+      console.error('Error running diagnostic:', err);
+      setError(err.message || 'Failed to run diagnostic check');
+      return {
+        success: false,
+        message: err.message || 'Error running diagnostic',
+        timestamp: new Date().toISOString()
+      };
     } finally {
-      setRunningDiagnostic(false);
-    }
-  };
-  
-  // Refresh schema and data
-  const refreshSchemaAndData = async (countryId: string) => {
-    try {
-      // Refresh document schema
-      await refreshDocumentSchema();
-      
-      // Invalidate queries
-      invalidateQueries(countryId);
-      
-      // Refresh data
-      return await fetchCountryData(countryId);
-    } catch (err: any) {
-      console.error("Error refreshing schema and data:", err);
-      throw err;
+      setLoading(false);
     }
   };
   
   return {
-    runningDiagnostic,
-    diagnosticResult,
     runCountryDiagnostic,
-    refreshSchemaAndData
+    loading,
+    diagnosticResult,
+    error
   };
 };
+
+export default useDiagnostics;
