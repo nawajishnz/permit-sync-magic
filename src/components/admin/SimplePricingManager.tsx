@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import PricingForm from './pricing/PricingForm';
+import PackageStatusToggle from './pricing/PackageStatusToggle';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, Save, RefreshCw } from 'lucide-react';
+import { useVisaPackage } from '@/hooks/useVisaPackage';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface SimplePricingManagerProps {
   countryId: string;
@@ -17,307 +16,274 @@ interface SimplePricingManagerProps {
   onSaved?: () => void;
 }
 
-interface PricingData {
-  government_fee: string;
-  service_fee: string;
-  processing_days: string;
-}
-
-const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
+const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({ 
   countryId,
   countryName,
-  existingPackage,
+  existingPackage = null,
   onSaved
 }) => {
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [formData, setFormData] = useState<PricingData>({
-    government_fee: '0',
-    service_fee: '0',
-    processing_days: '15'
+  const [formData, setFormData] = useState({
+    government_fee: '',
+    service_fee: '',
+    processing_days: ''
   });
   
+  const [isActive, setIsActive] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   
+  const { 
+    saveVisaPackageData, 
+    togglePackageStatus,
+    runVisaDiagnostic,
+    packageData,
+    loading,
+    saving,
+    runningDiagnostic,
+    diagnosticResult,
+    error
+  } = useVisaPackage({});
+  
+  // Initialize form with existing data or default values
   useEffect(() => {
+    console.log('SimplePricingManager - Initializing with existing package:', existingPackage);
+    
     if (existingPackage) {
-      console.log('Using provided package data:', existingPackage);
       setFormData({
-        government_fee: existingPackage.government_fee?.toString() || '0',
-        service_fee: existingPackage.service_fee?.toString() || '0',
-        processing_days: existingPackage.processing_days?.toString() || '15'
+        government_fee: String(existingPackage.government_fee || ''),
+        service_fee: String(existingPackage.service_fee || ''),
+        processing_days: String(existingPackage.processing_days || '15')
       });
-      return;
+      
+      // Calculate if package is active based on having non-zero fees
+      const active = 
+        (existingPackage.government_fee > 0 || 
+         existingPackage.service_fee > 0);
+      
+      setIsActive(active);
     }
-    
-    const fetchPricingData = async () => {
-      if (!countryId) return;
+  }, [existingPackage]);
+  
+  // Also update when packageData changes
+  useEffect(() => {
+    if (packageData) {
+      setFormData({
+        government_fee: String(packageData.government_fee || ''),
+        service_fee: String(packageData.service_fee || ''),
+        processing_days: String(packageData.processing_days || '15')
+      });
       
-      setLoading(true);
-      setError(null);
-      
-      try {
-        console.log('Fetching pricing data for country:', countryId);
-        
-        try {
-          const { data, error } = await supabase
-            .from('visa_packages')
-            .select('*')
-            .eq('country_id', countryId)
-            .maybeSingle();
-            
-          if (error) {
-            console.warn('Direct query failed:', error.message);
-          } else if (data) {
-            console.log('Package data loaded via direct query:', data);
-            setFormData({
-              government_fee: data.government_fee?.toString() || '0',
-              service_fee: data.service_fee?.toString() || '0',
-              processing_days: data.processing_days?.toString() || '15'
-            });
-            return;
-          }
-        } catch (directErr) {
-          console.warn('Direct query threw error:', directErr);
-        }
-        
-        try {
-          // Try to create a default package if one doesn't exist
-          const { data: rpcData, error: rpcError } = await supabase.rpc('save_visa_package', {
-            p_country_id: countryId,
-            p_name: 'Visa Package',
-            p_government_fee: 0,
-            p_service_fee: 0,
-            p_processing_days: 15
-          });
-          
-          if (rpcError) {
-            console.warn('RPC method failed:', rpcError);
-          } else {
-            console.log('Package created via RPC:', rpcData);
-            
-            // Fetch the newly created package
-            const { data: newPackage } = await supabase
-              .from('visa_packages')
-              .select('*')
-              .eq('country_id', countryId)
-              .single();
-              
-            if (newPackage) {
-              setFormData({
-                government_fee: newPackage.government_fee?.toString() || '0',
-                service_fee: newPackage.service_fee?.toString() || '0',
-                processing_days: newPackage.processing_days?.toString() || '15'
-              });
-            }
-          }
-        } catch (rpcErr) {
-          console.warn('RPC call failed:', rpcErr);
-        }
-      } catch (err: any) {
-        console.error('Error fetching pricing data:', err);
-        setError(err.message || 'Failed to fetch pricing data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchPricingData();
-  }, [countryId, existingPackage]);
+      // Update active status
+      setIsActive(!!packageData.is_active);
+    }
+  }, [packageData]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSave = async () => {
+  const handleSubmit = async () => {
     if (!countryId) {
       toast({
-        title: "No country selected",
-        description: "Please select a country before saving pricing",
-        variant: "destructive",
+        title: "Error",
+        description: "Country ID is missing",
+        variant: "destructive"
       });
       return;
     }
     
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-    
     try {
-      const governmentFee = parseFloat(formData.government_fee) || 0;
-      const serviceFee = parseFloat(formData.service_fee) || 0;
-      const processingDays = parseInt(formData.processing_days) || 15;
-      
-      console.log('Saving package data:', { 
-        countryId, 
-        governmentFee, 
-        serviceFee, 
-        processingDays 
-      });
-      
-      // Save using visaPackageService for more reliable saving
-      const { saveVisaPackage } = await import('@/services/visaPackageService');
-      
-      const result = await saveVisaPackage({
+      const packageToSave = {
         country_id: countryId,
-        name: 'Visa Package',
-        government_fee: governmentFee,
-        service_fee: serviceFee,
-        processing_days: processingDays
-      });
+        name: `${countryName} Visa Package`,
+        government_fee: Number(formData.government_fee) || 0,
+        service_fee: Number(formData.service_fee) || 0,
+        processing_days: Number(formData.processing_days) || 15
+      };
       
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to save package data');
-      }
+      const result = await saveVisaPackageData(packageToSave);
       
-      console.log('Package saved successfully:', result);
-      
-      // Force invalidate all related queries to ensure UI updates
-      queryClient.invalidateQueries({ queryKey: ['countries'] });
-      queryClient.invalidateQueries({ queryKey: ['country', countryId] });
-      queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
-      queryClient.invalidateQueries({ queryKey: ['countryVisaPackage', countryId] });
-      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
-      
-      // Verify the save by fetching fresh data
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('visa_packages')
-        .select('*')
-        .eq('country_id', countryId)
-        .single();
+      if (result && result.success) {
+        toast({
+          title: "Success",
+          description: "Pricing information saved successfully"
+        });
         
-      if (verifyError || !verifyData) {
-        throw new Error('Failed to verify saved data');
+        // If pricing is non-zero, make sure the package is active
+        if ((packageToSave.government_fee > 0 || packageToSave.service_fee > 0) && !isActive) {
+          await handleToggleStatus(true);
+        }
+        
+        if (onSaved) onSaved();
+      } else {
+        toast({
+          title: "Error",
+          description: result?.message || "Failed to save pricing information",
+          variant: "destructive"
+        });
       }
-      
-      console.log('Verified saved data:', verifyData);
-      
-      setFormData({
-        government_fee: verifyData.government_fee?.toString() || '0',
-        service_fee: verifyData.service_fee?.toString() || '0',
-        processing_days: verifyData.processing_days?.toString() || '15'
-      });
-      
-      setSuccess(`Pricing for ${countryName} has been updated successfully`);
-      
-      toast({
-        title: "Pricing saved",
-        description: `Pricing for ${countryName} has been updated successfully`,
-      });
-      
-      if (onSaved) {
-        onSaved();
-      }
-      
     } catch (err: any) {
-      console.error("Error saving pricing:", err);
-      setError(err.message || "An error occurred while saving pricing");
-      
       toast({
-        title: "Error saving pricing",
-        description: err.message || "An error occurred while saving pricing",
-        variant: "destructive",
+        title: "Error",
+        description: err.message || "An error occurred while saving",
+        variant: "destructive"
       });
-    } finally {
-      setSaving(false);
     }
   };
   
-  const totalPrice = parseFloat(formData.government_fee) + parseFloat(formData.service_fee) || 0;
+  const handleToggleStatus = async (newStatus: boolean) => {
+    try {
+      if (!countryId) return;
+      
+      const result = await togglePackageStatus(countryId, newStatus);
+      
+      if (result && result.success) {
+        setIsActive(newStatus);
+        toast({
+          title: "Status updated",
+          description: `Package is now ${newStatus ? 'active' : 'inactive'}`
+        });
+        
+        if (onSaved) onSaved();
+      } else {
+        toast({
+          title: "Error toggling status",
+          description: result?.message || "Failed to update status",
+          variant: "destructive"
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "An error occurred while toggling status",
+        variant: "destructive"
+      });
+    }
+  };
   
+  const handleRunDiagnostic = async () => {
+    try {
+      if (!countryId) return;
+      
+      await runVisaDiagnostic(countryId);
+      setShowDiagnostic(true);
+    } catch (err) {
+      // Error handling in hook
+    }
+  };
+  
+  const totalPrice = 
+    (parseFloat(formData.government_fee) || 0) + 
+    (parseFloat(formData.service_fee) || 0);
+
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium">
-          Pricing for {countryName}
+    <Card className="mt-6">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-xl font-semibold">
+          {countryName} Visa Package
         </CardTitle>
+        
+        <div className="flex items-center space-x-3">
+          <PackageStatusToggle 
+            isActive={isActive}
+            onToggle={handleToggleStatus}
+            disabled={saving || loading}
+          />
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRunDiagnostic}
+            disabled={runningDiagnostic}
+            className="ml-2"
+          >
+            {runningDiagnostic ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Diagnose
+              </>
+            )}
+          </Button>
+        </div>
       </CardHeader>
+      
       <CardContent>
         {error && (
           <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
         
-        {success && (
-          <Alert variant="default" className="mb-4 bg-green-50 border-green-200">
-            <AlertTitle className="text-green-800">Success</AlertTitle>
-            <AlertDescription className="text-green-700">{success}</AlertDescription>
+        {showDiagnostic && diagnosticResult && (
+          <Alert 
+            variant={diagnosticResult.success ? "default" : "destructive"} 
+            className={`mb-4 ${diagnosticResult.success ? "border-green-300" : ""}`}
+          >
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Diagnostic Result</AlertTitle>
+            <AlertDescription>
+              <div>{diagnosticResult.message}</div>
+              {diagnosticResult.details && (
+                <pre className="mt-2 text-xs bg-gray-100 p-2 rounded">
+                  {JSON.stringify(diagnosticResult.details, null, 2)}
+                </pre>
+              )}
+            </AlertDescription>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowDiagnostic(false)}
+              className="mt-2"
+            >
+              Hide
+            </Button>
           </Alert>
         )}
         
-        {loading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="government_fee">Government Fee (₹)</Label>
-                <Input
-                  id="government_fee"
-                  name="government_fee"
-                  type="number"
-                  value={formData.government_fee}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="service_fee">Service Fee (₹)</Label>
-                <Input
-                  id="service_fee"
-                  name="service_fee"
-                  type="number"
-                  value={formData.service_fee}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="processing_days">Processing Days</Label>
-                <Input
-                  id="processing_days"
-                  name="processing_days"
-                  type="number"
-                  value={formData.processing_days}
-                  onChange={handleInputChange}
-                  placeholder="15"
-                />
-              </div>
+        <div className={isActive ? '' : 'opacity-50'}>
+          <PricingForm 
+            formData={formData}
+            onChange={handleInputChange}
+            disabled={!isActive || saving || loading}
+          />
+          
+          <div className="border-t mt-6 pt-4">
+            <div className="text-lg font-medium mb-4">
+              Total Price: ₹{totalPrice.toFixed(2)}
             </div>
             
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-700 font-medium">
-                Total Price: ₹{totalPrice.toFixed(2)}
-              </div>
-              
-              <Button 
-                onClick={handleSave} 
-                disabled={saving}
-                className="bg-teal-600 hover:bg-teal-700"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Pricing
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={saving || loading || !isActive}
+              className="bg-teal hover:bg-teal-600"
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+        
+        {!isActive && (
+          <div className="mt-4 text-yellow-600 text-sm flex items-center">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Activate this package to edit pricing details
           </div>
         )}
       </CardContent>

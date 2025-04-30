@@ -7,10 +7,12 @@ import SimplePricingManager from './SimplePricingManager';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { fixVisaPackagesSchema } from '@/integrations/supabase/fix-schema';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase'; // Using from lib
 import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertTriangle } from 'lucide-react';
+import { RefreshCw, AlertTriangle, HelpCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import HelpOverlay from './HelpOverlay';
+import { checkDatabaseConnection } from '@/services/visaPackageService';
 
 interface CountryPricingTabProps {
   countries: any[];
@@ -22,6 +24,7 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   const [countryPackages, setCountryPackages] = useState<any>(null);
   const [isFixingSchema, setIsFixingSchema] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -32,6 +35,14 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
       setSchemaError(null);
       
       try {
+        // First check database connection
+        const connectionCheck = await checkDatabaseConnection();
+        if (!connectionCheck.success) {
+          console.warn('Database connection issue detected:', connectionCheck.message);
+          setSchemaError(`Database connection issue: ${connectionCheck.message}`);
+          return;
+        }
+        
         const result = await fixVisaPackagesSchema();
         console.log('Schema fix result:', result);
         
@@ -168,7 +179,19 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
       )}
       
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Country Pricing</h2>
+        <div className="flex items-center">
+          <h2 className="text-xl font-bold">Country Pricing</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowHelp(true)}
+            className="ml-2"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="sr-only">Help</span>
+          </Button>
+        </div>
+        
         <Button
           variant="outline"
           onClick={handleRefreshData}
@@ -218,6 +241,13 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
           onSaved={handleSaved}
         />
       )}
+      
+      {/* Help overlay */}
+      <HelpOverlay 
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
+        topic="visa-packages"
+      />
     </div>
   );
 };
