@@ -1,6 +1,7 @@
 
 import { DocumentItem } from '@/services/documentChecklistService';
 import { VisaPackage } from '@/types/visaPackage';
+import { DiagnosticResult } from './useDiagnostics';
 
 export interface CountryManagementProps {
   externalQueryClient?: any;
@@ -13,7 +14,7 @@ export interface CountryManagementState {
   error: string | null;
   packageData: VisaPackage | null;
   documentData: DocumentItem[];
-  diagnosticResult: any;
+  diagnosticResult: DiagnosticResult | null;
 }
 
 export interface CountryManagementResult extends CountryManagementState {

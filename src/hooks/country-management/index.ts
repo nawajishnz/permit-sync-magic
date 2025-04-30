@@ -26,7 +26,7 @@ export const useCountryManagement = ({ externalQueryClient }: CountryManagementP
   } = useCountryOperations(externalQueryClient);
   
   const {
-    runningDiagnostic,
+    loading: runningDiagnostic,
     diagnosticResult,
     runCountryDiagnostic,
     refreshSchemaAndData

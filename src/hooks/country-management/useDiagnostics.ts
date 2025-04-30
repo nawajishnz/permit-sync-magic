@@ -1,16 +1,25 @@
 
 import { useState } from 'react';
-import { runDiagnostic } from '@/services/visaDiagnosticService';
+import { runDiagnostic, fixVisaPackageSchema } from '@/services/visaDiagnosticService';
 
 export interface DiagnosticResult {
   success: boolean;
   message: string;
   details?: any;
   timestamp: string;
+  recommendations?: string[];
+  results?: {
+    tableAccess?: { success: boolean; message?: string };
+    packageExists?: boolean;
+    packageActive?: boolean;
+    documentsExist?: boolean;
+    documentsCount?: number;
+    documentTableAccess?: { success: boolean; message?: string };
+  };
   // Add any other properties that might be used
 }
 
-export const useDiagnostics = () => {
+export const useDiagnostics = (queryClient?: any) => {
   const [loading, setLoading] = useState(false);
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +49,42 @@ export const useDiagnostics = () => {
     }
   };
   
+  const refreshSchemaAndData = async (countryId: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // First fix the schema
+      const schemaResult = await fixVisaPackageSchema();
+      
+      if (!schemaResult.success) {
+        setError(`Schema fix failed: ${schemaResult.message}`);
+        return schemaResult;
+      }
+      
+      // Then run the diagnostic again to check the results
+      const diagResult = await runCountryDiagnostic(countryId);
+      
+      return {
+        ...diagResult,
+        schemaFixed: true
+      };
+    } catch (err: any) {
+      console.error('Error refreshing schema and data:', err);
+      setError(err.message || 'Failed to refresh schema and data');
+      return {
+        success: false,
+        message: err.message || 'Error refreshing schema and data',
+        timestamp: new Date().toISOString()
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return {
     runCountryDiagnostic,
+    refreshSchemaAndData,
     loading,
     diagnosticResult,
     error
