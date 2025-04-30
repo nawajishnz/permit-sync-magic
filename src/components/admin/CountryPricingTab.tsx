@@ -155,7 +155,7 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   return (
     <div className="space-y-6">
       {schemaError && (
-        <Alert variant="warning" className="mb-4 border-amber-300 bg-amber-50">
+        <Alert variant="default" className="mb-4 border-amber-300 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertTitle>Schema issue detected</AlertTitle>
           <AlertDescription>{schemaError}</AlertDescription>
