@@ -20,6 +20,10 @@ const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3Mi
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
-)
+  import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
+);
+
+// Debug supabase connection
+console.log("Supabase URL being used:", import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL);
+console.log("Supabase client initialized:", !!supabase);

@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase'; // Updated to use from lib
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CountryTable from './CountryTable';
 import CountryDialog, { CountryFormData, CountrySubmitData } from './CountryDialog';
@@ -79,6 +80,20 @@ const CountriesManager = () => {
       console.log('Fetching countries data');
       
       try {
+        // First test if supabase connection is working
+        console.log('Testing supabase connection...');
+        const { data: testData, error: testError } = await supabase
+          .from('countries')
+          .select('count')
+          .limit(1);
+          
+        if (testError) {
+          console.error('Supabase connection test failed:', testError);
+          throw testError;
+        }
+        
+        console.log('Supabase connection test successful:', testData);
+        
         const { data: countriesData, error: countriesError } = await supabase
           .from('countries')
           .select('*');
@@ -88,7 +103,10 @@ const CountriesManager = () => {
           throw countriesError;
         }
         
-        if (!countriesData) {
+        console.log('Countries data fetched:', countriesData?.length || 0, 'countries');
+        
+        if (!countriesData || countriesData.length === 0) {
+          console.warn('No countries found in database');
           return [];
         }
         
@@ -103,13 +121,15 @@ const CountriesManager = () => {
                 
               return {
                 ...country,
-                visa_packages: packageData ? [packageData] : []
+                visa_packages: packageData ? [packageData] : [],
+                has_visa_package: !!packageData
               };
             } catch (err) {
               console.warn(`Could not fetch package for country ${country.id}:`, err);
               return {
                 ...country,
-                visa_packages: []
+                visa_packages: [],
+                has_visa_package: false
               };
             }
           })
@@ -122,8 +142,10 @@ const CountriesManager = () => {
         throw err;
       }
     },
-    staleTime: 0,
-    retry: 1
+    staleTime: 0, // Don't cache this data
+    retry: 2, // Try up to 3 times (initial + 2 retries)
+    refetchOnMount: true, // Always fetch fresh data when component mounts
+    refetchOnWindowFocus: true // Refresh when window regains focus
   });
 
   const handleRefresh = async () => {

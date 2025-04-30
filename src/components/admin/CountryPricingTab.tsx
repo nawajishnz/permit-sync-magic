@@ -152,6 +152,11 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   
   const selectedCountry = countries.find(c => c.id === selectedCountryId);
   
+  // Debug countries prop
+  useEffect(() => {
+    console.log('Countries in CountryPricingTab:', countries);
+  }, [countries]);
+  
   return (
     <div className="space-y-6">
       {schemaError && (
@@ -191,11 +196,15 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
             <SelectValue placeholder="Choose a country" />
           </SelectTrigger>
           <SelectContent>
-            {countries.map(country => (
-              <SelectItem key={country.id} value={country.id}>
-                {country.flag} {country.name}
-              </SelectItem>
-            ))}
+            {countries && countries.length > 0 ? (
+              countries.map(country => (
+                <SelectItem key={country.id} value={country.id}>
+                  {country.flag} {country.name}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="no-countries" disabled>No countries available</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>

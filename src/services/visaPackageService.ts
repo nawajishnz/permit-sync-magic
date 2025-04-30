@@ -1,4 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
+
+import { supabase } from '@/lib/supabase'; // Updated to use from lib
 import { VisaPackage } from '@/types/visaPackage';
 import { runDiagnostic as runVisaDiagnostic } from '@/services/visaDiagnosticService';
 
