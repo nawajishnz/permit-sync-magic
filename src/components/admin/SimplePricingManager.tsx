@@ -67,7 +67,7 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
             .from('visa_packages')
             .select('*')
             .eq('country_id', countryId)
-            .single();
+            .maybeSingle();
             
           if (error) {
             console.warn('Direct query failed:', error.message);
@@ -180,6 +180,8 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
       queryClient.invalidateQueries({ queryKey: ['countries'] });
       queryClient.invalidateQueries({ queryKey: ['country', countryId] });
       queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
+      queryClient.invalidateQueries({ queryKey: ['countryVisaPackage', countryId] });
+      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       
       // Verify the save by fetching fresh data
       const { data: verifyData, error: verifyError } = await supabase

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { VisaPackage } from '@/types/visaPackage';
 import { runDiagnostic as runVisaDiagnostic } from '@/services/visaDiagnosticService';
@@ -79,8 +78,7 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
 
     let result;
     
-    // Prepare the data to be used for either create or update
-    // Always include country_id for both update and insert operations
+    // Ensure all numeric values are properly converted to numbers
     const packageValues = {
       name: packageData.name || 'Visa Package',
       country_id: packageData.country_id,

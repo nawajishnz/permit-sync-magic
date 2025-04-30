@@ -23,8 +23,15 @@ export const useCountryOperations = (queryClient?: any) => {
     setError(null);
     
     try {
-      // Save package data
-      const packageResult = await saveVisaPackage(packageToSave);
+      // Save package data with proper number conversion
+      const packageWithNumericValues = {
+        ...packageToSave,
+        government_fee: Number(packageToSave.government_fee) || 0,
+        service_fee: Number(packageToSave.service_fee) || 0,
+        processing_days: Number(packageToSave.processing_days) || 15
+      };
+      
+      const packageResult = await saveVisaPackage(packageWithNumericValues);
       
       // If documents were provided, save them too
       let documentResult = { success: true, message: 'No documents to save' };

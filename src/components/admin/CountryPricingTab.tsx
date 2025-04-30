@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -103,39 +104,50 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
       
       // Force refresh by incrementing key and invalidating queries
       setRefreshKey(prev => prev + 1);
+      
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+      queryClient.invalidateQueries({ queryKey: ['countryDetail'] });
       queryClient.invalidateQueries({ queryKey: ['countries'] });
-      queryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
-      queryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
+      queryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] });
+      queryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
+      
+      if (selectedCountryId) {
+        queryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
+        queryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
+        queryClient.invalidateQueries({ queryKey: ['countryVisaPackage', selectedCountryId] });
+      }
       
       toast({
-        title: "Refreshing data",
-        description: "Fetching the latest pricing information",
+        title: "Data refreshed",
+        description: "Pricing data has been refreshed",
       });
-    } catch (error) {
-      console.error('Error during refresh:', error);
+    } catch (error: any) {
+      toast({
+        title: "Error refreshing data",
+        description: error.message || "An error occurred while refreshing data",
+        variant: "destructive",
+      });
     } finally {
       setIsFixingSchema(false);
     }
   };
   
-  const handlePricingSaved = () => {
-    // Invalidate ALL relevant queries
-    queryClient.invalidateQueries({ queryKey: ['countries'] });
-    queryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
-    queryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
-    
-    // Force refresh the pricing manager component and fetch packages again
+  const handleSaved = () => {
+    // Refresh the packages list and invalidate queries
     setRefreshKey(prev => prev + 1);
     
-    // Extra cache invalidation for good measure
-    setTimeout(() => {
+    // Invalidate all relevant queries
+    if (selectedCountryId) {
+      queryClient.invalidateQueries({ queryKey: ['country', selectedCountryId] });
       queryClient.invalidateQueries({ queryKey: ['countryDetail', selectedCountryId] });
-    }, 1000);
+      queryClient.invalidateQueries({ queryKey: ['countryVisaPackage', selectedCountryId] });
+    }
     
-    toast({
-      title: "Pricing Updated",
-      description: "The pricing information has been successfully updated.",
-    });
+    queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
+    queryClient.invalidateQueries({ queryKey: ['countryDetail'] });
+    queryClient.invalidateQueries({ queryKey: ['countries'] });
+    queryClient.invalidateQueries({ queryKey: ['popularDestinations'] });
   };
   
   const selectedCountry = countries.find(c => c.id === selectedCountryId);
@@ -143,75 +155,60 @@ const CountryPricingTab: React.FC<CountryPricingTabProps> = ({ countries }) => {
   return (
     <div className="space-y-6">
       {schemaError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Schema Error</AlertTitle>
-          <AlertDescription>
-            There was an issue with the database schema: {schemaError}
-            <div className="mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRefreshData}
-                disabled={isFixingSchema}
-              >
-                {isFixingSchema ? 'Fixing...' : 'Try Fix Schema'}
-              </Button>
-            </div>
-          </AlertDescription>
+        <Alert variant="warning" className="mb-4 border-amber-300 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle>Schema issue detected</AlertTitle>
+          <AlertDescription>{schemaError}</AlertDescription>
         </Alert>
       )}
       
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Manage Country Pricing (₹)</CardTitle>
-          {selectedCountryId && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefreshData}
-              disabled={isFixingSchema}
-            >
-              {isFixingSchema ? (
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
-              )}
-              {isFixingSchema ? 'Fixing Schema...' : 'Refresh Data'}
-            </Button>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Country Pricing</h2>
+        <Button
+          variant="outline"
+          onClick={handleRefreshData}
+          disabled={isFixingSchema}
+          className="text-sm"
+        >
+          {isFixingSchema ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Refreshing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh Data
+            </>
           )}
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label>Select Country</Label>
-              <Select value={selectedCountryId} onValueChange={handleCountryChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map((country) => (
-                    <SelectItem key={country.id} value={country.id}>
-                      {country.flag} {country.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedCountryId && selectedCountry && (
-              <div key={`pricing-manager-${selectedCountryId}-${refreshKey}`}>
-                <SimplePricingManager
-                  countryId={selectedCountryId}
-                  countryName={selectedCountry.name}
-                  existingPackage={countryPackages}
-                  onSaved={handlePricingSaved}
-                />
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </Button>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="country-select">Select a Country</Label>
+        <Select value={selectedCountryId} onValueChange={handleCountryChange}>
+          <SelectTrigger id="country-select" className="w-full md:w-1/2">
+            <SelectValue placeholder="Choose a country" />
+          </SelectTrigger>
+          <SelectContent>
+            {countries.map(country => (
+              <SelectItem key={country.id} value={country.id}>
+                {country.flag} {country.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {selectedCountryId && selectedCountry && (
+        <SimplePricingManager
+          key={`${selectedCountryId}-${refreshKey}`}
+          countryId={selectedCountryId}
+          countryName={selectedCountry.name}
+          existingPackage={countryPackages}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   );
 };
