@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase'; // Using from lib directory
 import { VisaPackage } from '@/types/visaPackage';
 import { runDiagnostic as runVisaDiagnostic } from '@/services/visaDiagnosticService';
@@ -281,10 +282,23 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
   try {
     console.log(`Toggling package status for country ${countryId} to ${isActive ? 'active' : 'inactive'}`);
     
-    // First make sure the schema is initialized
-    await initializeVisaPackagesSchema();
+    // First check if the visa_packages table has a processing_time column
+    // This is important because we need to handle potential schema differences
+    const { data: tableInfo, error: tableInfoError } = await supabase
+      .rpc('get_table_info', { p_table_name: 'visa_packages' });
     
-    // Check if a package already exists
+    if (tableInfoError) {
+      console.error('Error checking table info:', tableInfoError);
+      return {
+        success: false,
+        message: 'Error checking database schema. Please try refreshing the data.',
+        error: tableInfoError
+      };
+    }
+    
+    console.log('Table info:', tableInfo);
+    
+    // Check if the visa_packages table exists
     const { data: existingPackage, error: checkError } = await supabase
       .from('visa_packages')
       .select('*')
@@ -293,7 +307,49 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       
     if (checkError) {
       console.error('Error checking existing package:', checkError);
-      throw checkError;
+      
+      // Check if the error is about processing_time
+      if (checkError.message?.includes('processing_time')) {
+        // Try a direct SQL approach to fix the schema
+        try {
+          // This will add the processing_days column if it doesn't exist
+          const { data: alterResult, error: alterError } = await supabase.rpc('execute_sql', {
+            sql: `
+              DO $$
+              BEGIN
+                -- Check if processing_time column exists
+                IF EXISTS (
+                  SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'visa_packages' AND column_name = 'processing_time'
+                ) THEN
+                  -- If it exists but processing_days doesn't, add processing_days
+                  IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name = 'visa_packages' AND column_name = 'processing_days'
+                  ) THEN
+                    ALTER TABLE visa_packages ADD COLUMN processing_days INTEGER DEFAULT 15 NOT NULL;
+                    UPDATE visa_packages SET processing_days = 15;
+                  END IF;
+                END IF;
+              END $$;
+            `
+          });
+          
+          console.log('Schema alteration result:', alterResult);
+          
+          if (alterError) {
+            console.error('Failed to alter schema:', alterError);
+          }
+        } catch (sqlError) {
+          console.error('SQL execution error:', sqlError);
+        }
+      }
+      
+      return {
+        success: false,
+        message: 'Error checking package status. Schema may be incompatible.',
+        error: checkError
+      };
     }
     
     // Set reasonable default values
@@ -302,23 +358,40 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       name: existingPackage?.name || 'Visa Package',
       government_fee: isActive ? 20 : 0,
       service_fee: isActive ? 10 : 0,
-      processing_days: existingPackage?.processing_days || 15,
-      updated_at: new Date().toISOString()
+      processing_days: existingPackage?.processing_days || 15
     };
+    
+    // Check if processing_time column exists to handle legacy schema
+    const hasProcessingTime = tableInfo && Array.isArray(tableInfo) && 
+      tableInfo.some((col: any) => col.column_name === 'processing_time');
+    
+    if (hasProcessingTime) {
+      console.log('Found processing_time column, adding to default values');
+      // @ts-ignore - Handle legacy schema
+      defaultValues.processing_time = '15 business days';
+    }
     
     let result;
     
     if (existingPackage) {
       console.log('Found existing package:', existingPackage);
       
+      // Prepare update data
+      const updateData: any = {
+        government_fee: isActive ? Math.max(existingPackage.government_fee || 20, 20) : 0,
+        service_fee: isActive ? Math.max(existingPackage.service_fee || 10, 10) : 0,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Add processing_time if needed for legacy schema
+      if (hasProcessingTime) {
+        updateData.processing_time = existingPackage.processing_time || '15 business days';
+      }
+      
       // Update the existing package with new values
       result = await supabase
         .from('visa_packages')
-        .update({
-          government_fee: isActive ? Math.max(existingPackage.government_fee || 20, 20) : 0,
-          service_fee: isActive ? Math.max(existingPackage.service_fee || 10, 10) : 0,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', existingPackage.id)
         .select();
         
@@ -337,6 +410,16 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
 
     if (result.error) {
       console.error('Error toggling package status:', result.error);
+      
+      // Special handling for processing_time constraint issues
+      if (result.error.message?.includes('processing_time')) {
+        return {
+          success: false,
+          message: 'The database schema needs to be updated. Please contact an administrator.',
+          error: result.error
+        };
+      }
+      
       throw result.error;
     }
 
