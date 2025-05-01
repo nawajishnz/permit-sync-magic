@@ -28,8 +28,8 @@ export interface CountryManagementResult extends CountryManagementState {
     documentsToSave?: DocumentItem[]
   ) => Promise<any>;
   togglePackageAndEnsureDocuments: (countryId: string, isActive: boolean) => Promise<any>;
-  runCountryDiagnostic: (countryId: string) => Promise<any>;
-  refreshSchemaAndData: (countryId: string) => Promise<any>;
+  runCountryDiagnostic: (countryId: string) => Promise<DiagnosticResult>;
+  refreshSchemaAndData: (countryId: string) => Promise<DiagnosticResult & { schemaFixed?: boolean }>;
   invalidateQueries: (countryId: string) => void;
   setError: (error: string | null) => void;
 }

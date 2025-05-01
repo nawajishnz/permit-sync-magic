@@ -24,7 +24,7 @@ export const useDiagnostics = (queryClient?: any) => {
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const runCountryDiagnostic = async (countryId: string) => {
+  const runCountryDiagnostic = async (countryId: string): Promise<DiagnosticResult> => {
     setLoading(true);
     setError(null);
     
@@ -49,7 +49,7 @@ export const useDiagnostics = (queryClient?: any) => {
     }
   };
   
-  const refreshSchemaAndData = async (countryId: string) => {
+  const refreshSchemaAndData = async (countryId: string): Promise<DiagnosticResult & { schemaFixed?: boolean }> => {
     setLoading(true);
     setError(null);
     
