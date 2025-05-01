@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useInView, useAnimation } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Shield, Users, Clock, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,8 @@ interface CounterProps {
 const Counter = ({ end, duration = 2 }: CounterProps) => {
   const [count, setCount] = React.useState(0);
   const ref = React.useRef(null);
-  const isInView = React.useInView(ref);
-  const controls = React.useAnimation();
+  const isInView = useInView(ref);
+  const controls = useAnimation();
   
   React.useEffect(() => {
     if (isInView) {
