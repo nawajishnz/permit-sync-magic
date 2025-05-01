@@ -11,6 +11,7 @@ export const runDiagnostic = async (countryId: string): Promise<{
   success: boolean;
   message: string;
   data?: any;
+  timestamp: string; // Added timestamp field to match DiagnosticResult type
 }> => {
   try {
     console.log('Running diagnostic for country:', countryId);
@@ -26,7 +27,8 @@ export const runDiagnostic = async (countryId: string): Promise<{
       return {
         success: false,
         message: `Country not found: ${countryError.message}`,
-        data: { error: countryError }
+        data: { error: countryError },
+        timestamp: new Date().toISOString()
       };
     }
     
@@ -40,7 +42,8 @@ export const runDiagnostic = async (countryId: string): Promise<{
       return {
         success: false,
         message: `Error checking visa packages: ${packageError.message}`,
-        data: { error: packageError }
+        data: { error: packageError },
+        timestamp: new Date().toISOString()
       };
     }
     
@@ -54,7 +57,8 @@ export const runDiagnostic = async (countryId: string): Promise<{
         government_fee: 0,
         service_fee: 0,
         processing_days: 15,
-        processing_time: '15 days' // Add the required processing_time field
+        processing_time: '15 days', // Add the required processing_time field
+        price: 0 // Add the required price field
       };
       
       const { data: newPackage, error: createError } = await supabase
@@ -67,14 +71,16 @@ export const runDiagnostic = async (countryId: string): Promise<{
         return {
           success: false,
           message: `Failed to create default package: ${createError.message}`,
-          data: { error: createError }
+          data: { error: createError },
+          timestamp: new Date().toISOString()
         };
       }
       
       return {
         success: true,
         message: 'Created default visa package',
-        data: { package: { ...newPackage, is_active: true } }
+        data: { package: { ...newPackage, is_active: true } },
+        timestamp: new Date().toISOString()
       };
     }
     
@@ -102,21 +108,24 @@ export const runDiagnostic = async (countryId: string): Promise<{
       return {
         success: false,
         message: `Found issues with visa package: ${issues.join(', ')}`,
-        data: { issues, package: existingPackage }
+        data: { issues, package: existingPackage },
+        timestamp: new Date().toISOString()
       };
     }
     
     return {
       success: true,
       message: 'Visa package is properly configured',
-      data: { package: { ...existingPackage, is_active: true } }
+      data: { package: { ...existingPackage, is_active: true } },
+      timestamp: new Date().toISOString()
     };
   } catch (error: any) {
     console.error('Exception in runDiagnostic:', error);
     return {
       success: false,
       message: `Diagnostic failed: ${error.message}`,
-      data: { error }
+      data: { error },
+      timestamp: new Date().toISOString()
     };
   }
 };
