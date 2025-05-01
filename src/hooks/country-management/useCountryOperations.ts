@@ -23,7 +23,7 @@ export const useCountryOperations = (queryClient?: any) => {
     setError(null);
     
     try {
-      // Save package data with proper number conversion
+      // Ensure all price values are properly converted to numbers
       const packageWithNumericValues = {
         ...packageToSave,
         government_fee: Number(packageToSave.government_fee) || 0,

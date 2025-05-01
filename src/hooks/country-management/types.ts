@@ -29,7 +29,7 @@ export interface CountryManagementResult extends CountryManagementState {
   ) => Promise<any>;
   togglePackageAndEnsureDocuments: (countryId: string, isActive: boolean) => Promise<any>;
   runCountryDiagnostic: (countryId: string) => Promise<DiagnosticResult>;
-  refreshSchemaAndData: (countryId: string) => Promise<DiagnosticResult & { schemaFixed?: boolean }>;
+  refreshSchemaAndData: (countryId: string) => Promise<DiagnosticResult>;
   invalidateQueries: (countryId: string) => void;
   setError: (error: string | null) => void;
 }

@@ -17,6 +17,7 @@ export interface DiagnosticResult {
     documentTableAccess?: { success: boolean; message?: string };
   };
   // Add any other properties that might be used
+  schemaFixed?: boolean;
 }
 
 export const useDiagnostics = (queryClient?: any) => {
@@ -49,7 +50,7 @@ export const useDiagnostics = (queryClient?: any) => {
     }
   };
   
-  const refreshSchemaAndData = async (countryId: string): Promise<DiagnosticResult & { schemaFixed?: boolean }> => {
+  const refreshSchemaAndData = async (countryId: string): Promise<DiagnosticResult> => {
     setLoading(true);
     setError(null);
     
@@ -59,7 +60,11 @@ export const useDiagnostics = (queryClient?: any) => {
       
       if (!schemaResult.success) {
         setError(`Schema fix failed: ${schemaResult.message}`);
-        return schemaResult;
+        return {
+          ...schemaResult,
+          timestamp: new Date().toISOString(),
+          schemaFixed: false
+        };
       }
       
       // Then run the diagnostic again to check the results
@@ -75,7 +80,8 @@ export const useDiagnostics = (queryClient?: any) => {
       return {
         success: false,
         message: err.message || 'Error refreshing schema and data',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        schemaFixed: false
       };
     } finally {
       setLoading(false);
