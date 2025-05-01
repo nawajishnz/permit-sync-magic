@@ -1,6 +1,5 @@
-
 import { supabase } from '@/lib/supabase';
-import { runDiagnostic } from '@/services/visa-package';
+import { runDiagnostic as runVisaPackageDiagnostic } from '@/services/visa-package';
 
 // Interface for diagnostic result
 interface DiagnosticResult {
@@ -183,7 +182,7 @@ export const checkCountryPackage = async (countryId: string): Promise<Diagnostic
   }
 };
 
-// Run all diagnostic checks
+// Run all diagnostic checks - renamed to avoid conflict with imported function
 export const runDiagnostic = async (countryId?: string): Promise<DiagnosticResult> => {
   console.log('Running visa package diagnostics', countryId ? `for country ${countryId}` : 'for all components');
   
@@ -196,7 +195,8 @@ export const runDiagnostic = async (countryId?: string): Promise<DiagnosticResul
     
     // If countryId provided, check that specific country
     if (countryId) {
-      return await checkCountryPackage(countryId);
+      // Use the imported function from visa-package instead
+      return await runVisaPackageDiagnostic(countryId);
     }
     
     // Otherwise return successful structure check
