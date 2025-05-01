@@ -7,7 +7,9 @@ export type VisaPackage = {
   service_fee: number;
   processing_days: number;
   total_price?: number;
+  price?: number;
   is_active?: boolean;
+  processing_time?: string;
   created_at?: string;
   updated_at?: string;
 };
