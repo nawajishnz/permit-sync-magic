@@ -15,7 +15,8 @@ export async function createDefaultPackage(countryId: string): Promise<VisaPacka
       name: 'Visa Package',
       government_fee: 0,
       service_fee: 0,
-      processing_days: 15
+      processing_days: 15,
+      processing_time: '15 days' // Add the required processing_time field
     };
     
     // Insert the database-compatible object
