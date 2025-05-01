@@ -1,43 +1,49 @@
 
 import { useState } from 'react';
 import { getCountryVisaPackage } from '@/services/visaPackageService';
-import { getDocumentChecklist } from '@/services/documentChecklistService';
-import { DocumentItem } from '@/services/documentChecklistService';
+import { getDocumentChecklist, DocumentItem } from '@/services/documentChecklistService';
 import { VisaPackage } from '@/types/visaPackage';
-import { useCountryQueries } from './useCountryQueries';
 
 export const useCountryData = (queryClient?: any) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [packageData, setPackageData] = useState<VisaPackage | null>(null);
   const [documentData, setDocumentData] = useState<DocumentItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  
-  const { invalidateQueries } = useCountryQueries(queryClient);
-  
-  // Fetch both package and document data
+
   const fetchCountryData = async (countryId: string) => {
-    if (!countryId) return null;
+    if (!countryId) {
+      return null;
+    }
     
     setLoading(true);
     setError(null);
     
     try {
-      // Fetch both in parallel
-      const [packageData, documentData] = await Promise.all([
-        getCountryVisaPackage(countryId),
-        getDocumentChecklist(countryId)
-      ]);
+      console.log('Fetching country data for:', countryId);
+      // Fetch package data
+      const fetchedPackage = await getCountryVisaPackage(countryId);
+      console.log('Fetched package data:', fetchedPackage);
+      setPackageData(fetchedPackage);
       
-      setPackageData(packageData);
-      setDocumentData(documentData);
+      // Fetch document data
+      let documents: DocumentItem[] = [];
+      try {
+        documents = await getDocumentChecklist(countryId);
+        console.log('Fetched document checklist:', documents);
+      } catch (docErr: any) {
+        console.error('Error fetching documents:', docErr);
+        // Continue even if documents can't be fetched
+      }
+      setDocumentData(documents);
       
       return {
-        packageData,
-        documentData
+        packageData: fetchedPackage,
+        documentData: documents
       };
+      
     } catch (err: any) {
-      console.error("Error fetching country data:", err);
-      setError(err.message || "An error occurred while fetching country data");
+      console.error('Error in fetchCountryData:', err);
+      setError(err.message || 'Failed to fetch country data');
       return null;
     } finally {
       setLoading(false);
@@ -46,11 +52,10 @@ export const useCountryData = (queryClient?: any) => {
   
   return {
     loading,
+    error,
     packageData,
     documentData,
-    error,
-    setError,
     fetchCountryData,
-    invalidateQueries
+    setError
   };
 };

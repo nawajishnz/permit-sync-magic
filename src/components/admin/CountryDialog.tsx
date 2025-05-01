@@ -210,9 +210,21 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
       processing_days: '15' 
     };
 
+    // Convert to number and back to string to ensure valid numeric input
+    let numericValue = value;
+    if (field !== 'processing_days') {
+      // For currency fields, allow decimal input
+      numericValue = value.replace(/[^\d.]/g, '');
+    } else {
+      // For days, only allow integers
+      numericValue = value.replace(/[^\d]/g, '');
+    }
+
+    console.log(`Updating pricing field ${field} with value:`, numericValue);
+    
     updateFormData('pricing', {
       ...currentPricing,
-      [field]: value
+      [field]: numericValue
     });
   };
 
@@ -230,6 +242,16 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
         required: !!doc.required
       }));
     
+    // Ensure pricing data is properly formatted
+    const pricing = formData.pricing || {
+      government_fee: '0',
+      service_fee: '0',
+      processing_days: '15'
+    };
+    
+    // Log pricing data to help with debugging
+    console.log('Submitting pricing data:', pricing);
+    
     const submitData: CountrySubmitData = {
       ...formData,
       flagFile: flagFile,
@@ -239,15 +261,8 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
       processing_steps: (formData.processing_steps || []).filter(step => step?.title?.trim()),
       faq: (formData.faq || []).filter(item => item?.question?.trim()),
       documents: processedDocuments,
+      pricing: pricing
     };
-    
-    if (!submitData.pricing) {
-      submitData.pricing = {
-        government_fee: '0',
-        service_fee: '0',
-        processing_days: '15'
-      };
-    }
     
     onSubmit(submitData);
   };
@@ -517,8 +532,7 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
             
             <div className="p-4 border rounded-md bg-gray-50">
               <p className="text-sm text-gray-600 mb-4">
-                After creating or updating the country, you'll be able to configure visa packages 
-                with pricing tiers in the Countries Manager.
+                Configure the pricing details for this country's visa package.
               </p>
               
               <div className="grid md:grid-cols-3 gap-4">
@@ -532,7 +546,10 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
                     onChange={(e) => handlePricingChange('government_fee', e.target.value)}
                     placeholder="e.g., 150"
                     min="0"
+                    step="0.01"
+                    className="text-right"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Government fee for this visa</p>
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="service_fee">Default Service Fee</Label>
@@ -544,7 +561,10 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
                     onChange={(e) => handlePricingChange('service_fee', e.target.value)}
                     placeholder="e.g., 50"
                     min="0"
+                    step="0.01"
+                    className="text-right"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Our service fee</p>
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="processing_days">Processing Days</Label>
@@ -556,15 +576,16 @@ const CountryDialog: React.FC<CountryDialogProps> = ({
                     onChange={(e) => handlePricingChange('processing_days', e.target.value)}
                     placeholder="e.g., 10"
                     min="1"
+                    className="text-right"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Days to process this visa</p>
                 </div>
               </div>
               
               <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
                 <p className="text-sm text-blue-700">
-                  <strong>Note:</strong> This sets the initial pricing for the default visa package. 
-                  After saving the country, you can activate this package and manage more pricing options 
-                  from the main Countries Manager screen.
+                  <strong>Note:</strong> This sets the pricing for the default visa package. 
+                  The total price will be calculated automatically as the sum of government and service fees.
                 </p>
               </div>
             </div>

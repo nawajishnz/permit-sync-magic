@@ -31,7 +31,9 @@ export const useCountryOperations = (queryClient?: any) => {
         processing_days: Number(packageToSave.processing_days) || 15
       };
       
+      console.log('Saving package with values:', packageWithNumericValues);
       const packageResult = await saveVisaPackage(packageWithNumericValues);
+      console.log('Package save result:', packageResult);
       
       // If documents were provided, save them too
       let documentResult = { success: true, message: 'No documents to save' };

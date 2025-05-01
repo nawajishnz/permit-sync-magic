@@ -29,7 +29,8 @@ export const useCountryManagement = ({ externalQueryClient }: CountryManagementP
     loading: runningDiagnostic,
     diagnosticResult,
     runCountryDiagnostic,
-    refreshSchemaAndData
+    refreshSchemaAndData,
+    error: diagnosticError
   } = useDiagnostics(externalQueryClient);
   
   return {
@@ -37,7 +38,7 @@ export const useCountryManagement = ({ externalQueryClient }: CountryManagementP
     loading,
     saving,
     runningDiagnostic,
-    error,
+    error: error || diagnosticError,
     packageData,
     documentData,
     diagnosticResult,

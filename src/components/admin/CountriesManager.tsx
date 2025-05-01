@@ -365,7 +365,7 @@ const CountriesManager = () => {
           
           const pricingResult = await saveVisaPackage({
             country_id: countryId,
-            name: isEditMode ? 'Updated Visa Package' : 'Visa Package',
+            name: submitData.name ? `${submitData.name} Visa` : 'Visa Package',
             government_fee: governmentFee,
             service_fee: serviceFee,
             processing_days: processingDaysValue
@@ -433,6 +433,7 @@ const CountriesManager = () => {
 
       setIsDialogOpen(false);
       
+      // Force a full data refresh
       queryClient.invalidateQueries({ queryKey: ['adminCountries'] });
       queryClient.invalidateQueries({ queryKey: ['countries'] });
       queryClient.invalidateQueries({ queryKey: ['countryVisaPackage'] }); 
@@ -441,6 +442,7 @@ const CountriesManager = () => {
         queryClient.invalidateQueries({ queryKey: ['country', countryId] });
         queryClient.invalidateQueries({ queryKey: ['countryDetail', countryId] });
         queryClient.invalidateQueries({ queryKey: ['documents', countryId] });
+        queryClient.invalidateQueries({ queryKey: ['countryVisaPackage', countryId] });
       }
       
       refetch();
