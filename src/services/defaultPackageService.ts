@@ -31,10 +31,10 @@ export async function createDefaultPackage(countryId: string): Promise<VisaPacka
     }
     
     console.log('Default package created successfully:', data);
-    // Ensure the returned data has the is_active field
+    // Explicitly cast the data to include the is_active property
     return { 
       ...data, 
-      is_active: data.is_active !== undefined ? data.is_active : true 
+      is_active: true // Explicitly set is_active since the Supabase type might not include it
     } as VisaPackage;
   } catch (err) {
     console.error('Failed to create default package:', err);
