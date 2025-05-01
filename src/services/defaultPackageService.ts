@@ -15,7 +15,7 @@ export async function createDefaultPackage(countryId: string): Promise<VisaPacka
       government_fee: 0,
       service_fee: 0,
       processing_days: 15,
-      is_active: true  // Add is_active field
+      is_active: true
     };
     
     const { data, error } = await supabase
@@ -26,15 +26,14 @@ export async function createDefaultPackage(countryId: string): Promise<VisaPacka
     
     if (error) {
       console.error('Error creating default package:', error);
-      // Make sure the returned packageData has is_active
-      return { ...packageData }; // Return the data even if it failed to save
+      return packageData; // Return the data even if it failed to save
     }
     
     console.log('Default package created successfully:', data);
-    // Explicitly cast the data to include the is_active property
+    // Ensure the returned data has the is_active property
     return { 
       ...data, 
-      is_active: true // Explicitly set is_active since the Supabase type might not include it
+      is_active: true 
     } as VisaPackage;
   } catch (err) {
     console.error('Failed to create default package:', err);
