@@ -6,9 +6,12 @@ import { DocumentItem } from '@/services/documentChecklistService';
 import { VisaPackage } from '@/types/visaPackage';
 import { useCountryQueries } from './useCountryQueries';
 import { useCountryData } from './useCountryData';
+import { useToast } from '@/hooks/use-toast';
+import schemaFixService from '@/services/schemaFixService';
 
 export const useCountryOperations = (queryClient?: any) => {
   const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
   
   const { invalidateQueries } = useCountryQueries(queryClient);
   const { fetchCountryData, setError } = useCountryData(queryClient);
@@ -23,12 +26,24 @@ export const useCountryOperations = (queryClient?: any) => {
     setError(null);
     
     try {
+      // First, ensure schema is valid
+      const schemaResult = await schemaFixService.fixSchema();
+      if (!schemaResult.success) {
+        toast({
+          title: "Schema Fix Required",
+          description: "Database schema needs to be fixed first. Please try again.",
+          variant: "destructive"
+        });
+        throw new Error("Schema fix required before saving");
+      }
+      
       // Ensure all price values are properly converted to numbers
       const packageWithNumericValues = {
         ...packageToSave,
         government_fee: Number(packageToSave.government_fee) || 0,
         service_fee: Number(packageToSave.service_fee) || 0,
-        processing_days: Number(packageToSave.processing_days) || 15
+        processing_days: Number(packageToSave.processing_days) || 15,
+        is_active: packageToSave.is_active !== false // Default to true if not explicitly false
       };
       
       console.log('Saving package with values:', packageWithNumericValues);
@@ -91,7 +106,23 @@ export const useCountryOperations = (queryClient?: any) => {
     try {
       console.log(`Toggling package status for country ${countryId} to ${isActive ? 'active' : 'inactive'}`);
       
-      // First toggle package status
+      // First make sure schema is properly set up
+      const schemaResult = await schemaFixService.fixSchema();
+      
+      if (!schemaResult.success) {
+        toast({
+          title: "Schema Fix Failed", 
+          description: "Database schema needs to be updated. Please use the database updater tool.",
+          variant: "destructive"
+        });
+        return {
+          success: false,
+          message: "Schema needs to be fixed before activating country",
+          data: null
+        };
+      }
+      
+      // Then toggle package status
       const packageResult = await toggleVisaPackageStatus(countryId, isActive);
       
       if (!packageResult.success) {

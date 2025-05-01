@@ -193,13 +193,14 @@ export const toggleVisaPackageStatus = async (
       if (existingPackages && existingPackages.length > 0) {
         const packageToUpdate = existingPackages[0];
         
-        const { error: updateError } = await supabase
+        const { data: updatedData, error: updateError } = await supabase
           .from('visa_packages')
           .update({
             is_active: true,
             updated_at: new Date().toISOString()
-          } as any) // Using type assertion to bypass the type check
-          .eq('id', packageToUpdate.id);
+          })
+          .eq('id', packageToUpdate.id)
+          .select();
         
         if (updateError) {
           console.error('Error updating existing package:', updateError);
@@ -210,24 +211,26 @@ export const toggleVisaPackageStatus = async (
           };
         }
         
-        return { success: true, message: 'Package activated successfully', data: packageToUpdate };
+        return { 
+          success: true, 
+          message: 'Package activated successfully', 
+          data: updatedData 
+        };
       }
       
       // No existing package, create a new one with all required fields
       const defaultPackage = {
-        country_id: countryId, // This is explicitly set as non-optional
+        country_id: countryId,
         name: 'Standard Visa',
         government_fee: 0,
         service_fee: 0,
         processing_days: 15,
-        price: 0,
-        processing_time: '15 business days',
         is_active: true
-      } as VisaPackage & { processing_time: string }; // Use type assertion to include non-standard fields
+      };
       
       const { data, error: insertError } = await supabase
         .from('visa_packages')
-        .insert([defaultPackage]) // Wrap in array to match the expected type
+        .insert([defaultPackage])
         .select();
       
       if (insertError) {
@@ -239,13 +242,18 @@ export const toggleVisaPackageStatus = async (
         };
       }
       
-      return { success: true, message: 'New package created and activated', data };
+      return { 
+        success: true, 
+        message: 'New package created and activated', 
+        data 
+      };
     } else {
       // Deactivate all packages for this country
-      const { error: updateError } = await supabase
+      const { data: updatedData, error: updateError } = await supabase
         .from('visa_packages')
-        .update({ is_active: false } as any) // Using type assertion to bypass the type check
-        .eq('country_id', countryId);
+        .update({ is_active: false })
+        .eq('country_id', countryId)
+        .select();
       
       if (updateError) {
         console.error('Error deactivating packages:', updateError);
@@ -256,7 +264,11 @@ export const toggleVisaPackageStatus = async (
         };
       }
       
-      return { success: true, message: 'Packages deactivated successfully', data: null };
+      return { 
+        success: true, 
+        message: 'Packages deactivated successfully', 
+        data: updatedData 
+      };
     }
   } catch (error: any) {
     console.error('Exception in toggleVisaPackageStatus:', error);

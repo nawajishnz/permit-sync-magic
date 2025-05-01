@@ -15,11 +15,20 @@ export const schemaFixService = {
       // Use a simpler query that won't have parsing issues
       const { data, error } = await supabase
         .from('visa_packages')
-        .select('id')
+        .select('id, is_active')
         .limit(1);
       
       if (error) {
         console.error('Error checking schema:', error);
+        // Check if error message specifically mentions is_active column
+        if (error.message && error.message.includes("is_active")) {
+          return { 
+            success: false, 
+            message: 'Schema is missing is_active column', 
+            error,
+            needsIsActiveColumn: true
+          };
+        }
         return { 
           success: false, 
           message: 'Schema check failed', 
@@ -30,7 +39,7 @@ export const schemaFixService = {
       // Table exists if we got here
       return {
         success: true,
-        data: { table_exists: true }
+        data: { table_exists: true, has_is_active: true }
       };
     } catch (err: any) {
       console.error('Exception during schema check:', err);
@@ -54,7 +63,8 @@ export const schemaFixService = {
       // If check succeeded and everything exists, we're good
       if (check.success && 
           check.data && 
-          check.data.table_exists) {
+          check.data.table_exists &&
+          check.data.has_is_active) {
         console.log('Schema is already valid:', check.data);
         return {
           success: true,
@@ -80,10 +90,22 @@ export const schemaFixService = {
                 service_fee NUMERIC NOT NULL DEFAULT 0,
                 processing_days INTEGER NOT NULL DEFAULT 15,
                 price NUMERIC NOT NULL DEFAULT 0,
-                processing_time TEXT NOT NULL DEFAULT '15 business days',
+                is_active BOOLEAN DEFAULT TRUE,
+                processing_time TEXT DEFAULT '15 business days',
                 created_at TIMESTAMPTZ DEFAULT NOW(),
                 updated_at TIMESTAMPTZ DEFAULT NOW()
               );
+              
+              -- Add is_active column if it doesn't exist
+              DO $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT FROM information_schema.columns 
+                  WHERE table_name = 'visa_packages' AND column_name = 'is_active'
+                ) THEN
+                  ALTER TABLE public.visa_packages ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+                END IF;
+              END $$;
             `
           }
         );
@@ -91,7 +113,7 @@ export const schemaFixService = {
         if (createTableError) {
           console.error('Error creating table with RPC:', createTableError);
           
-          // Try direct insert approach instead
+          // Try direct insert approach instead with is_active field
           const { data: directResult, error: directError } = await supabase
             .from('visa_packages')
             .insert({
@@ -101,7 +123,8 @@ export const schemaFixService = {
               service_fee: 0,
               processing_days: 15,
               price: 0,
-              processing_time: '15 business days' // Add the required field
+              processing_time: '15 business days',
+              is_active: true // Add the required field
             })
             .select();
           

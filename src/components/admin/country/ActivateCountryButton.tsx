@@ -38,8 +38,8 @@ const ActivateCountryButton = ({
       
       if (!schemaResult.success) {
         toast({
-          title: 'Schema Fix Failed',
-          description: schemaResult.message || 'Could not prepare database schema',
+          title: 'Database Schema Issue',
+          description: 'Please use the Database Updater tool in the admin panel to fix schema issues first.',
           variant: 'destructive',
         });
         setIsActivating(false);
