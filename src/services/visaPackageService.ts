@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { VisaPackage } from '@/types/visaPackage';
 
@@ -218,13 +219,13 @@ export const toggleVisaPackageStatus = async (
       }
       
       // No existing package, create a new one with all required fields
-      const defaultPackage = {
+      const defaultPackage: VisaPackage = {
         country_id: countryId,
         name: 'Standard Visa',
         government_fee: 0,
         service_fee: 0,
         processing_days: 15,
-        is_active: true  // Ensure is_active is set
+        is_active: true
       };
       
       const { data, error: insertError } = await supabase

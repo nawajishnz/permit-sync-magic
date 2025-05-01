@@ -32,7 +32,10 @@ export async function createDefaultPackage(countryId: string): Promise<VisaPacka
     
     console.log('Default package created successfully:', data);
     // Ensure the returned data has the is_active field
-    return { ...data, is_active: data.is_active !== undefined ? data.is_active : true };
+    return { 
+      ...data, 
+      is_active: data.is_active !== undefined ? data.is_active : true 
+    } as VisaPackage;
   } catch (err) {
     console.error('Failed to create default package:', err);
     return null;
