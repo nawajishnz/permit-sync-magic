@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ActivateCountryButton from './country/ActivateCountryButton';
 
 interface CountryTableProps {
   countries: any[];
@@ -220,12 +220,11 @@ const CountryTable: React.FC<CountryTableProps> = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge 
-                    variant={hasActivePackage(country) ? "default" : "secondary"}
-                    className={hasActivePackage(country) ? "bg-green-100 text-green-800" : ""}
-                  >
-                    {hasActivePackage(country) ? 'Active' : 'Inactive'}
-                  </Badge>
+                  <ActivateCountryButton 
+                    countryId={country.id}
+                    isActive={hasActivePackage(country)}
+                    variant="outline"
+                  />
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex flex-col md:flex-row justify-end gap-2">

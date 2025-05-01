@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PowerIcon, CheckIcon, Loader2 } from 'lucide-react';
+import { CheckCircle, Power, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { toggleVisaPackageStatus } from '@/services/visaPackageService';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,7 +24,9 @@ const ActivateCountryButton = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handleToggleActive = async () => {
+  const handleToggleActive = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click event
+    
     if (!countryId) return;
     
     setIsActivating(true);
@@ -86,12 +88,12 @@ const ActivateCountryButton = ({
         </>
       ) : isActive ? (
         <>
-          <CheckIcon className="h-4 w-4" />
+          <CheckCircle className="h-4 w-4" />
           <span>Active</span>
         </>
       ) : (
         <>
-          <PowerIcon className="h-4 w-4" />
+          <Power className="h-4 w-4" />
           <span>Activate</span>
         </>
       )}
