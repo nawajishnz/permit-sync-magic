@@ -41,7 +41,8 @@ export const toggleVisaPackageStatus = async (
         government_fee: 0,
         service_fee: 0,
         processing_days: 15,
-        processing_time: '15 days'  // Add processing_time field
+        processing_time: '15 days',  // Add processing_time field
+        price: 0  // Add the price field to fix the not-null constraint
       };
       
       const { data, error } = await supabase

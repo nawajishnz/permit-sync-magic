@@ -14,7 +14,8 @@ export type VisaPackage = {
   updated_at?: string;
 };
 
-// Database representation with the processing_time field
+// Database representation with the processing_time and price fields
 export type VisaPackageDB = Omit<VisaPackage, 'is_active'> & {
   processing_time: string;
+  price: number;
 };

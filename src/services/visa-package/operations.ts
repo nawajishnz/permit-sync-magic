@@ -82,7 +82,8 @@ export const saveVisaPackage = async (
       government_fee: Number(packageData.government_fee) || 0,
       service_fee: Number(packageData.service_fee) || 0,
       processing_days: Number(packageData.processing_days) || 15,
-      processing_time: packageData.processing_time || `${Number(packageData.processing_days) || 15} days` // Add processing_time field
+      processing_time: packageData.processing_time || `${Number(packageData.processing_days) || 15} days`, // Add processing_time field
+      price: Number(packageData.price) || 0 // Add price field with a default of 0
     };
     
     if (packageData.id) {
