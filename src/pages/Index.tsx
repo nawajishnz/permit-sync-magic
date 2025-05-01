@@ -5,7 +5,6 @@ import Hero from '@/components/Hero';
 import PopularDestinations from '@/components/PopularDestinations';
 import HowItWorks from '@/components/HowItWorks';
 import Testimonials from '@/components/Testimonials';
-import PopularCountries from '@/components/PopularCountries';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { motion, useInView, useAnimation } from 'framer-motion';
@@ -264,10 +263,6 @@ const Index = () => {
         
         <div className="py-12 md:py-20 bg-gradient-to-b from-blue-50/60 to-white px-4">
           <Testimonials />
-        </div>
-        
-        <div className="py-12 md:py-20 bg-white px-4">
-          <PopularCountries />
         </div>
         
         <motion.div 
