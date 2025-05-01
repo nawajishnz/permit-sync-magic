@@ -8,11 +8,13 @@ export type VisaPackage = {
   processing_days: number;
   total_price?: number;
   price?: number;
-  is_active?: boolean; // Changed from required to optional
+  is_active?: boolean;
   processing_time?: string;
   created_at?: string;
   updated_at?: string;
 };
 
-// Database representation without the is_active field
-export type VisaPackageDB = Omit<VisaPackage, 'is_active'>;
+// Database representation with the processing_time field
+export type VisaPackageDB = Omit<VisaPackage, 'is_active'> & {
+  processing_time: string;
+};

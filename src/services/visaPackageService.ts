@@ -111,7 +111,8 @@ export const saveVisaPackage = async (
       name: packageData.name || 'Visa Package',
       government_fee: Number(packageData.government_fee) || 0,
       service_fee: Number(packageData.service_fee) || 0,
-      processing_days: Number(packageData.processing_days) || 15
+      processing_days: Number(packageData.processing_days) || 15,
+      processing_time: packageData.processing_time || `${Number(packageData.processing_days) || 15} days` // Add processing_time field
     };
     
     if (packageData.id) {
@@ -231,7 +232,8 @@ export const toggleVisaPackageStatus = async (
         name: 'Visa Package',
         government_fee: 0,
         service_fee: 0,
-        processing_days: 15
+        processing_days: 15,
+        processing_time: '15 days'  // Add processing_time field
       };
       
       const { data, error } = await supabase

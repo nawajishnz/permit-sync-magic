@@ -43,7 +43,8 @@ export const useCountryOperations = (queryClient?: any) => {
         government_fee: Number(packageToSave.government_fee) || 0,
         service_fee: Number(packageToSave.service_fee) || 0,
         processing_days: Number(packageToSave.processing_days) || 15,
-        is_active: packageToSave.is_active !== undefined ? packageToSave.is_active : true // Ensure we have a default
+        is_active: packageToSave.is_active !== undefined ? packageToSave.is_active : true, // Ensure we have a default
+        processing_time: packageToSave.processing_time || `${Number(packageToSave.processing_days) || 15} days` // Add processing_time
       };
       
       console.log('Saving package with values:', packageWithNumericValues);
