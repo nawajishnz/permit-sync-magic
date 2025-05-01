@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { toggleVisaPackageStatus } from '@/services/visaPackageService';
 import { useQueryClient } from '@tanstack/react-query';
 import schemaFixService from '@/services/schemaFixService';
+import { useCountryOperations } from '@/hooks/country-management/useCountryOperations';
 
 interface ActivateCountryButtonProps {
   countryId: string;
@@ -23,6 +24,7 @@ const ActivateCountryButton = ({
   const [isActivating, setIsActivating] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { togglePackageAndEnsureDocuments } = useCountryOperations();
 
   const handleToggleActive = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row click event
@@ -46,9 +48,9 @@ const ActivateCountryButton = ({
         return;
       }
       
-      // Then toggle the package status
+      // Use country operations hook for better encapsulation of the activation logic
       const newStatus = !isActive;
-      const result = await toggleVisaPackageStatus(countryId, newStatus);
+      const result = await togglePackageAndEnsureDocuments(countryId, newStatus);
       
       if (result.success) {
         toast({
