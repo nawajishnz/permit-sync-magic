@@ -29,7 +29,7 @@ export const useVisaPackage = ({ externalQueryClient }: UseVisaPackageProps = {}
     
     try {
       const packageData = await getCountryVisaPackage(countryId);
-      // Ensure is_active is set for the application layer
+      // Always add is_active: true when we have package data in the application
       const enhancedData = packageData ? { ...packageData, is_active: true } : null;
       setPackageData(enhancedData);
       return enhancedData;
