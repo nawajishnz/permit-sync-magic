@@ -32,8 +32,18 @@ const ActivateCountryButton = ({
     setIsActivating(true);
     
     try {
-      // First ensure schema is correct
-      await schemaFixService.fixSchema();
+      // First try to ensure schema is correct
+      const schemaResult = await schemaFixService.fixSchema();
+      console.log('Schema fix result:', schemaResult);
+      
+      if (!schemaResult.success) {
+        toast({
+          title: 'Schema Fix Failed',
+          description: schemaResult.message || 'Could not prepare database schema',
+          variant: 'destructive',
+        });
+        return;
+      }
       
       // Then toggle the package status
       const newStatus = !isActive;

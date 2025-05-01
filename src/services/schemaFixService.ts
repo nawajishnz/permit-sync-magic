@@ -12,11 +12,10 @@ export const schemaFixService = {
    */
   checkSchema: async () => {
     try {
-      // Instead of trying to use check_visa_packages_schema RPC function,
-      // just check if the visa_packages table exists with a direct query
+      // Use a simpler query that won't have parsing issues
       const { data, error } = await supabase
         .from('visa_packages')
-        .select('count(*)')
+        .select('id')
         .limit(1);
       
       if (error) {
@@ -66,15 +65,33 @@ export const schemaFixService = {
       
       console.log('Schema needs fixing, running fix...');
       
-      // Try to upload the fix SQL through the frontend handler
-      const fixResult = await fixVisaPackagesSchema();
-      
-      if (!fixResult.success) {
-        console.error('Schema fix failed:', fixResult);
+      // Don't try to use the RPC function anymore since it doesn't exist
+      // Instead create the table directly
+      try {
+        // Create basic version of the table with all required fields
+        const { error: createTableError } = await supabase.rpc(
+          'execute_sql',
+          {
+            sql_query: `
+              CREATE TABLE IF NOT EXISTS public.visa_packages (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                country_id UUID NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                government_fee NUMERIC NOT NULL DEFAULT 0,
+                service_fee NUMERIC NOT NULL DEFAULT 0,
+                processing_days INTEGER NOT NULL DEFAULT 15,
+                processing_time TEXT NOT NULL DEFAULT '15 business days',
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+              );
+            `
+          }
+        );
         
-        // Try direct approach as a fallback - create the table directly
-        try {
-          // Try to create a basic version of the table
+        if (createTableError) {
+          console.error('Error creating table:', createTableError);
+          
+          // Try direct insert approach instead
           const { data: directResult, error: directError } = await supabase
             .from('visa_packages')
             .insert({
@@ -82,7 +99,8 @@ export const schemaFixService = {
               name: 'Test Package',
               government_fee: 0,
               service_fee: 0,
-              processing_days: 15
+              processing_days: 15,
+              processing_time: '15 business days' // Add the required field
             })
             .select();
           
@@ -90,43 +108,50 @@ export const schemaFixService = {
           
           if (directError && !directError.message.includes('foreign key constraint')) {
             console.error('Direct schema creation error:', directError);
-            return fixResult; // Return original error
+            return { 
+              success: false, 
+              message: 'Failed to fix schema: ' + directError.message
+            };
           }
           
           return {
             success: true,
-            message: 'Table exists or was created with direct approach',
+            message: 'Schema fixed with direct approach',
             directFix: true
           };
-        } catch (directError) {
-          console.error('Error in direct schema creation:', directError);
-          return fixResult; // Return original error
         }
-      }
-      
-      console.log('Schema fix complete:', fixResult);
-      
-      // Verify the fix worked with a simple query
-      const verification = await schemaFixService.checkSchema();
-      
-      if (verification.success && 
-          verification.data && 
-          verification.data.table_exists) {
+        
+        console.log('Table creation successful');
         return {
           success: true,
-          message: 'Schema fixed successfully',
-          data: verification.data
+          message: 'Schema fixed successfully with SQL query',
         };
+      } catch (createError: any) {
+        console.error('Error in SQL query execution:', createError);
+        
+        // Final fallback to integration function
+        try {
+          // Try using the integration function as last resort
+          const fixResult = await fixVisaPackagesSchema();
+          
+          if (!fixResult.success) {
+            console.error('Schema fix failed:', fixResult);
+            return fixResult;
+          }
+          
+          return {
+            success: true,
+            message: 'Schema fixed with integration function',
+            data: fixResult
+          };
+        } catch (integrationError: any) {
+          console.error('Error in integration schema fix:', integrationError);
+          return { 
+            success: false, 
+            message: 'All schema fix attempts failed: ' + integrationError.message
+          };
+        }
       }
-      
-      console.warn('Schema fix partially successful, verification:', verification);
-      
-      return {
-        success: true,
-        message: 'Schema fix attempted, but verification shows issues',
-        data: verification.data,
-        fixResult
-      };
     } catch (err: any) {
       console.error('Exception during schema fix:', err);
       return {

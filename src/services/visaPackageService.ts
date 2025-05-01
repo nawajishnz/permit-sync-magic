@@ -150,7 +150,7 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
     }
 
     // Ensure numeric values - force conversion to numbers
-    const packageValues = {
+    const packageValues: any = {
       name: packageData.name || 'Visa Package',
       country_id: packageData.country_id,
       government_fee: Number(packageData.government_fee || 0),
@@ -159,61 +159,40 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       updated_at: new Date().toISOString()
     };
     
+    // Add processing_time field if needed (since it's required by the schema)
+    packageValues.processing_time = `${packageValues.processing_days} business days`;
+    
     console.log('Formatted package values to save:', packageValues);
 
     let result;
     let rpcSuccess = false;
     
-    // Try direct SQL approach using RPC function if available
-    try {
-      console.log('Attempting to save via RPC function...');
-      const rpcResult = await supabase.rpc('save_visa_package', {
-        p_country_id: packageData.country_id,
-        p_name: packageValues.name,
-        p_government_fee: packageValues.government_fee,
-        p_service_fee: packageValues.service_fee,
-        p_processing_days: packageValues.processing_days
-      });
+    // Skip RPC approach and go directly to standard methods
+    if (existingPackage && existingPackage.id) {
+      console.log('Updating existing package with ID:', existingPackage.id);
       
-      if (rpcResult.error) {
-        console.warn('RPC approach failed, falling back to standard method:', rpcResult.error);
-      } else {
-        console.log('RPC call successful:', rpcResult.data);
-        rpcSuccess = true;
-        result = rpcResult;
-      }
-    } catch (rpcError) {
-      console.warn('RPC approach failed with exception, falling back to standard method:', rpcError);
+      // IMPORTANT: We MUST NOT include the total_price field as it's a generated column
+      result = await supabase
+        .from('visa_packages')
+        .update(packageValues)
+        .eq('id', existingPackage.id)
+        .select();
+        
+      console.log('Update result:', result);
+    } else {
+      console.log('Creating new package for country:', packageData.country_id);
+      
+      result = await supabase
+        .from('visa_packages')
+        .insert(packageValues)
+        .select();
+        
+      console.log('Insert result:', result);
     }
-    
-    // Standard approach (fallback if RPC failed)
-    if (!rpcSuccess) {
-      if (existingPackage && existingPackage.id) {
-        console.log('Updating existing package with ID:', existingPackage.id);
-        
-        // IMPORTANT: We MUST NOT include the total_price field as it's a generated column
-        result = await supabase
-          .from('visa_packages')
-          .update(packageValues)
-          .eq('id', existingPackage.id)
-          .select();
-          
-        console.log('Update result:', result);
-      } else {
-        console.log('Creating new package for country:', packageData.country_id);
-        
-        result = await supabase
-          .from('visa_packages')
-          .insert(packageValues)
-          .select();
-          
-        console.log('Insert result:', result);
-      }
 
-      if (result.error) {
-        console.error('Error saving package:', result.error);
-        throw result.error;
-      }
+    if (result.error) {
+      console.error('Error saving package:', result.error);
+      throw result.error;
     }
 
     // Calculate active status - a package is active if either fee is > 0
@@ -313,7 +292,7 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
     }
     
     // Set reasonable default values for a new package
-    const defaultValues = {
+    const defaultValues: any = {
       country_id: countryId,
       name: existingPackage?.name || 'Visa Package',
       government_fee: isActive ? 20 : 0,
@@ -321,15 +300,8 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       processing_days: existingPackage?.processing_days || 15
     };
     
-    // Check if the package has a processing_time column (for legacy support)
-    // by checking if it exists in the existingPackage data
-    const hasProcessingTime = existingPackage && 'processing_time' in existingPackage;
-    
-    if (hasProcessingTime) {
-      console.log('Found processing_time in existing package, will include it in update');
-      // @ts-ignore - Handle legacy schema
-      defaultValues.processing_time = existingPackage.processing_time || '15 business days';
-    }
+    // Always set processing_time since it's required by the schema
+    defaultValues.processing_time = `${defaultValues.processing_days} business days`;
     
     let result;
     
@@ -343,10 +315,9 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
         updated_at: new Date().toISOString()
       };
       
-      // Add processing_time if needed for legacy schema
-      if (hasProcessingTime) {
-        updateData.processing_time = existingPackage.processing_time || '15 business days';
-      }
+      // Always include processing_time to avoid not-null constraint error
+      updateData.processing_time = existingPackage.processing_time || 
+                                  `${existingPackage.processing_days || 15} business days`;
       
       // Update the existing package with new values
       result = await supabase
@@ -370,16 +341,10 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
 
     if (result.error) {
       console.error('Error toggling package status:', result.error);
-      
-      // Special handling for processing_time constraint issues
-      if (result.error.message?.includes('processing_time')) {
-        return {
-          success: false,
-          message: 'The database schema needs to be updated. Please contact an administrator.'
-        };
-      }
-      
-      throw result.error;
+      return {
+        success: false,
+        message: `Failed to update package status: ${result.error.message}`
+      };
     }
 
     // Also update the countries table to reflect the package status
