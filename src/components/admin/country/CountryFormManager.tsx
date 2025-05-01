@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -102,7 +101,8 @@ export const useCountryFormManager = ({ onSuccess, onError }: CountryFormManager
             name: submitData.name ? `${submitData.name} Visa` : 'Visa Package',
             government_fee: governmentFee,
             service_fee: serviceFee,
-            processing_days: processingDaysValue
+            processing_days: processingDaysValue,
+            is_active: true // Adding the is_active property with default true
           });
           
           console.log('Pricing save result:', pricingResult);

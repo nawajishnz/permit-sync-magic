@@ -8,7 +8,7 @@ export type VisaPackage = {
   processing_days: number;
   total_price?: number;
   price?: number;
-  is_active: boolean; // Used only in application logic, not stored in database
+  is_active?: boolean; // Changed from required to optional
   processing_time?: string;
   created_at?: string;
   updated_at?: string;

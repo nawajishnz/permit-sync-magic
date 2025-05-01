@@ -171,10 +171,10 @@ export const saveVisaPackage = async (
       };
     }
     
-    // Add is_active for our application
+    // Add is_active for our application, using the value from packageData or default to true
     const savedPackage: VisaPackage = {
       ...result.data,
-      is_active: true
+      is_active: packageData.is_active !== undefined ? packageData.is_active : true
     };
     
     console.log('Visa package saved successfully:', savedPackage);

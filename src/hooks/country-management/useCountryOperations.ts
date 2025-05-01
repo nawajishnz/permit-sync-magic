@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { saveVisaPackage, toggleVisaPackageStatus } from '@/services/visaPackageService';
 import { saveDocumentChecklist, fixDocumentIssues } from '@/services/documentChecklistService';
@@ -37,13 +36,13 @@ export const useCountryOperations = (queryClient?: any) => {
         throw new Error("Schema fix required before saving");
       }
       
-      // Ensure all price values are properly converted to numbers
+      // Ensure all price values are properly converted to numbers and is_active has a default
       const packageWithNumericValues = {
         ...packageToSave,
         government_fee: Number(packageToSave.government_fee) || 0,
         service_fee: Number(packageToSave.service_fee) || 0,
         processing_days: Number(packageToSave.processing_days) || 15,
-        is_active: packageToSave.is_active !== false // Default to true if not explicitly false
+        is_active: packageToSave.is_active !== undefined ? packageToSave.is_active : true // Ensure we have a default
       };
       
       console.log('Saving package with values:', packageWithNumericValues);
