@@ -8,6 +8,7 @@ import { useDiagnostics } from './useDiagnostics';
 import { CountryManagementProps, CountryManagementResult } from './types';
 
 export const useCountryManagement = ({ externalQueryClient }: CountryManagementProps = {}): CountryManagementResult => {
+  const { toast } = useToast();
   const { invalidateQueries } = useCountryQueries(externalQueryClient);
   
   const {

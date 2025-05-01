@@ -80,12 +80,21 @@ export const useCountryOperations = (queryClient?: any) => {
   };
   
   // Toggle package status and ensure documents exist
-  const togglePackageAndEnsureDocuments = async (countryId: string, isActive: boolean) => {
+  const togglePackageAndEnsureDocuments = async (countryId: string, isActive: boolean): Promise<{
+    success: boolean;
+    message: string;
+    data?: any;
+  }> => {
+    setSaving(true);
+    
     try {
+      console.log(`Toggling package status for country ${countryId} to ${isActive ? 'active' : 'inactive'}`);
+      
       // First toggle package status
       const packageResult = await toggleVisaPackageStatus(countryId, isActive);
       
       if (!packageResult.success) {
+        setError(packageResult.message || "Failed to update package status");
         return packageResult;
       }
       
@@ -104,7 +113,12 @@ export const useCountryOperations = (queryClient?: any) => {
     } catch (err: any) {
       console.error("Error in togglePackageAndEnsureDocuments:", err);
       setError(err.message || "Failed to update package status");
-      throw err;
+      return {
+        success: false,
+        message: err.message || "An error occurred while updating package status"
+      };
+    } finally {
+      setSaving(false);
     }
   };
   

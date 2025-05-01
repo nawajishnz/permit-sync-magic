@@ -63,7 +63,7 @@ export const getCountryVisaPackage = async (countryId: string): Promise<VisaPack
     if (data) {
       console.log('Found existing package:', data);
       // Calculate is_active based on having either government_fee or service_fee > 0
-      const isActive = data.total_price > 0 || (data.government_fee > 0 || data.service_fee > 0);
+      const isActive = (data.government_fee > 0 || data.service_fee > 0);
       return {
         ...data,
         is_active: isActive
@@ -193,95 +193,77 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
   try {
     console.log(`Toggling package status for country ${countryId} to ${isActive ? 'active' : 'inactive'}`);
     
-    // First, check database connection
-    const connectionCheck = await checkDatabaseConnection();
-    if (!connectionCheck.success) {
-      console.warn('Database connection issue detected during toggle:', connectionCheck.message);
-    }
-    
+    // Check if a package already exists
     const { data: existingPackage, error: checkError } = await supabase
       .from('visa_packages')
       .select('*')
       .eq('country_id', countryId)
       .maybeSingle();
       
-    if (checkError) throw checkError;
-
+    if (checkError) {
+      console.error('Error checking existing package:', checkError);
+      throw checkError;
+    }
+    
+    // Set reasonable default values
+    const defaultValues = {
+      country_id: countryId,
+      name: existingPackage?.name || 'Visa Package',
+      government_fee: isActive ? 20 : 0,
+      service_fee: isActive ? 10 : 0,
+      processing_days: existingPackage?.processing_days || 15,
+      updated_at: new Date().toISOString()
+    };
+    
     let result;
     
     if (existingPackage) {
       console.log('Found existing package:', existingPackage);
       
-      // IMPROVED: Set more reasonable default values when activating
-      // "Activate" by ensuring there's a positive price, or "deactivate" by setting fees to 0
-      const governmentFee = isActive ? Math.max(existingPackage.government_fee || 0, 10) : 0;
-      const serviceFee = isActive ? Math.max(existingPackage.service_fee || 0, 5) : 0;
-      
-      console.log('Setting fees to:', { governmentFee, serviceFee });
-      
-      // Use RPC function to ensure proper handling of generated columns
-      result = await supabase
-        .rpc('save_visa_package', {
-          p_country_id: countryId,
-          p_name: existingPackage.name || 'Visa Package',
-          p_government_fee: governmentFee,
-          p_service_fee: serviceFee,
-          p_processing_days: existingPackage.processing_days || 15
-        });
-        
-      console.log('Toggle via RPC result:', result);
-      
-      // If RPC fails, fallback to direct update
-      if (result.error) {
-        console.warn('RPC failed, falling back to direct update:', result.error);
-        
-        result = await supabase
-          .from('visa_packages')
-          .update({ 
-            government_fee: governmentFee,
-            service_fee: serviceFee,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPackage.id)
-          .select();
-          
-        console.log('Fallback update result:', result);
-      }
-    } else {
-      console.log('No existing package, creating new one');
-      
-      // Create new package with status represented by pricing
+      // Update the existing package with new values
       result = await supabase
         .from('visa_packages')
-        .insert({
-          country_id: countryId,
-          name: 'Visa Package',
-          government_fee: isActive ? 10 : 0,
-          service_fee: isActive ? 5 : 0,
-          processing_days: 15,
+        .update({
+          government_fee: isActive ? Math.max(existingPackage.government_fee || 20, 20) : 0,
+          service_fee: isActive ? Math.max(existingPackage.service_fee || 10, 10) : 0,
           updated_at: new Date().toISOString()
         })
+        .eq('id', existingPackage.id)
+        .select();
+        
+      console.log('Update result:', result);
+    } else {
+      console.log('No existing package, creating new one with status:', isActive);
+      
+      // Create a new package
+      result = await supabase
+        .from('visa_packages')
+        .insert(defaultValues)
         .select();
         
       console.log('Insert result:', result);
     }
 
     if (result.error) {
-      console.error('Error updating package status:', result.error);
+      console.error('Error toggling package status:', result.error);
       throw result.error;
     }
 
-    // Verify the update was successful
-    const { data: verifyData, error: verifyError } = await supabase
-      .from('visa_packages')
-      .select('*')
-      .eq('country_id', countryId)
-      .maybeSingle();
+    // Also update the countries table to reflect the package status
+    try {
+      const { error: countryUpdateError } = await supabase
+        .from('countries')
+        .update({
+          has_visa_package: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', countryId);
       
-    if (verifyError) {
-      console.warn('Could not verify status update:', verifyError);
-    } else {
-      console.log('Verified status update:', verifyData);
+      if (countryUpdateError) {
+        console.warn('Could not update country has_visa_package status:', countryUpdateError);
+      }
+    } catch (countryUpdateErr) {
+      console.warn('Error updating country status:', countryUpdateErr);
     }
 
     return {

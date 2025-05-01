@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -51,9 +52,13 @@ const CountryTable: React.FC<CountryTableProps> = ({
       
       // Filter by visibility based on whether country has an active visa package
       if (visibilityFilter !== 'all') {
-        const hasVisaPackage = country.visa_packages && country.visa_packages.length > 0;
-        if (visibilityFilter === 'active' && !hasVisaPackage) return false;
-        if (visibilityFilter === 'inactive' && hasVisaPackage) return false;
+        // Check for active visa packages (has packages with positive fees)
+        const hasActiveVisaPackage = country.visa_packages?.some(pkg => 
+          (pkg.government_fee > 0 || pkg.service_fee > 0)
+        );
+        
+        if (visibilityFilter === 'active' && !hasActiveVisaPackage) return false;
+        if (visibilityFilter === 'inactive' && hasActiveVisaPackage) return false;
       }
       
       return true;
@@ -94,6 +99,13 @@ const CountryTable: React.FC<CountryTableProps> = ({
       </div>
     );
   }
+
+  // Helper function to determine if a country has an active visa package
+  const hasActivePackage = (country) => {
+    return country.visa_packages?.some(pkg => 
+      (pkg.government_fee > 0 || pkg.service_fee > 0)
+    ) || false;
+  };
 
   // Extract filter options for entry types
   const entryTypes = Array.from(new Set(countries.map(country => country.entry_type))).filter(Boolean);
@@ -182,7 +194,7 @@ const CountryTable: React.FC<CountryTableProps> = ({
                     )}
                     <div>
                       <div>{country.name}</div>
-                      {country.has_visa_package && (
+                      {hasActivePackage(country) && (
                         <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                           Visa Package Ready
                         </Badge>
@@ -209,10 +221,10 @@ const CountryTable: React.FC<CountryTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <Badge 
-                    variant={country.visa_packages?.length > 0 ? "default" : "secondary"}
-                    className={country.visa_packages?.length > 0 ? "bg-green-100 text-green-800" : ""}
+                    variant={hasActivePackage(country) ? "default" : "secondary"}
+                    className={hasActivePackage(country) ? "bg-green-100 text-green-800" : ""}
                   >
-                    {country.visa_packages?.length > 0 ? 'Active' : 'Inactive'}
+                    {hasActivePackage(country) ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
