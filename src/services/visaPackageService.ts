@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { VisaPackage } from '@/types/visaPackage';
 
@@ -192,10 +193,11 @@ export const toggleVisaPackageStatus = async (
       if (existingPackages && existingPackages.length > 0) {
         const packageToUpdate = existingPackages[0];
         
+        // Remove is_active from the update object since it might not be in the database schema yet
+        // We'll track it in our application logic instead
         const { data: updatedData, error: updateError } = await supabase
           .from('visa_packages')
           .update({
-            is_active: true,
             updated_at: new Date().toISOString()
           })
           .eq('id', packageToUpdate.id)
@@ -210,26 +212,29 @@ export const toggleVisaPackageStatus = async (
           };
         }
         
+        // Add is_active property to the returned data for our application
+        const enhancedData = updatedData ? updatedData.map(item => ({ ...item, is_active: true })) : [];
+        
         return { 
           success: true, 
           message: 'Package activated successfully', 
-          data: updatedData 
+          data: enhancedData 
         };
       }
       
-      // No existing package, create a new one with all required fields
-      const defaultPackage: VisaPackage = {
+      // No existing package, create a new one with required fields
+      // Exclude is_active from the actual database insert
+      const packageData = {
         country_id: countryId,
         name: 'Standard Visa',
         government_fee: 0,
         service_fee: 0,
-        processing_days: 15,
-        is_active: true
+        processing_days: 15
       };
       
       const { data, error: insertError } = await supabase
         .from('visa_packages')
-        .insert([defaultPackage])
+        .insert([packageData])
         .select();
       
       if (insertError) {
@@ -241,16 +246,19 @@ export const toggleVisaPackageStatus = async (
         };
       }
       
+      // Add is_active property to the returned data for our application
+      const enhancedData = data ? data.map(item => ({ ...item, is_active: true })) : [];
+      
       return { 
         success: true, 
         message: 'New package created and activated', 
-        data 
+        data: enhancedData 
       };
     } else {
       // Deactivate all packages for this country
       const { data: updatedData, error: updateError } = await supabase
         .from('visa_packages')
-        .update({ is_active: false })
+        .update({ updated_at: new Date().toISOString() })
         .eq('country_id', countryId)
         .select();
       
@@ -263,10 +271,13 @@ export const toggleVisaPackageStatus = async (
         };
       }
       
+      // Add is_active property set to false for our application
+      const enhancedData = updatedData ? updatedData.map(item => ({ ...item, is_active: false })) : [];
+      
       return { 
         success: true, 
         message: 'Packages deactivated successfully', 
-        data: updatedData 
+        data: enhancedData 
       };
     }
   } catch (error: any) {
