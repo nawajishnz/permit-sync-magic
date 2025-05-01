@@ -9,32 +9,43 @@ export async function createDefaultPackage(countryId: string): Promise<VisaPacka
   console.log('Creating default package for country:', countryId);
   
   try {
-    const packageData: VisaPackage = {
+    // Create a database-compatible object without is_active
+    const dbPackageData = {
       country_id: countryId,
       name: 'Visa Package',
       government_fee: 0,
       service_fee: 0,
-      processing_days: 15,
-      is_active: true
+      processing_days: 15
     };
     
+    // Insert the database-compatible object
     const { data, error } = await supabase
       .from('visa_packages')
-      .insert(packageData)
+      .insert(dbPackageData)
       .select()
       .single();
     
     if (error) {
       console.error('Error creating default package:', error);
-      return packageData; // Return the data even if it failed to save
+      
+      // Return applicationPackageData with is_active for our app
+      const applicationPackageData: VisaPackage = {
+        ...dbPackageData,
+        is_active: true
+      };
+      
+      return applicationPackageData;
     }
     
     console.log('Default package created successfully:', data);
-    // Ensure the returned data has the is_active property
-    return { 
-      ...data, 
-      is_active: true 
-    } as VisaPackage;
+    
+    // Add is_active for our application
+    const packageWithIsActive: VisaPackage = {
+      ...data,
+      is_active: true
+    };
+    
+    return packageWithIsActive;
   } catch (err) {
     console.error('Failed to create default package:', err);
     return null;
