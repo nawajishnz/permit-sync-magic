@@ -29,8 +29,10 @@ export const useVisaPackage = ({ externalQueryClient }: UseVisaPackageProps = {}
     
     try {
       const packageData = await getCountryVisaPackage(countryId);
-      setPackageData(packageData);
-      return packageData;
+      // Ensure is_active is set for the application layer
+      const enhancedData = packageData ? { ...packageData, is_active: true } : null;
+      setPackageData(enhancedData);
+      return enhancedData;
     } catch (err: any) {
       console.error("Error in fetchVisaPackage:", err);
       setError(err.message || "An error occurred while fetching visa package");

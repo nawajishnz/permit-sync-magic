@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { VisaPackage } from '@/types/visaPackage';
+import { VisaPackage, VisaPackageDB } from '@/types/visaPackage';
 
 /**
  * Fetches all visa packages.
@@ -192,7 +192,7 @@ export const toggleVisaPackageStatus = async (
       if (existingPackages && existingPackages.length > 0) {
         const packageToUpdate = existingPackages[0];
         
-        // Update the package - don't include is_active in database operations
+        // Update the package - is_active is not in the database schema
         const { data: updatedData, error: updateError } = await supabase
           .from('visa_packages')
           .update({
@@ -221,8 +221,8 @@ export const toggleVisaPackageStatus = async (
       }
       
       // No existing package, create a new one with required fields
-      // Don't include is_active in database operations
-      const packageDataForDb = {
+      // is_active is not part of the database schema
+      const packageDataForDb: VisaPackageDB = {
         country_id: countryId,
         name: 'Standard Visa',
         government_fee: 0,
@@ -254,6 +254,7 @@ export const toggleVisaPackageStatus = async (
       };
     } else {
       // Deactivate all packages for this country
+      // No need to store is_active in database, we just return it as false
       const { data: updatedData, error: updateError } = await supabase
         .from('visa_packages')
         .update({ updated_at: new Date().toISOString() })

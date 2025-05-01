@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { VisaPackage } from '@/types/visaPackage';
+import type { VisaPackage, VisaPackageDB } from '@/types/visaPackage';
 
 /**
  * Create a default package for a country if none exists
@@ -10,7 +10,7 @@ export async function createDefaultPackage(countryId: string): Promise<VisaPacka
   
   try {
     // Create a database-compatible object without is_active
-    const dbPackageData = {
+    const dbPackageData: VisaPackageDB = {
       country_id: countryId,
       name: 'Visa Package',
       government_fee: 0,
