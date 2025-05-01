@@ -1,4 +1,6 @@
+
 import { supabase } from '@/lib/supabase';
+import { runDiagnostic } from '@/services/visa-package';
 
 // Interface for diagnostic result
 interface DiagnosticResult {

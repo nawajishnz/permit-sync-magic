@@ -1,7 +1,12 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getCountryVisaPackage, saveVisaPackage, toggleVisaPackageStatus, runDiagnostic } from '@/services/visaPackageService';
+import { 
+  getCountryVisaPackage, 
+  saveVisaPackage, 
+  toggleVisaPackageStatus, 
+  runDiagnostic 
+} from '@/services/visa-package';
 import { VisaPackage } from '@/types/visaPackage';
 import { useQueryClient } from '@tanstack/react-query';
 

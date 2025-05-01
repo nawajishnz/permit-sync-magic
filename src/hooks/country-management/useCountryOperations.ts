@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { saveVisaPackage, toggleVisaPackageStatus } from '@/services/visaPackageService';
+import { saveVisaPackage, toggleVisaPackageStatus } from '@/services/visa-package';
 import { saveDocumentChecklist, fixDocumentIssues } from '@/services/documentChecklistService';
 import { DocumentItem } from '@/services/documentChecklistService';
 import { VisaPackage } from '@/types/visaPackage';
