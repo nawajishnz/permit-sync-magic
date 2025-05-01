@@ -196,7 +196,15 @@ export const runDiagnostic = async (countryId?: string): Promise<DiagnosticResul
     // If countryId provided, check that specific country
     if (countryId) {
       // Use the imported function from visa-package instead
-      return await runVisaPackageDiagnostic(countryId);
+      const packageResult = await runVisaPackageDiagnostic(countryId);
+      
+      // Convert the result format by adding timestamp
+      return {
+        success: packageResult.success,
+        message: packageResult.message,
+        details: packageResult.data,
+        timestamp: new Date().toISOString()
+      };
     }
     
     // Otherwise return successful structure check
