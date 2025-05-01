@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase'; // Using from lib directory
 import { VisaPackage } from '@/types/visaPackage';
 import { runDiagnostic as runVisaDiagnostic } from '@/services/visaDiagnosticService';
@@ -116,9 +115,7 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       throw checkError;
     }
 
-    let result;
-    
-    // Ensure all numeric values are properly converted to numbers
+    // Ensure numeric values
     const packageValues = {
       name: packageData.name || 'Visa Package',
       country_id: packageData.country_id,
@@ -128,8 +125,36 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       updated_at: new Date().toISOString()
     };
     
-    console.log('Package values to save:', packageValues);
+    console.log('Formatted package values to save:', packageValues);
+
+    let result;
     
+    // Try direct SQL approach using RPC function if available
+    try {
+      console.log('Attempting to save via RPC function...');
+      const rpcResult = await supabase.rpc('save_visa_package', {
+        p_country_id: packageData.country_id,
+        p_name: packageValues.name,
+        p_government_fee: packageValues.government_fee,
+        p_service_fee: packageValues.service_fee,
+        p_processing_days: packageValues.processing_days
+      });
+      
+      if (rpcResult.error) {
+        console.warn('RPC approach failed, falling back to standard method:', rpcResult.error);
+      } else {
+        console.log('RPC call successful:', rpcResult.data);
+        return {
+          success: true,
+          message: `Visa package ${existingPackage ? 'updated' : 'created'} successfully via RPC`,
+          data: rpcResult.data
+        };
+      }
+    } catch (rpcError) {
+      console.warn('RPC approach failed with exception, falling back to standard method:', rpcError);
+    }
+    
+    // Standard approach (fallback)
     if (existingPackage && existingPackage.id) {
       console.log('Updating existing package with ID:', existingPackage.id);
       
@@ -155,6 +180,24 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
     if (result.error) {
       console.error('Error saving package:', result.error);
       throw result.error;
+    }
+
+    // Update the countries table to reflect has_visa_package status
+    const isActive = packageValues.government_fee > 0 || packageValues.service_fee > 0;
+    try {
+      const { error: countryUpdateError } = await supabase
+        .from('countries')
+        .update({
+          has_visa_package: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', packageData.country_id);
+      
+      if (countryUpdateError) {
+        console.warn('Could not update country has_visa_package status:', countryUpdateError);
+      }
+    } catch (countryUpdateErr) {
+      console.warn('Error updating country status:', countryUpdateErr);
     }
 
     // Verify the update was successful by fetching the latest data
