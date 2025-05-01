@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getDocumentChecklist } from '@/services/documentChecklistService';
+import { getCountryVisaPackage, initializeVisaPackagesSchema } from '@/services/visaPackageService';
 import CountryDialog, { CountryFormData } from '../CountryDialog';
 
 interface CountryEditDialogProps {
@@ -51,37 +52,61 @@ export const useCountryEditDialog = () => {
   const handleEdit = async (country: any) => {
     console.log('Editing country with data:', country);
     
-    let countryWithPackages = country;
+    // Initialize schema first to make sure everything is set up
+    try {
+      await initializeVisaPackagesSchema();
+    } catch (err) {
+      console.warn('Schema initialization warning:', err);
+      // Continue even if this fails
+    }
     
-    if (!country.visa_packages || country.visa_packages.length === 0) {
-      console.log('Fetching fresh visa package data for country:', country.id);
-      try {
-        const { data: freshData, error } = await supabase
-          .from('countries')
-          .select(`
-            *,
-            visa_packages(
-              id, 
-              name, 
-              government_fee, 
-              service_fee, 
-              processing_days,
-              total_price
-            )
-          `)
-          .eq('id', country.id)
-          .single();
-          
-        if (!error && freshData) {
-          countryWithPackages = freshData;
-          console.log('Fetched fresh data:', freshData);
+    let countryWithPackages = country;
+    let packageData = null;
+    
+    // Direct fetch from visa_packages table for most current data
+    try {
+      console.log('Fetching visa package directly:', country.id);
+      packageData = await getCountryVisaPackage(country.id);
+      console.log('Fetched visa package:', packageData);
+    } catch (err) {
+      console.error('Error fetching visa package:', err);
+      
+      // Fall back to fetching along with the country data
+      if (!country.visa_packages || country.visa_packages.length === 0) {
+        console.log('Fetching fresh visa package data for country:', country.id);
+        try {
+          const { data: freshData, error } = await supabase
+            .from('countries')
+            .select(`
+              *,
+              visa_packages(
+                id, 
+                name, 
+                government_fee, 
+                service_fee, 
+                processing_days,
+                total_price
+              )
+            `)
+            .eq('id', country.id)
+            .single();
+            
+          if (!error && freshData) {
+            countryWithPackages = freshData;
+            console.log('Fetched fresh data:', freshData);
+            
+            if (freshData.visa_packages && freshData.visa_packages.length > 0) {
+              packageData = freshData.visa_packages[0];
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching fresh country data:', err);
         }
-      } catch (err) {
-        console.error('Error fetching fresh country data:', err);
+      } else if (country.visa_packages && country.visa_packages.length > 0) {
+        packageData = country.visa_packages[0];
       }
     }
     
-    const packageData = countryWithPackages.visa_packages?.[0];
     console.log('Package data for form:', packageData);
     
     let documents = [];
