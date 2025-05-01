@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -170,7 +169,8 @@ const PricingTierManager: React.FC<PricingTierManagerProps> = ({
         name: formData.name || 'Visa Package',
         government_fee: parseFloat(formData.government_fee) || 0,
         service_fee: parseFloat(formData.service_fee) || 0,
-        processing_days: parseInt(formData.processing_days) || 15
+        processing_days: parseInt(formData.processing_days) || 15,
+        is_active: true  // Add is_active field
       };
       
       const country = countries.find(c => c.id === selectedCountryId);

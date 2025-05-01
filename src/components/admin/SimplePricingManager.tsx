@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,7 +98,8 @@ const SimplePricingManager: React.FC<SimplePricingManagerProps> = ({
         name: `${countryName} Visa Package`,
         government_fee: Number(formData.government_fee) || 0,
         service_fee: Number(formData.service_fee) || 0,
-        processing_days: Number(formData.processing_days) || 15
+        processing_days: Number(formData.processing_days) || 15,
+        is_active: isActive  // Add is_active field with the current status
       };
       
       const result = await saveVisaPackageData(packageToSave);

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { VisaPackage } from '@/types/visaPackage';
 
@@ -225,7 +224,7 @@ export const toggleVisaPackageStatus = async (
         government_fee: 0,
         service_fee: 0,
         processing_days: 15,
-        is_active: true
+        is_active: true  // Ensure is_active is set
       };
       
       const { data, error: insertError } = await supabase
