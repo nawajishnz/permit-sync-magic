@@ -224,7 +224,7 @@ export const toggleVisaPackageStatus = async (
       
       // No existing package, create a new one with required fields
       // Exclude is_active from the actual database insert
-      const packageData = {
+      const packageData: Omit<VisaPackage, 'is_active'> = {
         country_id: countryId,
         name: 'Standard Visa',
         government_fee: 0,
