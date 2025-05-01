@@ -13,13 +13,9 @@ interface CountryEditDialogProps {
   isLoading: boolean;
 }
 
-export const useCountryEditDialog = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [currentCountryId, setCurrentCountryId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CountryFormData>(getInitialFormData());
-
-  const getInitialFormData = (): CountryFormData => ({
+// Move the function declaration to the top so it's defined before being used
+function getInitialFormData(): CountryFormData {
+  return {
     name: '',
     flag: '',
     banner: '',
@@ -36,7 +32,14 @@ export const useCountryEditDialog = () => {
     embassy_details: { address: '', phone: '', email: '', hours: '' },
     documents: [],
     pricing: { government_fee: '', service_fee: '', processing_days: '' }
-  });
+  };
+}
+
+export const useCountryEditDialog = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentCountryId, setCurrentCountryId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<CountryFormData>(getInitialFormData());
 
   const handleAddNew = () => {
     setFormData(getInitialFormData());
@@ -149,27 +152,6 @@ export const CountryEditDialog = ({
   isLoading
 }: CountryEditDialogProps) => {
   const [formData, setFormData] = useState<CountryFormData>(getInitialFormData());
-
-  function getInitialFormData(): CountryFormData {
-    return {
-      name: '',
-      flag: '',
-      banner: '',
-      description: '',
-      entry_type: 'Tourist Visa',
-      validity: '',
-      processing_time: '',
-      length_of_stay: '',
-      requirements_description: '',
-      visa_includes: [],
-      visa_assistance: [],
-      processing_steps: [],
-      faq: [],
-      embassy_details: { address: '', phone: '', email: '', hours: '' },
-      documents: [],
-      pricing: { government_fee: '', service_fee: '', processing_days: '' }
-    };
-  }
 
   return (
     <CountryDialog
