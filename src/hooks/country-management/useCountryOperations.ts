@@ -55,7 +55,7 @@ export const useCountryOperations = (queryClient?: any) => {
         return {
           success: false,
           message: errorMessage || 'Failed to save some country data',
-          data: null // Add the missing data property
+          data: null
         };
       }
       

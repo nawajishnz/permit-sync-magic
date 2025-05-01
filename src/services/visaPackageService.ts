@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { VisaPackage } from '@/types/visaPackage';
 
 /**
  * Fetches all visa packages.
@@ -162,7 +163,7 @@ export const deleteVisaPackage = async (id: string): Promise<{ success: boolean;
  * Toggles the active status of a visa package for a country.
  * @param {string} countryId - The ID of the country to toggle package status for.
  * @param {boolean} isActive - The new active status.
- * @returns {Promise<{ success: boolean; message?: string }>}
+ * @returns {Promise<{ success: boolean; message: string; data?: any }>}
  */
 export const toggleVisaPackageStatus = async (
   countryId: string,
@@ -213,13 +214,13 @@ export const toggleVisaPackageStatus = async (
       }
       
       // No existing package, create a new one with all required fields
-      const defaultPackage = {
+      const defaultPackage: Partial<VisaPackage> & { is_active: boolean; processing_time: string; price: number } = {
         country_id: countryId,
         name: 'Standard Visa',
         government_fee: 0,
         service_fee: 0,
         processing_days: 15,
-        price: 0, // Make sure price is included
+        price: 0,
         processing_time: '15 business days',
         is_active: true
       };
@@ -430,10 +431,22 @@ export const initializeVisaPackagesSchema = async (): Promise<{ success: boolean
     // Call the fixSchema method from the imported service
     const result = await schemaFixService.default.fixSchema();
     
+    // Handle all possible return types from fixSchema
+    if (!result.success) {
+      return {
+        success: result.success,
+        message: result.message || 'Schema initialization failed',
+        data: null
+      };
+    }
+    
+    // For successful results, ensure we always return a data property
     return {
-      success: result.success,
+      success: true,
       message: result.message || 'Schema initialization complete',
-      data: result.data
+      data: result.directFix ? { directFix: true } : 
+            result.data ? result.data : 
+            { initialized: true }
     };
   } catch (error: any) {
     console.error('Error initializing schema:', error);
