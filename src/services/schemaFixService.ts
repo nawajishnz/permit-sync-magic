@@ -65,10 +65,9 @@ export const schemaFixService = {
       
       console.log('Schema needs fixing, running fix...');
       
-      // Don't try to use the RPC function anymore since it doesn't exist
-      // Instead create the table directly
+      // Create basic version of the table with all required fields
       try {
-        // Create basic version of the table with all required fields
+        // Try direct database operations to create the table with all required fields
         const { error: createTableError } = await supabase.rpc(
           'execute_sql',
           {
@@ -80,6 +79,7 @@ export const schemaFixService = {
                 government_fee NUMERIC NOT NULL DEFAULT 0,
                 service_fee NUMERIC NOT NULL DEFAULT 0,
                 processing_days INTEGER NOT NULL DEFAULT 15,
+                price NUMERIC NOT NULL DEFAULT 0,
                 processing_time TEXT NOT NULL DEFAULT '15 business days',
                 created_at TIMESTAMPTZ DEFAULT NOW(),
                 updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -89,7 +89,7 @@ export const schemaFixService = {
         );
         
         if (createTableError) {
-          console.error('Error creating table:', createTableError);
+          console.error('Error creating table with RPC:', createTableError);
           
           // Try direct insert approach instead
           const { data: directResult, error: directError } = await supabase
@@ -100,6 +100,7 @@ export const schemaFixService = {
               government_fee: 0,
               service_fee: 0,
               processing_days: 15,
+              price: 0,
               processing_time: '15 business days' // Add the required field
             })
             .select();

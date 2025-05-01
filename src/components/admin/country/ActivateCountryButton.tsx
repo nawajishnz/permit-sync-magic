@@ -42,6 +42,7 @@ const ActivateCountryButton = ({
           description: schemaResult.message || 'Could not prepare database schema',
           variant: 'destructive',
         });
+        setIsActivating(false);
         return;
       }
       

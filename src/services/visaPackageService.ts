@@ -139,12 +139,19 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       
       if (retryError) {
         console.error('Still error after schema fix:', retryError);
-        throw retryError;
+        return {
+          success: false,
+          message: 'Failed to check or create package: ' + retryError.message
+        };
       }
       
       // Update our reference if retry worked
       if (retryPackage) {
         console.log('Successfully found package after schema fix:', retryPackage);
+        if (!existingPackage) {
+          // Create a new empty object if it doesn't exist
+          existingPackage = {};
+        }
         existingPackage.id = retryPackage.id;
       }
     }
@@ -156,7 +163,9 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
       government_fee: Number(packageData.government_fee || 0),
       service_fee: Number(packageData.service_fee || 0),
       processing_days: Number(packageData.processing_days || 15),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      // Add price field to satisfy the not-null constraint
+      price: Number(packageData.government_fee || 0) + Number(packageData.service_fee || 0)
     };
     
     // Add processing_time field if needed (since it's required by the schema)
@@ -165,13 +174,10 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
     console.log('Formatted package values to save:', packageValues);
 
     let result;
-    let rpcSuccess = false;
     
-    // Skip RPC approach and go directly to standard methods
     if (existingPackage && existingPackage.id) {
       console.log('Updating existing package with ID:', existingPackage.id);
       
-      // IMPORTANT: We MUST NOT include the total_price field as it's a generated column
       result = await supabase
         .from('visa_packages')
         .update(packageValues)
@@ -192,7 +198,10 @@ export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
 
     if (result.error) {
       console.error('Error saving package:', result.error);
-      throw result.error;
+      return {
+        success: false,
+        message: `Failed to save package: ${result.error.message}`
+      };
     }
 
     // Calculate active status - a package is active if either fee is > 0
@@ -303,6 +312,9 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
     // Always set processing_time since it's required by the schema
     defaultValues.processing_time = `${defaultValues.processing_days} business days`;
     
+    // Add price field to satisfy the not-null constraint
+    defaultValues.price = defaultValues.government_fee + defaultValues.service_fee;
+    
     let result;
     
     if (existingPackage) {
@@ -318,6 +330,9 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       // Always include processing_time to avoid not-null constraint error
       updateData.processing_time = existingPackage.processing_time || 
                                   `${existingPackage.processing_days || 15} business days`;
+      
+      // Add price field to satisfy the not-null constraint
+      updateData.price = updateData.government_fee + updateData.service_fee;
       
       // Update the existing package with new values
       result = await supabase
