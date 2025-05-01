@@ -291,8 +291,7 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       console.error('Error checking table info:', tableInfoError);
       return {
         success: false,
-        message: 'Error checking database schema. Please try refreshing the data.',
-        error: tableInfoError
+        message: 'Error checking database schema. Please try refreshing the data.'
       };
     }
     
@@ -347,8 +346,7 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       
       return {
         success: false,
-        message: 'Error checking package status. Schema may be incompatible.',
-        error: checkError
+        message: 'Error checking package status. Schema may be incompatible.'
       };
     }
     
@@ -415,8 +413,7 @@ export const toggleVisaPackageStatus = async (countryId: string, isActive: boole
       if (result.error.message?.includes('processing_time')) {
         return {
           success: false,
-          message: 'The database schema needs to be updated. Please contact an administrator.',
-          error: result.error
+          message: 'The database schema needs to be updated. Please contact an administrator.'
         };
       }
       
