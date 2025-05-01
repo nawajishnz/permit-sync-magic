@@ -78,6 +78,11 @@ export const getVisaPackagesByCountryId = async (countryId: string): Promise<{ s
  */
 export const createVisaPackage = async (packageData: any): Promise<{ success: boolean; data?: any; message?: string }> => {
   try {
+    // Ensure price field is properly calculated
+    if (!packageData.price && (packageData.government_fee || packageData.service_fee)) {
+      packageData.price = (packageData.government_fee || 0) + (packageData.service_fee || 0);
+    }
+
     const { data, error } = await supabase
       .from('visa_packages')
       .insert([packageData])
@@ -104,6 +109,11 @@ export const createVisaPackage = async (packageData: any): Promise<{ success: bo
  */
 export const updateVisaPackage = async (id: string, packageData: any): Promise<{ success: boolean; data?: any; message?: string }> => {
   try {
+    // Ensure price field is properly calculated
+    if (!packageData.price && (packageData.government_fee || packageData.service_fee)) {
+      packageData.price = (packageData.government_fee || 0) + (packageData.service_fee || 0);
+    }
+
     const { data, error } = await supabase
       .from('visa_packages')
       .update(packageData)
@@ -147,6 +157,12 @@ export const deleteVisaPackage = async (id: string): Promise<{ success: boolean;
   }
 };
 
+/**
+ * Toggles the active status of a visa package for a country.
+ * @param {string} countryId - The ID of the country to toggle package status for.
+ * @param {boolean} isActive - The new active status.
+ * @returns {Promise<{ success: boolean; message?: string }>}
+ */
 export const toggleVisaPackageStatus = async (
   countryId: string,
   isActive: boolean
@@ -240,6 +256,180 @@ export const toggleVisaPackageStatus = async (
     return {
       success: false,
       message: error.message || 'An unexpected error occurred'
+    };
+  }
+};
+
+/**
+ * Gets the visa package data for a specific country.
+ * If a visa package doesn't exist, it returns null.
+ * @param {string} countryId - The ID of the country to get the visa package for.
+ * @returns {Promise<any>} - The visa package data or null if not found.
+ */
+export const getCountryVisaPackage = async (countryId: string): Promise<any> => {
+  try {
+    if (!countryId) {
+      console.log('No countryId provided to getCountryVisaPackage');
+      return null;
+    }
+    
+    console.log(`Fetching visa package for country ${countryId}`);
+    
+    // Get the first active package for this country
+    const { data: packages, error } = await supabase
+      .from('visa_packages')
+      .select('*')
+      .eq('country_id', countryId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    if (error) {
+      console.error('Error fetching country visa package:', error);
+      return null;
+    }
+    
+    if (!packages || packages.length === 0) {
+      console.log(`No visa package found for country ${countryId}`);
+      return null;
+    }
+    
+    // Process the package data before returning
+    const packageData = packages[0];
+    
+    // Calculate total price if not set
+    if (packageData && !packageData.total_price) {
+      packageData.total_price = (packageData.government_fee || 0) + (packageData.service_fee || 0);
+    }
+    
+    console.log('Retrieved package data:', packageData);
+    return packageData;
+  } catch (error: any) {
+    console.error('Exception in getCountryVisaPackage:', error);
+    return null;
+  }
+};
+
+/**
+ * Saves (creates or updates) a visa package.
+ * @param {any} packageData - The visa package data to save.
+ * @returns {Promise<{ success: boolean; data?: any; message?: string }>}
+ */
+export const saveVisaPackage = async (packageData: any): Promise<{ success: boolean; data?: any; message?: string }> => {
+  try {
+    if (!packageData) {
+      return { 
+        success: false, 
+        message: 'No package data provided', 
+        data: null 
+      };
+    }
+    
+    // Calculate total price and set price field
+    packageData.price = (packageData.government_fee || 0) + (packageData.service_fee || 0);
+    
+    // If we have an ID, it's an update operation
+    if (packageData.id) {
+      return updateVisaPackage(packageData.id, packageData);
+    }
+    
+    // Otherwise, it's a create operation
+    return createVisaPackage(packageData);
+  } catch (error: any) {
+    console.error('Error in saveVisaPackage:', error);
+    return {
+      success: false,
+      message: error.message || 'An unexpected error occurred',
+      data: null
+    };
+  }
+};
+
+/**
+ * Runs diagnostic operations for a country's visa package.
+ * @param {string} countryId - The ID of the country to diagnose.
+ * @returns {Promise<{ success: boolean; data?: any; message: string }>}
+ */
+export const runDiagnostic = async (countryId: string): Promise<{ success: boolean; data?: any; message: string }> => {
+  try {
+    // Check if visa packages table exists
+    const { error: schemaError } = await supabase
+      .rpc('check_table_exists', { table_name: 'visa_packages' });
+    
+    if (schemaError) {
+      return { 
+        success: false, 
+        message: `Schema issue: ${schemaError.message}`,
+        data: { schema_error: schemaError }
+      };
+    }
+    
+    // Check for package data
+    const packageData = await getCountryVisaPackage(countryId);
+    
+    return {
+      success: true,
+      message: packageData ? 'Visa package exists' : 'No visa package found',
+      data: {
+        package_exists: !!packageData,
+        package_data: packageData
+      }
+    };
+  } catch (error: any) {
+    console.error('Error in runDiagnostic:', error);
+    return {
+      success: false,
+      message: error.message || 'Diagnostic failed',
+      data: { error_details: error }
+    };
+  }
+};
+
+/**
+ * Checks database connection.
+ * @returns {Promise<{ success: boolean; message: string }>}
+ */
+export const checkDatabaseConnection = async (): Promise<{ success: boolean; message: string }> => {
+  try {
+    const { error } = await supabase.from('visa_packages').select('id').limit(1);
+    
+    if (error) {
+      return {
+        success: false,
+        message: `Database connection issue: ${error.message}`
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Database connection successful'
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: `Database connection error: ${error.message || 'Unknown error'}`
+    };
+  }
+};
+
+/**
+ * Initializes visa packages schema if it doesn't exist.
+ * @returns {Promise<{ success: boolean; message: string; data?: any }>}
+ */
+export const initializeVisaPackagesSchema = async (): Promise<{ success: boolean; message: string; data?: any }> => {
+  try {
+    const { data: schemaFixService } = await import('@/services/schemaFixService');
+    const result = await schemaFixService.fixSchema();
+    
+    return {
+      success: result.success,
+      message: result.message || 'Schema initialization complete',
+      data: result.data
+    };
+  } catch (error: any) {
+    console.error('Error initializing schema:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to initialize schema'
     };
   }
 };
