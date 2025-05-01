@@ -1,477 +1,245 @@
+import { supabase } from '@/integrations/supabase/client';
 
-import { supabase } from '@/lib/supabase'; // Using from lib directory
-import { VisaPackage } from '@/types/visaPackage';
-import { runDiagnostic as runVisaDiagnostic } from '@/services/visaDiagnosticService';
-import { fixVisaPackagesSchema } from '@/integrations/supabase/fix-schema';
-
-// Export the diagnostic function from the visaPackageService
-export const runDiagnostic = runVisaDiagnostic;
-
-// Debug function to check database connection and visa_packages table
-export const checkDatabaseConnection = async (): Promise<{ success: boolean, message: string }> => {
+/**
+ * Fetches all visa packages.
+ * @returns {Promise<{ success: boolean; data?: any[]; message?: string }>}
+ */
+export const getAllVisaPackages = async (): Promise<{ success: boolean; data?: any[]; message?: string }> => {
   try {
-    console.log('Testing database connection and visa_packages table structure...');
-    
-    // Test basic connection with a simple select query instead of RPC
-    const { data: testData, error: testError } = await supabase
+    const { data, error } = await supabase
       .from('visa_packages')
-      .select('count')
-      .limit(1);
-      
-    if (testError) {
-      console.error('Connection test failed:', testError);
-      return { success: false, message: `Connection error: ${testError.message}` };
+      .select('*');
+
+    if (error) {
+      console.error('Error fetching visa packages:', error);
+      return { success: false, message: 'Failed to fetch visa packages', data: [] };
     }
-    
-    // Instead of using get_table_info RPC, check if table exists using metadata
-    console.log('Database connection test successful');
-    return { success: true, message: 'Database connection verified.' };
+
+    return { success: true, data: data || [] };
   } catch (error: any) {
-    console.error('Database check failed:', error);
-    return { success: false, message: `Check failed: ${error.message || 'Unknown error'}` };
+    console.error('Unexpected error fetching visa packages:', error);
+    return { success: false, message: error.message || 'Unexpected error', data: [] };
   }
 };
 
-export const getCountryVisaPackage = async (countryId: string): Promise<VisaPackage | null> => {
+/**
+ * Fetches a visa package by its ID.
+ * @param {string} id - The ID of the visa package to fetch.
+ * @returns {Promise<{ success: boolean; data?: any; message?: string }>}
+ */
+export const getVisaPackageById = async (id: string): Promise<{ success: boolean; data?: any; message?: string }> => {
   try {
-    console.log('Fetching visa package for country:', countryId);
-    
-    // First, check database connection
-    const connectionCheck = await checkDatabaseConnection();
-    if (!connectionCheck.success) {
-      console.warn('Database connection issue detected:', connectionCheck.message);
-    }
-    
     const { data, error } = await supabase
       .from('visa_packages')
       .select('*')
-      .eq('country_id', countryId)
-      .maybeSingle();
-    
+      .eq('id', id)
+      .single();
+
     if (error) {
-      console.error('Error fetching visa package:', error);
-      throw error;
+      console.error('Error fetching visa package by ID:', error);
+      return { success: false, message: 'Failed to fetch visa package', data: null };
     }
-    
-    if (data) {
-      console.log('Found existing package:', data);
-      // Calculate is_active based on having either government_fee or service_fee > 0
-      const isActive = (data.government_fee > 0 || data.service_fee > 0);
-      return {
-        ...data,
-        is_active: isActive
-      } as VisaPackage;
-    }
-    
-    // Return a default package template if none exists
-    console.log('No package found, returning default template');
-    return {
-      country_id: countryId,
-      name: 'Visa Package',
-      government_fee: 0,
-      service_fee: 0,
-      processing_days: 15,
-      total_price: 0,
-      is_active: false,
-      updated_at: new Date().toISOString()
-    };
-    
-  } catch (error) {
-    console.error('Error in getCountryVisaPackage:', error);
-    throw error;
-  }
-};
 
-// Initialize the visa package schema to ensure all tables and functions exist
-export const initializeVisaPackagesSchema = async (): Promise<{
-  success: boolean;
-  message: string;
-}> => {
-  console.log('Initializing visa packages schema...');
-  try {
-    const result = await fixVisaPackagesSchema();
-    console.log('Schema initialization result:', result);
-    return result;
+    return { success: true, data: data || null };
   } catch (error: any) {
-    console.error('Error initializing schema:', error);
-    return {
-      success: false,
-      message: error.message || 'Failed to initialize visa packages schema'
-    };
+    console.error('Unexpected error fetching visa package by ID:', error);
+    return { success: false, message: error.message || 'Unexpected error', data: null };
   }
 };
 
-export const saveVisaPackage = async (packageData: VisaPackage): Promise<{
-  success: boolean;
-  message: string;
-  data?: any;
-}> => {
-  console.log('Saving visa package with data:', packageData);
-  
+/**
+ * Fetches visa packages by country ID.
+ * @param {string} countryId - The ID of the country to fetch visa packages for.
+ * @returns {Promise<{ success: boolean; data?: any[]; message?: string }>}
+ */
+export const getVisaPackagesByCountryId = async (countryId: string): Promise<{ success: boolean; data?: any[]; message?: string }> => {
   try {
-    if (!packageData.country_id) {
-      return {
-        success: false,
-        message: 'Country ID is required'
-      };
-    }
-
-    // Check if a package already exists
-    const { data: existingPackage, error: checkError } = await supabase
-      .from('visa_packages')
-      .select('id')
-      .eq('country_id', packageData.country_id)
-      .maybeSingle();
-      
-    if (checkError) {
-      console.error('Error checking existing package:', checkError);
-      
-      // Try to fix database schema if there's an error
-      console.log('Attempting to fix schema...');
-      await initializeVisaPackagesSchema();
-      
-      // Re-check after fix attempt
-      const { data: retryPackage, error: retryError } = await supabase
-        .from('visa_packages')
-        .select('id')
-        .eq('country_id', packageData.country_id)
-        .maybeSingle();
-      
-      if (retryError) {
-        console.error('Still error after schema fix:', retryError);
-        return {
-          success: false,
-          message: 'Failed to check or create package: ' + retryError.message
-        };
-      }
-      
-      // Update our reference if retry worked
-      if (retryPackage) {
-        console.log('Successfully found package after schema fix:', retryPackage);
-        if (!existingPackage) {
-          // Create a new empty object if it doesn't exist
-          existingPackage = {};
-        }
-        existingPackage.id = retryPackage.id;
-      }
-    }
-
-    // Ensure numeric values - force conversion to numbers
-    const packageValues: any = {
-      name: packageData.name || 'Visa Package',
-      country_id: packageData.country_id,
-      government_fee: Number(packageData.government_fee || 0),
-      service_fee: Number(packageData.service_fee || 0),
-      processing_days: Number(packageData.processing_days || 15),
-      updated_at: new Date().toISOString(),
-      // Add price field to satisfy the not-null constraint
-      price: Number(packageData.government_fee || 0) + Number(packageData.service_fee || 0)
-    };
-    
-    // Add processing_time field if needed (since it's required by the schema)
-    packageValues.processing_time = `${packageValues.processing_days} business days`;
-    
-    console.log('Formatted package values to save:', packageValues);
-
-    let result;
-    
-    if (existingPackage && existingPackage.id) {
-      console.log('Updating existing package with ID:', existingPackage.id);
-      
-      result = await supabase
-        .from('visa_packages')
-        .update(packageValues)
-        .eq('id', existingPackage.id)
-        .select();
-        
-      console.log('Update result:', result);
-    } else {
-      console.log('Creating new package for country:', packageData.country_id);
-      
-      result = await supabase
-        .from('visa_packages')
-        .insert(packageValues)
-        .select();
-        
-      console.log('Insert result:', result);
-    }
-
-    if (result.error) {
-      console.error('Error saving package:', result.error);
-      return {
-        success: false,
-        message: `Failed to save package: ${result.error.message}`
-      };
-    }
-
-    // Calculate active status - a package is active if either fee is > 0
-    const isActive = packageValues.government_fee > 0 || packageValues.service_fee > 0;
-    console.log(`Package active status: ${isActive ? 'ACTIVE' : 'INACTIVE'} (gov fee: ${packageValues.government_fee}, service fee: ${packageValues.service_fee})`);
-
-    // Update the countries table to reflect has_visa_package status
-    try {
-      console.log(`Updating country ${packageData.country_id} to has_visa_package=${isActive}`);
-      const { error: countryUpdateError } = await supabase
-        .from('countries')
-        .update({
-          has_visa_package: isActive,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', packageData.country_id);
-      
-      if (countryUpdateError) {
-        console.warn('Could not update country has_visa_package status:', countryUpdateError);
-      }
-    } catch (countryUpdateErr) {
-      console.warn('Error updating country status:', countryUpdateErr);
-    }
-
-    // Verify the update was successful by fetching the latest data
-    const { data: verifyData, error: verifyError } = await supabase
+    const { data, error } = await supabase
       .from('visa_packages')
       .select('*')
-      .eq('country_id', packageData.country_id)
-      .maybeSingle();
-      
-    if (verifyError) {
-      console.warn('Could not verify saved data:', verifyError);
-    } else {
-      console.log('Verified saved data:', verifyData);
+      .eq('country_id', countryId);
+
+    if (error) {
+      console.error('Error fetching visa packages by country ID:', error);
+      return { success: false, message: 'Failed to fetch visa packages for the country', data: [] };
     }
 
-    return {
-      success: true,
-      message: `Visa package ${existingPackage ? 'updated' : 'created'} successfully`,
-      data: result.data
-    };
-    
+    return { success: true, data: data || [] };
   } catch (error: any) {
-    console.error('Error in saveVisaPackage:', error);
-    return {
-      success: false,
-      message: error.message || 'An unexpected error occurred'
-    };
+    console.error('Unexpected error fetching visa packages by country ID:', error);
+    return { success: false, message: error.message || 'Unexpected error', data: [] };
   }
 };
 
-export const toggleVisaPackageStatus = async (countryId: string, isActive: boolean): Promise<{
-  success: boolean;
-  message: string;
-  data?: any;
-}> => {
+/**
+ * Creates a new visa package.
+ * @param {any} packageData - The data for the new visa package.
+ * @returns {Promise<{ success: boolean; data?: any; message?: string }>}
+ */
+export const createVisaPackage = async (packageData: any): Promise<{ success: boolean; data?: any; message?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('visa_packages')
+      .insert([packageData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating visa package:', error);
+      return { success: false, message: 'Failed to create visa package', data: null };
+    }
+
+    return { success: true, data: data || null };
+  } catch (error: any) {
+    console.error('Unexpected error creating visa package:', error);
+    return { success: false, message: error.message || 'Unexpected error', data: null };
+  }
+};
+
+/**
+ * Updates an existing visa package.
+ * @param {string} id - The ID of the visa package to update.
+ * @param {any} packageData - The updated data for the visa package.
+ * @returns {Promise<{ success: boolean; data?: any; message?: string }>}
+ */
+export const updateVisaPackage = async (id: string, packageData: any): Promise<{ success: boolean; data?: any; message?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('visa_packages')
+      .update(packageData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating visa package:', error);
+      return { success: false, message: 'Failed to update visa package', data: null };
+    }
+
+    return { success: true, data: data || null };
+  } catch (error: any) {
+    console.error('Unexpected error updating visa package:', error);
+    return { success: false, message: error.message || 'Unexpected error', data: null };
+  }
+};
+
+/**
+ * Deletes a visa package by its ID.
+ * @param {string} id - The ID of the visa package to delete.
+ * @returns {Promise<{ success: boolean; message?: string }>}
+ */
+export const deleteVisaPackage = async (id: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const { error } = await supabase
+      .from('visa_packages')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting visa package:', error);
+      return { success: false, message: 'Failed to delete visa package' };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Unexpected error deleting visa package:', error);
+    return { success: false, message: error.message || 'Unexpected error' };
+  }
+};
+
+export const toggleVisaPackageStatus = async (
+  countryId: string,
+  isActive: boolean
+): Promise<{ success: boolean; message?: string }> => {
   try {
     console.log(`Toggling package status for country ${countryId} to ${isActive ? 'active' : 'inactive'}`);
     
-    // First check if the visa_packages table exists with a simple query
-    // instead of using the get_table_info RPC function
-    const { data, error: tableCheckError } = await supabase
-      .from('visa_packages')
-      .select('id')
-      .limit(1);
-    
-    if (tableCheckError) {
-      console.error('Error checking visa_packages table:', tableCheckError);
-      return {
-        success: false,
-        message: 'Error checking database schema. Please try refreshing the data.'
-      };
-    }
-    
-    // Check if the visa_packages table exists
-    const { data: existingPackage, error: checkError } = await supabase
-      .from('visa_packages')
-      .select('*')
-      .eq('country_id', countryId)
-      .maybeSingle();
-      
-    if (checkError) {
-      console.error('Error checking existing package:', checkError);
-      
-      // Try to create the table and schema first
-      try {
-        await initializeVisaPackagesSchema();
-      } catch (schemaError) {
-        console.error('Error initializing schema:', schemaError);
-      }
-      
-      return {
-        success: false,
-        message: 'Error checking package status. Schema may be incompatible.'
-      };
-    }
-    
-    // Set reasonable default values for a new package
-    const defaultValues: any = {
-      country_id: countryId,
-      name: existingPackage?.name || 'Visa Package',
-      government_fee: isActive ? 20 : 0,
-      service_fee: isActive ? 10 : 0,
-      processing_days: existingPackage?.processing_days || 15
-    };
-    
-    // Always set processing_time since it's required by the schema
-    defaultValues.processing_time = `${defaultValues.processing_days} business days`;
-    
-    // Add price field to satisfy the not-null constraint
-    defaultValues.price = defaultValues.government_fee + defaultValues.service_fee;
-    
-    let result;
-    
-    if (existingPackage) {
-      console.log('Found existing package:', existingPackage);
-      
-      // Prepare update data
-      const updateData: any = {
-        government_fee: isActive ? Math.max(existingPackage.government_fee || 20, 20) : 0,
-        service_fee: isActive ? Math.max(existingPackage.service_fee || 10, 10) : 0,
-        updated_at: new Date().toISOString()
-      };
-      
-      // Always include processing_time to avoid not-null constraint error
-      updateData.processing_time = existingPackage.processing_time || 
-                                  `${existingPackage.processing_days || 15} business days`;
-      
-      // Add price field to satisfy the not-null constraint
-      updateData.price = updateData.government_fee + updateData.service_fee;
-      
-      // Update the existing package with new values
-      result = await supabase
+    if (isActive) {
+      // Check if visa package already exists
+      const { data: existingPackages, error: checkError } = await supabase
         .from('visa_packages')
-        .update(updateData)
-        .eq('id', existingPackage.id)
-        .select();
-        
-      console.log('Update result:', result);
-    } else {
-      console.log('No existing package, creating new one with status:', isActive);
+        .select('*')
+        .eq('country_id', countryId)
+        .limit(1);
       
-      // Create a new package
-      result = await supabase
-        .from('visa_packages')
-        .insert(defaultValues)
-        .select();
-        
-      console.log('Insert result:', result);
-    }
-
-    if (result.error) {
-      console.error('Error toggling package status:', result.error);
-      return {
-        success: false,
-        message: `Failed to update package status: ${result.error.message}`
-      };
-    }
-
-    // Also update the countries table to reflect the package status
-    try {
-      console.log(`Updating country ${countryId} to has_visa_package=${isActive}`);
-      const { error: countryUpdateError } = await supabase
-        .from('countries')
-        .update({
-          has_visa_package: isActive,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', countryId);
-      
-      if (countryUpdateError) {
-        console.warn('Could not update country has_visa_package status:', countryUpdateError);
-      }
-    } catch (countryUpdateErr) {
-      console.warn('Error updating country status:', countryUpdateErr);
-    }
-
-    // Verify update was successful
-    const { data: verifyData, error: verifyError } = await supabase
-      .from('visa_packages')
-      .select('*')
-      .eq('country_id', countryId)
-      .maybeSingle();
-      
-    if (verifyError) {
-      console.warn('Could not verify saved data:', verifyError);
-    } else {
-      console.log('Verified saved data:', verifyData);
-    }
-
-    return {
-      success: true,
-      message: `Package status ${isActive ? 'activated' : 'deactivated'} successfully`,
-      data: result.data
-    };
-    
-  } catch (error: any) {
-    console.error('Error toggling package status:', error);
-    return {
-      success: false,
-      message: error.message || 'Failed to update package status'
-    };
-  }
-};
-
-// NEW: Function to add a complete visa package with one call
-export const addCompleteVisaPackage = async (
-  countryId: string, 
-  packageData: {
-    name?: string;
-    government_fee: number;
-    service_fee: number;
-    processing_days?: number;
-  }
-): Promise<{
-  success: boolean;
-  message: string;
-  data?: any;
-}> => {
-  try {
-    console.log('Adding complete visa package for country:', countryId, packageData);
-    
-    // First make sure the schema is initialized
-    await initializeVisaPackagesSchema();
-    
-    if (!countryId) {
-      return {
-        success: false,
-        message: 'Country ID is required'
-      };
-    }
-    
-    // Ensure numeric values
-    const packageToSave: VisaPackage = {
-      country_id: countryId,
-      name: packageData.name || 'Visa Package',
-      government_fee: Number(packageData.government_fee) || 0,
-      service_fee: Number(packageData.service_fee) || 0,
-      processing_days: Number(packageData.processing_days) || 15
-    };
-    
-    // Calculate if this package should be active
-    const isActive = packageToSave.government_fee > 0 || packageToSave.service_fee > 0;
-    
-    // First try to save the package data
-    const saveResult = await saveVisaPackage(packageToSave);
-    
-    // Then make sure the status is set correctly if save was successful
-    if (saveResult.success && isActive) {
-      const toggleResult = await toggleVisaPackageStatus(countryId, true);
-      if (!toggleResult.success) {
-        return {
-          success: true,
-          message: `Package created but activation failed: ${toggleResult.message}`,
-          data: saveResult.data
+      if (checkError) {
+        console.error('Error checking existing packages:', checkError);
+        return { 
+          success: false, 
+          message: `Failed to check existing packages: ${checkError.message}` 
         };
       }
+      
+      // If we have an existing package, update it instead of creating a new one
+      if (existingPackages && existingPackages.length > 0) {
+        const packageToUpdate = existingPackages[0];
+        
+        const { error: updateError } = await supabase
+          .from('visa_packages')
+          .update({
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', packageToUpdate.id);
+        
+        if (updateError) {
+          console.error('Error updating existing package:', updateError);
+          return { 
+            success: false, 
+            message: `Failed to update package: ${updateError.message}` 
+          };
+        }
+        
+        return { success: true };
+      }
+      
+      // No existing package, create a new one with all required fields
+      const defaultPackage = {
+        country_id: countryId,
+        name: 'Standard Visa',
+        government_fee: 0,
+        service_fee: 0,
+        processing_days: 15,
+        price: 0, // Make sure price is included
+        processing_time: '15 business days',
+        is_active: true
+      };
+      
+      const { error: insertError } = await supabase
+        .from('visa_packages')
+        .insert(defaultPackage);
+      
+      if (insertError) {
+        console.error('Error creating package:', insertError);
+        return { 
+          success: false, 
+          message: `Failed to create package: ${insertError.message}` 
+        };
+      }
+      
+      return { success: true };
+    } else {
+      // Deactivate all packages for this country
+      const { error: updateError } = await supabase
+        .from('visa_packages')
+        .update({ is_active: false })
+        .eq('country_id', countryId);
+      
+      if (updateError) {
+        console.error('Error deactivating packages:', updateError);
+        return { 
+          success: false, 
+          message: `Failed to deactivate packages: ${updateError.message}` 
+        };
+      }
+      
+      return { success: true };
     }
-    
-    return {
-      success: true,
-      message: `Complete visa package ${isActive ? 'activated' : 'created'} successfully`,
-      data: saveResult.data
-    };
   } catch (error: any) {
-    console.error('Error in addCompleteVisaPackage:', error);
+    console.error('Exception in toggleVisaPackageStatus:', error);
     return {
       success: false,
-      message: error.message || 'Failed to add complete package'
+      message: error.message || 'An unexpected error occurred'
     };
   }
 };
