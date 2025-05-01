@@ -54,7 +54,8 @@ export const useCountryOperations = (queryClient?: any) => {
         
         return {
           success: false,
-          message: errorMessage || 'Failed to save some country data'
+          message: errorMessage || 'Failed to save some country data',
+          data: null // Add the missing data property
         };
       }
       
@@ -95,7 +96,11 @@ export const useCountryOperations = (queryClient?: any) => {
       
       if (!packageResult.success) {
         setError(packageResult.message || "Failed to update package status");
-        return packageResult;
+        return {
+          success: false,
+          message: packageResult.message || "Failed to update package status",
+          data: null
+        };
       }
       
       // Then ensure documents exist if activating
@@ -109,13 +114,18 @@ export const useCountryOperations = (queryClient?: any) => {
       // Refresh the data
       await fetchCountryData(countryId);
       
-      return packageResult;
+      return {
+        success: true,
+        message: "Package status updated successfully",
+        data: packageResult.data
+      };
     } catch (err: any) {
       console.error("Error in togglePackageAndEnsureDocuments:", err);
       setError(err.message || "Failed to update package status");
       return {
         success: false,
-        message: err.message || "An error occurred while updating package status"
+        message: err.message || "An error occurred while updating package status",
+        data: null
       };
     } finally {
       setSaving(false);

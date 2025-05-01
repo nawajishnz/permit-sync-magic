@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -150,7 +151,7 @@ export const deleteVisaPackage = async (id: string): Promise<{ success: boolean;
       return { success: false, message: 'Failed to delete visa package' };
     }
 
-    return { success: true };
+    return { success: true, message: 'Visa package deleted successfully' };
   } catch (error: any) {
     console.error('Unexpected error deleting visa package:', error);
     return { success: false, message: error.message || 'Unexpected error' };
@@ -166,7 +167,7 @@ export const deleteVisaPackage = async (id: string): Promise<{ success: boolean;
 export const toggleVisaPackageStatus = async (
   countryId: string,
   isActive: boolean
-): Promise<{ success: boolean; message?: string }> => {
+): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
     console.log(`Toggling package status for country ${countryId} to ${isActive ? 'active' : 'inactive'}`);
     
@@ -182,7 +183,8 @@ export const toggleVisaPackageStatus = async (
         console.error('Error checking existing packages:', checkError);
         return { 
           success: false, 
-          message: `Failed to check existing packages: ${checkError.message}` 
+          message: `Failed to check existing packages: ${checkError.message}`,
+          data: null
         };
       }
       
@@ -202,11 +204,12 @@ export const toggleVisaPackageStatus = async (
           console.error('Error updating existing package:', updateError);
           return { 
             success: false, 
-            message: `Failed to update package: ${updateError.message}` 
+            message: `Failed to update package: ${updateError.message}`,
+            data: null
           };
         }
         
-        return { success: true };
+        return { success: true, message: 'Package activated successfully', data: packageToUpdate };
       }
       
       // No existing package, create a new one with all required fields
@@ -221,19 +224,21 @@ export const toggleVisaPackageStatus = async (
         is_active: true
       };
       
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('visa_packages')
-        .insert(defaultPackage);
+        .insert(defaultPackage)
+        .select();
       
       if (insertError) {
         console.error('Error creating package:', insertError);
         return { 
           success: false, 
-          message: `Failed to create package: ${insertError.message}` 
+          message: `Failed to create package: ${insertError.message}`,
+          data: null
         };
       }
       
-      return { success: true };
+      return { success: true, message: 'New package created and activated', data };
     } else {
       // Deactivate all packages for this country
       const { error: updateError } = await supabase
@@ -245,17 +250,19 @@ export const toggleVisaPackageStatus = async (
         console.error('Error deactivating packages:', updateError);
         return { 
           success: false, 
-          message: `Failed to deactivate packages: ${updateError.message}` 
+          message: `Failed to deactivate packages: ${updateError.message}`,
+          data: null
         };
       }
       
-      return { success: true };
+      return { success: true, message: 'Packages deactivated successfully', data: null };
     }
   } catch (error: any) {
     console.error('Exception in toggleVisaPackageStatus:', error);
     return {
       success: false,
-      message: error.message || 'An unexpected error occurred'
+      message: error.message || 'An unexpected error occurred',
+      data: null
     };
   }
 };
@@ -417,8 +424,11 @@ export const checkDatabaseConnection = async (): Promise<{ success: boolean; mes
  */
 export const initializeVisaPackagesSchema = async (): Promise<{ success: boolean; message: string; data?: any }> => {
   try {
-    const { data: schemaFixService } = await import('@/services/schemaFixService');
-    const result = await schemaFixService.fixSchema();
+    // Import the schema fix service
+    const schemaFixService = await import('@/services/schemaFixService');
+    
+    // Call the fixSchema method from the imported service
+    const result = await schemaFixService.default.fixSchema();
     
     return {
       success: result.success,
@@ -429,7 +439,8 @@ export const initializeVisaPackagesSchema = async (): Promise<{ success: boolean
     console.error('Error initializing schema:', error);
     return {
       success: false,
-      message: error.message || 'Failed to initialize schema'
+      message: error.message || 'Failed to initialize schema',
+      data: null
     };
   }
 };
